@@ -9,6 +9,7 @@ const DEFAULTS = {
   aiAsked: false,         // ya se mostró el selector de la primera vez
   overlayKey: "focus",    // focus | global-safe | global-shift-tab
   keepBackground: true,   // al cerrar la ventana, seguir en la bandeja
+  launchAtStartup: false, // iniciar sesión al arrancar el sistema
   bgSync: true,           // buscar novedades en segundo plano
   syncMinutes: 15,
   toasts: true,           // avisos estilo Steam
@@ -37,6 +38,7 @@ function sanitize(s) {
     aiAsked: !!s.aiAsked,
     overlayKey: OVERLAY_KEYS.includes(s.overlayKey) ? s.overlayKey : DEFAULTS.overlayKey,
     keepBackground: !!s.keepBackground,
+    launchAtStartup: !!s.launchAtStartup,
     bgSync: !!s.bgSync,
     syncMinutes: SYNC_CHOICES.includes(Number(s.syncMinutes)) ? Number(s.syncMinutes) : DEFAULTS.syncMinutes,
     toasts: !!s.toasts,

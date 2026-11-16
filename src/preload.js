@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("notxuntaClient", {
-  version: "0.6.5",
+  version: "0.6.6",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
   addAccount: acc => call("accounts:add", acc),
@@ -43,6 +43,9 @@ contextBridge.exposeInMainWorld("notxuntaClient", {
   friendRequest: userId => call("friends:request", userId),
   friendRespond: (id, accept) => call("friends:respond", id, accept),
   friendRemove: id => call("friends:remove", id),
+  chatList: userId => call("chat:list", userId),
+  chatSend: (userId, body) => call("chat:send", userId, body),
+  chatRead: userId => call("chat:read", userId),
   // Sincronización de ajustes con la cuenta NotXunta
   syncLook: (look, changed) => call("sync:look", look, !!changed),
   syncNow: () => call("sync:now"),

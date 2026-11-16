@@ -154,3 +154,12 @@ Sin el paso 6 la app funciona igual, pero «Cuenta y amigos» avisa de que no ha
 
 ## 0.5.7 (fix de la 0.5.6)
 - Arreglo: si la base de datos de Supabase no tenía aplicado `supabase/migration-0.5.6.sql`, la app 0.5.6 no podía cargar el perfil y «Cuenta y amigos» dejaba de funcionar entera. Ahora la cuenta y los amigos funcionan igualmente y la app avisa de que falta ejecutar la migración (necesaria solo para la foto de perfil y la sincronización de ajustes).
+
+
+## 0.6.6 · Inicio automático, mensajería y actualizaciones
+
+- En **Ajustes → Segundo plano y avisos** puedes activar «Iniciar NotXunta al encender el ordenador». Windows y macOS usan los elementos de inicio de sesión; Linux crea un archivo `.desktop` en `~/.config/autostart`.
+- La mensajería directa está disponible entre amistades aceptadas desde **Cuenta NotXunta y amigos → Mensaje**. Para activarla, ejecuta `supabase/migration-0.6.6.sql` en Supabase → SQL Editor. Los mensajes se limitan a 2.000 caracteres y las políticas RLS restringen lectura y envío a los participantes/amigos.
+- **Windows instalado** y **Linux AppImage** descargan e instalan actualizaciones con `electron-updater`. Linux `.deb` debe actualizarse con el gestor de paquetes.
+- **macOS** requiere firma Developer ID y notarización para que Gatekeeper permita instalar actualizaciones. En GitHub Actions configura los secretos `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_API_KEY`, `APPLE_API_KEY_ID` y `APPLE_API_ISSUER`; sin ellos el artefacto Mac se compila sin firma y la actualización automática no será fiable.
+- Publica versiones creando una etiqueta `vX.Y.Z` que coincida con `package.json`; el workflow compila y adjunta los metadatos `latest*.yml` a GitHub Releases.

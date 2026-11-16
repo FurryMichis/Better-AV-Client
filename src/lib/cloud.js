@@ -70,6 +70,8 @@ function cloudError(status, data) {
     "23514": "El nombre de usuario solo puede tener letras minúsculas, números y _ (3 a 20 caracteres)."
   };
   if (map[code]) return new Error(map[code]);
+  if ((code === "42P01" || code === "PGRST205" || /direct_messages/i.test(msg)) && /direct_messages/i.test(msg))
+    return new Error("Falta activar la mensajería: ejecuta supabase/migration-0.6.6.sql en el SQL Editor.");
   if (code === "42703" || code === "PGRST204" || code === "42P01" || code === "PGRST205" || /does not exist|schema cache/i.test(msg))
     return new Error("Falta actualizar la base de datos de Supabase: ejecuta supabase/migration-0.6.1.sql en el SQL Editor (y migration-0.5.6.sql si todavía no lo hiciste).");
   if (/provider is not enabled|Unsupported provider/i.test(msg)) return new Error("Ese método de inicio de sesión no está activado en el servidor.");

@@ -141,6 +141,7 @@ $$(".nav[data-view]").forEach(btn => btn.addEventListener("click", () => {
   const label = btn.cloneNode(true); label.querySelector(".nav-badge")?.remove();
   crumb.textContent = label.textContent.trim().replace(/^\S+\s+/, "").toUpperCase();
   if (btn.dataset.view === "cloud") renderCloud($("#cloud-view")).catch(e => notify(e.message));
+  if (btn.dataset.view === "nxmessages") renderNotXuntaMessages($("#nxmessages-view")).catch(e => notify(e.message));
   if (btn.dataset.view === "nxfiles") renderNxFiles($("#nxfiles-view")).catch(e => notify(e.message));
   if (btn.dataset.view === "news") renderNews($("#news-view")).catch(e => notify(e.message));
   if (btn.dataset.view === "appearance") renderAppearance($("#appearance-view"));
@@ -763,6 +764,110 @@ function openFriends() {
   else $('.nav[data-view="cloud"]').click();
 }
 
+// Mensajería propia de NotXunta: separada de los mensajes de cada aula Moodle.
+async function renderNotXuntaMessages(root) {
+  clear(root);
+  root.append(pageTitle("COMUNIDAD NOTXUNTA", "Mensajes NotXunta", "Chats privados entre usuarios de NotXunta Client. Los mensajes de Moodle siguen en cada aula."));
+  let status;
+  try { status = await api("cloudStatus"); }
+  catch (e) { root.append(empty("✉", "No se pudo conectar", e.message)); return; }
+  if (!status.configured) {
+    root.append(empty("☁", "Mensajería no configurada", "El servidor de cuentas NotXunta todavía no está configurado."));
+    return;
+  }
+  if (!status.signedIn || !status.profile) {
+    const panel = empty("✉", "Inicia sesión en NotXunta", "Para enviar y recibir mensajes necesitas una cuenta NotXunta. No es la misma cuenta que la del aula.");
+    panel.append(h("button", { class: "primary", text: "Ir a Cuenta y amigos", onclick: () => $('.nav[data-view="cloud"]').click() }));
+    root.append(panel);
+    return;
+  }
+
+  const layout = h("div", { class: "nx-dm-layout" });
+  const list = h("div", { class: "nx-dm-list" });
+  const thread = h("div", { class: "nx-dm-thread" }, h("div", { class: "muted pad", text: "Selecciona un contacto para abrir la conversación." }));
+  layout.append(list, thread); root.append(layout);
+  let selected = null;
+  let refreshTimer = null;
+  const contacts = (await api("friendsList")).filter(f => f.status === "accepted");
+  if (!contacts.length) {
+    clear(list).append(h("div", { class: "muted pad", text: "Todavía no tienes amigos. Añade contactos desde «Cuenta y amigos»." }));
+    return;
+  }
+
+  const contactButtons = new Map();
+  // Las fotos de perfil de NotXunta se guardan como data URLs en profiles.avatar.
+  // No usar loadImage(): ese helper es para imágenes de Moodle y necesita una cuenta de aula.
+  function dmAvatar(url, name, cls = "") {
+    const el = h("span", { class: `nx-dm-avatar ${cls}`, text: initials(name) });
+    if (typeof url === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(url)) {
+      el.style.backgroundImage = `url("${url}")`;
+      el.classList.add("has-img");
+      el.textContent = "";
+    }
+    return el;
+  }
+  async function loadThread(friend, btn, keepScroll = false) {
+    selected = friend;
+    contactButtons.forEach(b => b.classList.toggle("active", b === btn));
+    const oldScroll = keepScroll ? thread.querySelector(".nx-dm-history")?.scrollTop : null;
+    const msgs = await api("chatList", friend.other_id);
+    const unread = msgs.filter(m => m.sender_id === friend.other_id && !m.read_at).length;
+    if (unread) await api("chatRead", friend.other_id);
+    const history = h("div", { class: "nx-dm-history" });
+    if (!msgs.length) history.append(h("div", { class: "muted pad", text: "Todavía no hay mensajes. ¡Saluda!" }));
+    for (const m of msgs) {
+      const mine = m.sender_id === status.profile.id;
+      history.append(h("article", { class: `nx-dm-bubble ${mine ? "mine" : ""}` },
+        h("p", { text: m.body }), h("small", { text: new Date(m.created_at).toLocaleString("es-ES") })));
+    }
+    const input = h("textarea", { rows: "2", maxlength: "2000", placeholder: "Escribe un mensaje… (Enter para enviar)" });
+    const send = h("button", { class: "primary", text: "Enviar", onclick: async () => {
+      const body = input.value.trim(); if (!body) return;
+      send.disabled = true;
+      try { await api("chatSend", friend.other_id, body); input.value = ""; await loadThread(friend, btn); }
+      catch (e) { notify(e.message); }
+      finally { send.disabled = false; }
+    } });
+    input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send.click(); } });
+    clear(thread).append(h("div", { class: "nx-dm-head" }, dmAvatar(friend.avatar, friend.display_name || friend.username, "large"), h("div", { class: "nx-dm-head-name" }, h("b", { text: friend.display_name || friend.username }), h("span", { class: "muted", text: `@${friend.username}` }))), history, h("div", { class: "nx-dm-compose" }, input, send));
+    history.scrollTop = oldScroll == null ? history.scrollHeight : oldScroll;
+    if (unread) btn.querySelector(".chip")?.remove();
+    btn._unread = unread;
+  }
+
+  const summaries = await Promise.all(contacts.map(async friend => {
+    try {
+      const msgs = await api("chatList", friend.other_id);
+      const unread = msgs.filter(m => m.sender_id === friend.other_id && !m.read_at).length;
+      return { friend, msgs, unread };
+    } catch { return { friend, msgs: [], unread: 0 }; }
+  }));
+  summaries.sort((a, b) => new Date(b.msgs.at(-1)?.created_at || 0) - new Date(a.msgs.at(-1)?.created_at || 0));
+  const unreadTotal = summaries.reduce((n, item) => n + item.unread, 0);
+  const unreadBadge = $('[data-badge="nxmessages"]');
+  if (unreadBadge) { unreadBadge.textContent = unreadTotal > 99 ? "99+" : String(unreadTotal); unreadBadge.hidden = unreadTotal === 0; }
+  clear(list);
+  for (const item of summaries) {
+    const f = item.friend, last = item.msgs.at(-1);
+    const btn = h("button", { class: "nx-dm-contact" },
+      dmAvatar(f.avatar, f.display_name || f.username),
+      h("span", { class: "item-main" }, h("b", { text: f.display_name || f.username }), h("span", { class: "muted", text: last ? `${last.sender_id === status.profile.id ? "Tú: " : ""}${last.body}`.slice(0, 58) : "Sin mensajes todavía" })),
+      item.unread ? chip(String(item.unread), "new") : null);
+    btn.addEventListener("click", () => loadThread(f, btn).catch(e => notify(e.message)));
+    contactButtons.set(f.other_id, btn); list.append(btn);
+  }
+  const first = summaries[0];
+  if (first) await loadThread(first.friend, contactButtons.get(first.friend.other_id));
+  refreshTimer = setInterval(async () => {
+    if (!root.isConnected || !root.classList.contains("active")) { clearInterval(refreshTimer); return; }
+    try {
+      const latest = await api("friendsList");
+      const current = latest.find(f => f.other_id === selected?.other_id && f.status === "accepted");
+      if (current) await loadThread(current, contactButtons.get(current.other_id), true);
+    } catch { /* mantiene el último contenido si se pierde la conexión */ }
+  }, 10000);
+}
+
 const ROLE_NAMES = { student: "Alumno", editingteacher: "Profesor", teacher: "Profesor", manager: "Gestor", coursecreator: "Creador de cursos" };
 
 async function renderParticipants(root, c) {
@@ -1046,6 +1151,40 @@ async function friendsPanel(redo) {
   const friends = rows.filter(r => r.status === "accepted").sort((a, b) => Number(!!b.online) - Number(!!a.online));
   const onlineN = friends.filter(r => r.online).length;
   setFriendBadge(incoming.length);
+  const chatHost = h("div", { class: "cloud-section", hidden: true });
+  const openChat = async friend => {
+    chatHost.hidden = false; clear(chatHost);
+    chatHost.append(h("h3", { text: `MENSAJES CON @${friend.username}` }));
+    const history = h("div", { class: "item-list", style: "max-height:320px;overflow:auto;gap:8px" }, h("p", { class: "muted", text: "Cargando mensajes…" }));
+    const input = h("textarea", { placeholder: "Escribe un mensaje…", maxlength: "2000", rows: "3" });
+    const sendBtn = h("button", { class: "primary", text: "Enviar" });
+    const refresh = async () => {
+      try {
+        const msgs = await api("chatList", friend.other_id);
+        clear(history);
+        if (!msgs.length) history.append(h("p", { class: "muted", text: "Todavía no hay mensajes. ¡Di hola!" }));
+        for (const m of msgs) history.append(h("div", { class: "cloud-card", style: "padding:10px;margin:0" },
+          h("b", { text: m.sender_id === st.profile.id ? "Tú" : (friend.display_name || friend.username) }),
+          h("p", { text: m.body, style: "white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0" }),
+          h("small", { class: "muted", text: new Date(m.created_at).toLocaleString() })));
+        await api("chatRead", friend.other_id);
+        history.scrollTop = history.scrollHeight;
+      } catch (e) { clear(history); history.append(h("p", { class: "muted", text: e.message })); }
+    };
+    sendBtn.addEventListener("click", async () => {
+      const body = input.value.trim(); if (!body) return;
+      sendBtn.disabled = true;
+      try { await api("chatSend", friend.other_id, body); input.value = ""; await refresh(); }
+      catch (e) { notify(e.message); }
+      finally { sendBtn.disabled = false; }
+    });
+    input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendBtn.click(); } });
+    let chatTimer = null;
+    chatHost.append(history, input, h("div", { class: "cloud-actions" }, sendBtn,
+      h("button", { class: "secondary", text: "Actualizar", onclick: refresh }),
+      h("button", { class: "secondary", text: "Cerrar", onclick: () => { clearInterval(chatTimer); chatHost.hidden = true; clear(chatHost); } })));
+    await refresh(); chatTimer = setInterval(() => { if (chatHost.isConnected && !chatHost.hidden) refresh(); }, 10000); input.focus();
+  };
 
   const person = (r, ...acts) => h("div", { class: "friend-row" }, cloudPic(r, "sm"),
     h("span", { class: "item-main" }, h("b", { text: r.display_name || r.username }),
@@ -1083,12 +1222,15 @@ async function friendsPanel(redo) {
     section("SOLICITUDES RECIBIDAS", incoming, r => person(r,
       act("Aceptar", "primary", () => api("friendRespond", r.friendship_id, true)),
       act("Rechazar", "secondary", () => api("friendRespond", r.friendship_id, false)))),
-    section("TUS AMIGOS", friends, r => person(r, act("Eliminar", "secondary", async () => {
+    section("TUS AMIGOS", friends, r => person(r,
+      h("button", { class: "primary small", text: "Mensaje", onclick: () => openChat(r) }),
+      act("Eliminar", "secondary", async () => {
       if (!confirm(`¿Dejar de ser amigo de @${r.username}?`)) throw new Error("Cancelado.");
       await api("friendRemove", r.friendship_id);
     })), onlineN ? `${onlineN} en línea` : ""),
     section("SOLICITUDES ENVIADAS", sent, r => person(r, act("Cancelar", "secondary", () => api("friendRemove", r.friendship_id))))
   ].filter(Boolean));
+  if (friends.length) wrap.append(chatHost);
   // El estado «en línea» se refresca solo mientras esta pantalla siga abierta (sin volver a pintarla entera).
   const presenceTimer = setInterval(async () => {
     if (!wrap.isConnected) { clearInterval(presenceTimer); return; }
@@ -1397,6 +1539,7 @@ async function renderSettings(root) {
   intSel.disabled = !cur.bgSync;
   intSel.addEventListener("change", () => patch({ syncMinutes: Number(intSel.value) }));
   root.append(h("div", { class: "settings-panel wide" }, h("h2", { text: "Segundo plano y avisos" }),
+    row("Iniciar NotXunta al encender el ordenador", "Abre NotXunta automáticamente al iniciar sesión en Windows, macOS o Linux.", "launchAtStartup"),
     row("Seguir en segundo plano al cerrar la ventana", "NotXunta Client se queda en la bandeja del sistema (junto al reloj, o en la barra de menú en Mac). Para salir del todo, usa «Salir» en su menú.", "keepBackground"),
     row("Buscar novedades en segundo plano", "Comprueba tus aulas sin tener la ventana abierta y te avisa si hay contenido nuevo.", "bgSync", true),
     h("div", { class: "switch-row" }, h("span", {}, h("b", { text: "Frecuencia de comprobación" }), h("small", { text: "Con menos comprobaciones se gasta menos batería y datos." })), intSel),
@@ -1421,14 +1564,14 @@ function updatesPanel(row) {
     msg.textContent = st.message || `Versión instalada: ${aula.version}`;
     clear(btns);
     if (st.state === "ready") btns.append(h("button", { class: "primary small", text: "Reiniciar e instalar ahora", onclick: () => api("updateInstall").catch(e => notify(e.message)) }));
-    else if (st.state === "available") btns.append(h("button", { class: "primary small", text: "Abrir página de descarga", onclick: () => api("updateOpenReleases").catch(e => notify(e.message)) }));
+    else if (st.state === "available" && aula.platform !== "linux") btns.append(h("button", { class: "primary small", text: "Abrir página de descarga", onclick: () => api("updateOpenReleases").catch(e => notify(e.message)) }));
     else if (st.state !== "unsupported") btns.append(h("button", { class: "secondary small", text: "Buscar actualizaciones", disabled: st.state === "checking" || st.state === "downloading" ? "" : null,
       onclick: () => api("updateCheck").then(paint).catch(e => notify(e.message)) }));
   };
   api("updateStatus").then(paint).catch(() => {});
   const off = aula.onUpdate(st => { if (msg.isConnected) paint(st); else off(); });
   return h("div", { class: "settings-panel wide" }, h("h2", { text: `Actualizaciones · v${aula.version}` }),
-    row("Buscar e instalar actualizaciones automáticamente", IS_MAC || aula.platform === "linux" ? "Se comprueba al abrir y cada 6 horas. En Windows y Linux (AppImage) se instala sola; en Mac y Linux .deb te avisa y abre la página de descarga." : "Se comprueba al abrir y cada 6 horas; se descarga en segundo plano y se instala al cerrar la app.", "autoUpdate"),
+    row("Buscar e instalar actualizaciones automáticamente", aula.platform === "linux" ? "Windows y Linux AppImage se descargan e instalan automáticamente. Linux .deb se actualiza desde el gestor de paquetes." : IS_MAC ? "Se descarga en segundo plano y se instala al cerrar. macOS requiere una versión firmada y notarizada por Apple." : "Se comprueba al abrir y cada 6 horas; se descarga en segundo plano y se instala al cerrar la app.", "autoUpdate"),
     h("div", { class: "pad" }, msg), btns);
 }
 

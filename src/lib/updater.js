@@ -1,8 +1,6 @@
 "use strict";
-// Actualizaciones automáticas (electron-updater). Solo funcionan en la app instalada:
-//  · Windows (instalador) y Linux (AppImage): comprueba al arrancar y cada 6 horas, descarga en segundo plano e instala al cerrar.
-//  · macOS y Linux .deb: solo AVISA de la versión nueva y abre la página de descarga (en Mac instalar solo exige una app firmada
-//    con cuenta de Apple Developer; sin ella la instalación automática falla).
+// Actualizaciones automáticas (electron-updater): Windows instalado, macOS firmado y Linux AppImage.
+// macOS necesita Developer ID + notarización; Linux .deb se actualiza mediante el gestor de paquetes.
 
 const { app } = require("electron");
 
@@ -10,7 +8,7 @@ let autoUpdater = null, deps = null, timer = null;
 let status = { state: "idle", version: "", message: "", percent: 0 };
 
 const supported = () => app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR; // la versión portable no se actualiza sola
-const manualOnly = () => process.platform === "darwin" || (process.platform === "linux" && !process.env.APPIMAGE);
+const manualOnly = () => process.platform === "linux" && !process.env.APPIMAGE;
 const set = patch => { status = { ...status, ...patch }; if (deps && deps.onStatus) deps.onStatus(status); };
 
 function init(d) {
@@ -28,8 +26,8 @@ function init(d) {
   autoUpdater.on("update-not-available", () => set({ state: "uptodate", message: `Estás al día (v${app.getVersion()}).` }));
   autoUpdater.on("update-available", info => {
     if (manualOnly()) {
-      set({ state: "available", version: info.version, percent: 0, message: `Hay una versión nueva: ${info.version}. Descárgala desde la página de versiones.` });
-      deps.notify("Nueva versión disponible", `NotXunta Client ${info.version}: pulsa para abrir la página de descarga.`, "releases");
+      set({ state: "available", version: info.version, percent: 0, message: `Hay una versión nueva: ${info.version}. En Linux .deb, actualiza desde el gestor de paquetes.` });
+      deps.notify("Nueva versión disponible", `NotXunta Client ${info.version}: actualiza desde el gestor de paquetes.`, "app");
       return;
     }
     set({ state: "downloading", version: info.version, percent: 0, message: `Descargando la versión ${info.version}…` });
@@ -80,7 +78,7 @@ function startupCheck(onProgress, { timeoutMs = 10000, stallMs = 60000 } = {}) {
     on("update-not-available", () => finish("none"));
     on("error", () => finish("error"));
     on("update-available", info => {
-      if (manualOnly()) { finish("available"); return; }   // en Mac / .deb no se descarga: solo se avisa
+      if (manualOnly()) { finish("available"); return; }   // Linux .deb depende del gestor de paquetes
       clearTimeout(checkTimer);   // la descarga puede tardar: ya no corre el límite de la comprobación
       armStall();
       onProgress({ text: `Descargando la versión ${info.version}…`, percent: 0, canSkip: true });

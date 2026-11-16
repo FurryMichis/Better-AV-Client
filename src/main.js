@@ -49,6 +49,29 @@ const loadAccounts = () => readJson(accountsFile(), []);
 const saveAccounts = list => writeJson(accountsFile(), list);
 const publicAccount = a => ({ id: a.id, name: a.name, url: a.url, username: a.username, icon: a.icon || "", needsPassword: !!a.needsPassword });
 
+// Inicio automático multiplataforma: Login Items en Windows/macOS y .desktop en XDG/Linux.
+function applyLaunchAtStartup(enabled) {
+  enabled = !!enabled;
+  try {
+    if (process.platform === "win32" || process.platform === "darwin") {
+      app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: false, path: process.execPath, args: app.isPackaged ? [] : [app.getAppPath()] });
+      return true;
+    }
+    if (process.platform === "linux") {
+      const dir = path.join(app.getPath("home"), ".config", "autostart");
+      const file = path.join(dir, "notxunta-client.desktop");
+      if (!enabled) { fs.rmSync(file, { force: true }); return true; }
+      fs.mkdirSync(dir, { recursive: true });
+      const quote = v => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      const executable = process.env.APPIMAGE || process.execPath;
+      fs.writeFileSync(file, `[Desktop Entry]\nType=Application\nName=NotXunta Client\nComment=Cliente del Aula Virtual\nExec="${quote(executable)}"\nTerminal=false\nX-GNOME-Autostart-enabled=true\n`, { mode: 0o644 });
+      return true;
+    }
+  } catch (e) { console.warn("No se pudo configurar el inicio automático:", e.message); return false; }
+  return false;
+}
+
+
 // Icono de instancia: un emoji/símbolo corto o una imagen pequeña (data URL).
 function cleanIcon(icon) {
   if (icon == null || icon === "") return "";
@@ -528,6 +551,7 @@ handle("settings:set", (_e, patch) => {
     if (!r.ok) { warn = r.error; settings.set({ overlayKey: "focus" }); overlay.applyHotkey("focus"); }
   }
   if (patch && ("bgSync" in patch || "syncMinutes" in patch)) scheduleBackground();
+  if (patch && "launchAtStartup" in patch) applyLaunchAtStartup(settings.get().launchAtStartup);
   if (patch && sync.PREF_KEYS.some(k => k in patch)) sync.touch("prefs");
   return { settings: settings.get(), warn };
 });
@@ -580,6 +604,27 @@ handle("friends:request", async (_e, userId) => {
 });
 handle("friends:respond", async (_e, id, accept) => { await cloud.rpc("respond_friend_request", { p_id: Number(id), p_accept: !!accept }); setTimeout(pollFriends, 300); return true; });
 handle("friends:remove", async (_e, id) => { await cloud.removeFriendship(id); setTimeout(pollFriends, 300); return true; });
+handle("chat:list", async (_e, userId) => {
+  if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
+  const me = cloud.userId();
+  if (!me) throw new Error("Inicia sesión en NotXunta.");
+  const rows = await cloud.rest("GET", `/rest/v1/direct_messages?or=(and(sender_id.eq.${me},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${me}))&select=id,sender_id,recipient_id,body,created_at,read_at&order=created_at.asc&limit=200`);
+  return rows || [];
+});
+handle("chat:send", async (_e, userId, body) => {
+  if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
+  body = String(body || "").trim();
+  if (!body || body.length > 2000) throw new Error("El mensaje debe tener entre 1 y 2000 caracteres.");
+  const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en NotXunta.");
+  const rows = await cloud.rest("POST", "/rest/v1/direct_messages", { body: { sender_id: me, recipient_id: userId, body }, headers: { Prefer: "return=representation" } });
+  return rows && rows[0];
+});
+handle("chat:read", async (_e, userId) => {
+  if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
+  const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en NotXunta.");
+  await cloud.rest("PATCH", `/rest/v1/direct_messages?sender_id=eq.${userId}&recipient_id=eq.${me}&read_at=is.null`, { body: { read_at: new Date().toISOString() }, headers: { Prefer: "return=minimal" } });
+  return true;
+});
 
 handle("update:status", () => updater.getStatus());
 handle("update:check", () => updater.check({ manual: true }));
@@ -920,6 +965,7 @@ if (!app.requestSingleInstanceLock()) {
     ]));
     else Menu.setApplicationMenu(null);
     hardenDefaultSession();
+    applyLaunchAtStartup(settings.get().launchAtStartup);
     registerMediaProtocol();
     overlay.init({
       getSettings: settings.get,
