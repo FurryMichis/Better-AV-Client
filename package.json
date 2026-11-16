@@ -1,17 +1,15 @@
 {
   "name": "notxunta-client",
   "version": "0.6.6",
-  "description": "Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia · Windows, Linux y macOS",
+  "description": "Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia · Windows y Linux",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
     "dist": "electron-builder --win --x64 --publish never",
     "dist:win": "electron-builder --win --x64 --publish never",
-    "dist:mac": "electron-builder --mac --publish never",
     "dist:linux": "electron-builder --linux --publish never",
     "release": "electron-builder --win --x64 --publish always",
-    "release:mac": "electron-builder --mac --publish always",
     "release:linux": "electron-builder --linux --publish always"
   },
   "devDependencies": {
@@ -68,30 +66,6 @@
         "repo": "notxunta-client"
       }
     ],
-    "mac": {
-      "icon": "build/icon.png",
-      "category": "public.app-category.education",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "artifactName": "NotXuntaClient-Mac-${arch}.${ext}"
-    },
-    "dmg": {
-      "title": "NotXunta Client"
-    },
     "linux": {
       "icon": "build/icon.png",
       "category": "Education",

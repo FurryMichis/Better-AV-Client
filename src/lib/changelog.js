@@ -3,12 +3,13 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
-    version: "0.6.6", headline: "Mensajes y arranque automático",
-    summary: "NotXunta puede iniciarse con el ordenador, incluye mensajes directos entre amigos y mejora las actualizaciones en Mac y Linux.",
+    version: "0.6.6", headline: "Mensajes, arranque automático y fin de macOS",
+    summary: "NotXunta puede iniciarse con el ordenador e incluye mensajes directos entre amigos. Desde esta versión ya no hay compatibilidad con macOS.",
     items: [
-      { kind: "new", title: "Inicio automático", text: "Activa desde Ajustes que NotXunta se abra al iniciar sesión en Windows, macOS o Linux." },
+      { kind: "new", title: "Inicio automático", text: "Activa desde Ajustes que NotXunta se abra al iniciar sesión en Windows o Linux." },
       { kind: "new", title: "Mensajería NotXunta", text: "Envía y recibe mensajes directos con tus amigos aceptados desde Cuenta NotXunta. Requiere ejecutar migration-0.6.6.sql en Supabase." },
-      { kind: "improve", title: "Actualizaciones multiplataforma", text: "macOS descarga actualizaciones en segundo plano cuando la aplicación está firmada y notarizada. Linux AppImage se actualiza solo; Linux .deb usa el gestor de paquetes." }
+      { kind: "improve", title: "Fin de la compatibilidad con macOS", text: "NotXunta Client deja de compilarse para Mac: no habrá nuevas versiones ni actualizaciones para macOS. Windows y Linux siguen con soporte completo." },
+      { kind: "improve", title: "Actualizaciones", text: "Windows instalado y Linux AppImage se actualizan solos; Linux .deb usa el gestor de paquetes." }
     ]
   },
   {

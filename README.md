@@ -1,6 +1,6 @@
 # NotXunta Client 0.6.5
 
-Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows, Linux y macOS.**
+Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
 ## Generar los instaladores
 Necesitas Node.js LTS e internet. Cada sistema se compila **desde ese mismo sistema** (un .dmg no se puede generar en Windows), o con GitHub Actions (más abajo).
@@ -8,7 +8,6 @@ Necesitas Node.js LTS e internet. Cada sistema se compila **desde ese mismo sist
 | Sistema | Cómo | Resultado en `dist/` |
 |---|---|---|
 | Windows 10/11 | doble clic en `build.bat` (o `npm install` + `npm run dist`) | `NotXuntaClient-Setup.exe` (instalador), `NotXuntaClient-Portable.exe`, `latest.yml` y `.blockmap` |
-| macOS | `./build.sh` (o `npm run dist:mac`) | `NotXuntaClient-Mac-x64.dmg` / `-arm64.dmg` y los `.zip` |
 | Linux | `./build.sh` (o `npm run dist:linux`) | `NotXuntaClient-Linux-x64.AppImage` y `.deb` |
 
 Para probar sin compilar: `npm start`.
@@ -158,8 +157,8 @@ Sin el paso 6 la app funciona igual, pero «Cuenta y amigos» avisa de que no ha
 
 ## 0.6.6 · Inicio automático, mensajería y actualizaciones
 
-- En **Ajustes → Segundo plano y avisos** puedes activar «Iniciar NotXunta al encender el ordenador». Windows y macOS usan los elementos de inicio de sesión; Linux crea un archivo `.desktop` en `~/.config/autostart`.
+- En **Ajustes → Segundo plano y avisos** puedes activar «Iniciar NotXunta al encender el ordenador». Windows usa los elementos de inicio de sesión; Linux crea un archivo `.desktop` en `~/.config/autostart`.
 - La mensajería directa está disponible entre amistades aceptadas desde **Cuenta NotXunta y amigos → Mensaje**. Para activarla, ejecuta `supabase/migration-0.6.6.sql` en Supabase → SQL Editor. Los mensajes se limitan a 2.000 caracteres y las políticas RLS restringen lectura y envío a los participantes/amigos.
 - **Windows instalado** y **Linux AppImage** descargan e instalan actualizaciones con `electron-updater`. Linux `.deb` debe actualizarse con el gestor de paquetes.
-- **macOS** requiere firma Developer ID y notarización para que Gatekeeper permita instalar actualizaciones. En GitHub Actions configura los secretos `CSC_LINK`, `CSC_KEY_PASSWORD`, `APPLE_API_KEY`, `APPLE_API_KEY_ID` y `APPLE_API_ISSUER`; sin ellos el artefacto Mac se compila sin firma y la actualización automática no será fiable.
 - Publica versiones creando una etiqueta `vX.Y.Z` que coincida con `package.json`; el workflow compila y adjunta los metadatos `latest*.yml` a GitHub Releases.
+- **Fin de la compatibilidad con macOS**: desde esta versión no se compila ni se publica la versión para Mac, ni habrá actualizaciones para ella.
