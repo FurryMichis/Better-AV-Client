@@ -1,6 +1,6 @@
 # NotXunta Client 0.6.7
 
-Cliente de escritorio para el Aula Virtual (las que tengan el API de Moodle). **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
+### Cliente de escritorio para el Aula Virtual (las que tengan el API de Moodle). **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
 ## Uso
 1. "Añadir cuenta": nombre, enlace de tu aula (p. ej. `https://centros.edu.xunta.gal/tu-centro/aulavirtual`), usuario y contraseña.
