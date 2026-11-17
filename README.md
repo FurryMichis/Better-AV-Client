@@ -1,16 +1,6 @@
-# NotXunta Client 0.6.5
+# NotXunta Client 0.6.7
 
-Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
-
-## Generar los instaladores
-Necesitas Node.js LTS e internet. Cada sistema se compila **desde ese mismo sistema** (un .dmg no se puede generar en Windows), o con GitHub Actions (más abajo).
-
-| Sistema | Cómo | Resultado en `dist/` |
-|---|---|---|
-| Windows 10/11 | doble clic en `build.bat` (o `npm install` + `npm run dist`) | `NotXuntaClient-Setup.exe` (instalador), `NotXuntaClient-Portable.exe`, `latest.yml` y `.blockmap` |
-| Linux | `./build.sh` (o `npm run dist:linux`) | `NotXuntaClient-Linux-x64.AppImage` y `.deb` |
-
-Para probar sin compilar: `npm start`.
+Cliente de escritorio para el Aula Virtual (las que tengan el API de Moodle). **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
 ## Uso
 1. "Añadir cuenta": nombre, enlace de tu aula (p. ej. `https://centros.edu.xunta.gal/tu-centro/aulavirtual`), usuario y contraseña.
@@ -21,7 +11,6 @@ Para probar sin compilar: `npm start`.
    cada tema muestra Documentos, Enlaces y Actividades a entregar.
 4. Apariencia: fondos estáticos y animados (nebulosa, atardecer, aurora, degradado vivo, galaxia con estrellas fugaces), imagen o GIF propio, **vídeo propio (MP4/WebM, en bucle y con sonido que puedes activar/silenciar con el botón 🔊 de la barra superior)**, oscurecimiento, color de acento y **tamaño de la interfaz** (botones − / + de la barra superior, Ctrl + «+» / «−» / «0» o Ctrl + rueda). Está en el lanzador y en la barra lateral de cada instancia.
 5. Barra lateral: Mis cursos, Calendario, Tareas, Calificaciones, Mensajes, Notificaciones y Perfil.
-
 6. Iconos de instancia: pulsa el icono de una cuenta (o «Icono» en Instancias) para elegir un emoji o subir una imagen.
 7. **Overlay (Shift+Tab)**: capa a pantalla completa con navegador integrado: buscar en Google, Gmail, el aula virtual original y tu IA.
    Tiene **pestañas**: «+» o Ctrl+T para una nueva, Ctrl+W para cerrar, Ctrl+Tab / Ctrl+Mayús+Tab para cambiar, Ctrl+L para ir a la barra de direcciones,
@@ -35,7 +24,6 @@ Para probar sin compilar: `npm start`.
 10. Mensajes: los chats muestran el nombre del contacto. El número de mensajes nuevos aparece junto a «Mensajes» y junto a cada chat, y desaparece al abrir el chat.
    Cada minuto se comprueban tus chats y, si llega un mensaje, salta un aviso (se puede desactivar en Ajustes); al pulsarlo se abre esa aula en «Mensajes».
    Las novedades de los cursos siguen avisando como antes.
-11. Apuntes: al pulsar un documento aparece «Abriendo los apuntes…». Al entrar en un tema se precargan sus documentos (hasta 10, de hasta 25 MB cada uno) y los ya abiertos quedan en caché 3 días, así que vuelven a abrirse al instante. Calendario: si el aula no lo ofrece, se muestra «Calendario no disponible.».
 
 ## Notas
 - Usa la API oficial de la app móvil de Moodle. Si tu centro la tiene desactivada o exige acceso solo por SSO,
@@ -48,6 +36,7 @@ Para probar sin compilar: `npm start`.
 - Las tareas se abren en el navegador para entregarlas (no se suben archivos desde la app).
 
 ## Novedades de la 0.6.7
+67
 - **Mensajes NotXunta**: arreglado el chat que se estiraba sin límite; ahora el historial se desplaza por dentro.
 - **Aviso de mensajes NotXunta**: notificación (o aviso dentro de la app) cuando un amigo te escribe, y el contador se actualiza solo.
 
