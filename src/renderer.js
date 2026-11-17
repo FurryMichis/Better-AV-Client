@@ -488,6 +488,7 @@ function setZoom(pct, save = true) {
   pct = Math.round(Number(pct) / 5) * 5;
   look.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number.isFinite(pct) ? pct : 100));
   aula.setZoom(look.zoom / 100);
+  document.documentElement.style.setProperty("--z", String(look.zoom / 100)); // la barra de ventana compensa el zoom para no cambiar de tamaño
   if (save) saveLook();
   updateZoomUi();
 }
@@ -515,6 +516,19 @@ addEventListener("wheel", e => {
   e.preventDefault(); zoomBy(e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
 }, { passive: false });
 setZoom(look.zoom, false);
+
+// ------------------------------------------------------------------ barra de ventana propia
+(function initTitlebar() {
+  const bar = $("#titlebar"), max = $("#win-max");
+  if (!bar) return;
+  const setState = m => { bar.classList.toggle("maximized", !!m); max.title = m ? "Restaurar" : "Maximizar"; max.setAttribute("aria-label", max.title); };
+  $("#win-min").addEventListener("click", () => api("winMinimize").catch(() => {}));
+  max.addEventListener("click", () => api("winToggleMaximize").then(setState).catch(() => {}));
+  $("#win-close").addEventListener("click", () => api("winClose").catch(() => {}));
+  bar.addEventListener("dblclick", e => { if (!e.target.closest(".tb-controls")) api("winToggleMaximize").then(setState).catch(() => {}); });
+  api("winIsMaximized").then(setState).catch(() => {});
+  aula.onWinState(setState);
+})();
 
 // ------------------------------------------------------------------ entrar / salir de una instancia
 // Aula importada de la cuenta NotXunta: falta la contraseña en este ordenador (las contraseñas nunca se sincronizan).

@@ -2,8 +2,8 @@
 textarea{display:block;width:100%;margin-top:8px;padding:12px;background:#110f18;border:1px solid #3b3349;border-radius:8px;color:#fff;font:12px Inter,Segoe UI,sans-serif;outline:none;resize:vertical}
 textarea:focus{border-color:var(--accent)}
 .sidebar{flex:none}
-.app-shell{height:100vh}
-.main{overflow-y:auto;position:relative}
+/* el scroll vive en .scroller; barra superior y barra lateral quedan fijas (0.6.8) */
+.app-shell{height:100%}
 .primary{background:linear-gradient(135deg,var(--accent),#7950d1)}
 .primary:disabled,.secondary:disabled{opacity:.55;cursor:wait}
 .small{padding:8px 12px;font-size:11px}
@@ -13,7 +13,7 @@ textarea:focus{border-color:var(--accent)}
 .form-error{margin-top:14px;padding:10px 12px;border-radius:7px;background:#3a1c26;color:#ffb3c0;font-size:11px;line-height:1.45}
 .list-row{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:10px}
 .row-actions{display:flex;gap:9px}
-.loading-overlay{position:fixed;inset:0;background:#08060dd9;backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:50;color:#e7dfff;font-size:13px}
+.loading-overlay{position:fixed;inset:var(--tb-h,0px) 0 0 0;background:#08060dd9;backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:50;color:#e7dfff;font-size:13px}
 .spinner{width:34px;height:34px;border:3px solid #3b3349;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .offline-banner{background:#3a2d12;color:#f6d68a;font-size:11px;padding:9px 38px;border-bottom:1px solid #5b4719}
@@ -72,7 +72,7 @@ textarea:focus{border-color:var(--accent)}
 .item-list{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden}
 .group .item-list{border:0;border-top:1px solid var(--line);border-radius:0}
 /* mensajes */
-.messages-layout{display:grid;grid-template-columns:300px 1fr;gap:14px;height:calc(100vh - 260px);min-height:360px}
+.messages-layout{display:grid;grid-template-columns:300px 1fr;gap:14px;height:calc(100vh - 260px - var(--tb-h,0px));min-height:360px}
 .conv-list,.thread{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow-y:auto}
 .conv{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:11px;padding:12px 14px;cursor:pointer;border-bottom:1px solid #251f33}
 .conv:hover,.conv.active{background:#262036}
@@ -91,11 +91,10 @@ textarea:focus{border-color:var(--accent)}
 .brand-mark{width:31px;height:31px;border-radius:9px;object-fit:cover;box-shadow:0 5px 22px #8a5de955}
 .nav span{color:var(--accent)}
 /* ---- fondos ---- */
-:root{--panel:rgba(25,22,36,.8);--panel2:rgba(33,29,46,.88)}
+:root{--panel:rgba(25,22,36,.86);--panel2:rgba(33,29,46,.9)}
 .app-shell{background:transparent;position:relative;z-index:1}
 .sidebar{background:rgba(20,17,30,.8);backdrop-filter:blur(14px)}
 .topbar{background:rgba(16,14,24,.55);backdrop-filter:blur(10px)}
-.account-card,.course-card,.topic-btn,.group,.item-list,.settings-panel,.list-row,.profile-card,.conv-list,.thread,.empty-panel{backdrop-filter:blur(10px)}
 #bg-layer{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
 #bg-art,#bg-canvas,#bg-dim{position:absolute;inset:0;width:100%;height:100%}
 #bg-art{background-size:cover;background-position:center;background-repeat:no-repeat}
@@ -200,7 +199,7 @@ select:focus{border-color:var(--accent)}
 .video-warn{background:#3a2d12;border:1px solid #5a4719;border-radius:9px;padding:10px 12px;margin:12px 0 0;font-size:12px;line-height:1.5}
 
 /* ---- cuenta NotXunta y amigos ---- */
-.cloud-card{max-width:560px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:16px;backdrop-filter:blur(10px)}
+.cloud-card{max-width:560px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:16px}
 .cloud-card h2{margin:0 0 6px;font-size:17px}
 .cloud-card>p{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
 .cloud-card label{display:block;margin-top:12px;font-size:12px}
@@ -239,7 +238,7 @@ select:focus{border-color:var(--accent)}
 .avatar-actions{display:flex;gap:8px;margin-top:8px}
 
 /* tablón de novedades */
-.news-card{max-width:860px;min-width:0;overflow-wrap:anywhere;word-break:break-word;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:16px;backdrop-filter:blur(10px)}
+.news-card{max-width:860px;min-width:0;overflow-wrap:anywhere;word-break:break-word;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:16px}
 .news-card.latest{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent),0 10px 40px #0005}
 .news-card h2{font-size:18px;margin:10px 0 4px}
 .news-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -261,7 +260,7 @@ select:focus{border-color:var(--accent)}
 .presence-dot{width:8px;height:8px;border-radius:50%;background:#5c5470;display:inline-block}
 .presence-bit.on{color:#7be0b0}
 .presence-bit.on .presence-dot{background:#55d69b;box-shadow:0 0 8px #55d69b99}
-.quota{max-width:760px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-bottom:10px;backdrop-filter:blur(10px)}
+.quota{max-width:760px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-bottom:10px}
 .quota-text{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
 .quota-text b{font-size:15px}
 .quota-bar{height:8px;border-radius:8px;background:#2a2339;margin-top:12px;overflow:hidden}
@@ -276,3 +275,55 @@ select:focus{border-color:var(--accent)}
 .file-row .acts{flex-wrap:wrap;justify-content:flex-end}
 .file-ico{flex:none;width:38px;height:38px;border-radius:9px;background:#34284d;color:#d8c5ff;display:grid;place-items:center;font-size:9.5px;font-weight:800;letter-spacing:.4px}
 .file-ico.dir{font-size:16px;background:#3a2d12;color:#f6d68a}
+
+/* =====================================================================
+   0.6.8 · barra de ventana propia, estructura con scroll interno y barras de desplazamiento de la app
+   ===================================================================== */
+:root{--tb-h:calc(36px / var(--z,1))}
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;background:var(--bg)}
+
+/* barra de ventana (minimizar · maximizar · cerrar) */
+.titlebar{flex:none;position:relative;z-index:3;height:36px;zoom:calc(1 / var(--z,1));display:flex;align-items:stretch;justify-content:space-between;
+  background:rgba(12,10,19,.78);border-bottom:1px solid var(--line);-webkit-app-region:drag;user-select:none}
+.tb-title{display:flex;align-items:center;gap:9px;padding:0 14px;font-size:11px;font-weight:700;letter-spacing:.6px;color:#a69bbd;min-width:0}
+.tb-title img{width:16px;height:16px;border-radius:5px;flex:none}
+.tb-title span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-controls{display:flex;-webkit-app-region:no-drag}
+.tb-btn{all:unset;box-sizing:border-box;width:46px;height:100%;display:grid;place-items:center;color:#cfc4e1;cursor:default;transition:background .12s,color .12s}
+.tb-btn svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;stroke-linejoin:round}
+.tb-btn:hover{background:#ffffff1a;color:#fff}
+.tb-btn:active{background:#ffffff2b}
+.tb-btn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tb-close:hover{background:#e5546f;color:#fff}
+.tb-close:active{background:#c8445d}
+.tb-btn .i-restore{display:none}
+.titlebar.maximized .i-restore{display:block}
+.titlebar.maximized .i-max{display:none}
+
+/* cuerpo: ocupa lo que queda bajo la barra de ventana */
+.app-body{flex:1;min-height:0;position:relative;z-index:1}
+.app-shell{overflow:hidden}
+
+/* barra lateral: fija; si la ventana es baja, solo se desplaza ella por dentro */
+.sidebar{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.sidebar::-webkit-scrollbar{width:8px}
+.sidebar-bottom{flex:none}
+@media(max-height:760px){.sidebar{padding-top:18px}.brand{padding-bottom:22px}.nav{padding:10px 12px}}
+
+/* zona principal: barra superior fija + contenido con scroll propio */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;position:relative}
+.topbar{flex:none}
+.offline-banner{flex:none}
+.scroller{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;position:relative}
+.bubbles,.nx-dm-history,.conv-list,.thread,.nx-dm-list,.item-list{overscroll-behavior:contain}
+
+/* barras de desplazamiento de la app (vertical y horizontal) */
+::-webkit-scrollbar{width:12px;height:12px;background:transparent}
+::-webkit-scrollbar-track{background:transparent;margin:2px}
+::-webkit-scrollbar-thumb{background-color:color-mix(in srgb,var(--accent) 34%,#2b2540);border-radius:10px;border:3px solid transparent;background-clip:padding-box;min-height:44px;min-width:44px}
+::-webkit-scrollbar-thumb:hover{background-color:color-mix(in srgb,var(--accent) 78%,#2b2540)}
+::-webkit-scrollbar-thumb:active{background-color:var(--accent)}
+::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+::-webkit-resizer{background:transparent}

@@ -535,6 +535,18 @@ function handle(channel, fn) {
   });
 }
 
+// Controles de la barra de ventana propia.
+handle("win:minimize", () => { if (mainWindow) mainWindow.minimize(); });
+handle("win:toggleMaximize", () => {
+  if (!mainWindow) return false;
+  if (mainWindow.isFullScreen()) mainWindow.setFullScreen(false);
+  else if (mainWindow.isMaximized()) mainWindow.unmaximize();
+  else mainWindow.maximize();
+  return mainWindow.isMaximized();
+});
+handle("win:close", () => { if (mainWindow) mainWindow.close(); }); // respeta «mantener en segundo plano»
+handle("win:isMaximized", () => !!mainWindow && (mainWindow.isMaximized() || mainWindow.isFullScreen()));
+
 handle("accounts:list", () => loadAccounts().map(publicAccount));
 
 handle("accounts:add", async (_e, { name, url, username, password }) => {
@@ -936,6 +948,7 @@ function createWindow() {
     title: "NotXunta Client",
     icon: path.join(__dirname, "..", "build", "icon.png"),
     autoHideMenuBar: true,
+    frame: false, // barra de ventana propia dentro de la app (ver .titlebar en index.html)
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -960,6 +973,11 @@ function createWindow() {
       announce("NotXunta Client", "Sigue en segundo plano. Pulsa Shift+Tab para abrir el overlay.", "", "overlay");
     }
   });
+  const sendWinState = () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("win:state", mainWindow.isMaximized() || mainWindow.isFullScreen()); };
+  mainWindow.on("maximize", sendWinState);
+  mainWindow.on("unmaximize", sendWinState);
+  mainWindow.on("enter-full-screen", sendWinState);
+  mainWindow.on("leave-full-screen", sendWinState);
   mainWindow.on("closed", () => {
     mainWindow = null;
     if (!settings.get().keepBackground) { quitting = true; app.quit(); }

@@ -3,6 +3,16 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.6.8", headline: "Barra de ventana propia y scroll arreglado",
+    summary: "La ventana ahora tiene su propia barra (minimizar, maximizar y cerrar) integrada en la app, las barras de desplazamiento tienen el estilo de NotXunta y se arreglan los fallos al desplazarse.",
+    items: [
+      { kind: "new", title: "Barra de ventana integrada", text: "Se quita el marco nativo de Windows/Linux y los botones de minimizar, maximizar/restaurar y cerrar están dentro de la app. Arrastra la barra para mover la ventana y haz doble clic para maximizar." },
+      { kind: "new", title: "Barras de desplazamiento de la app", text: "Las barras verticales y horizontales (también en el overlay) usan el color de acento que elijas en Apariencia." },
+      { kind: "fix", title: "Barra superior y barra lateral ya no se descolocan al desplazar", text: "Ahora quedan fijas y solo se mueve el contenido. Si la ventana es baja o aumentas el tamaño de la interfaz, la barra lateral se desplaza por sí sola en vez de salirse de la ventana." },
+      { kind: "improve", title: "Desplazamiento más fluido", text: "Se quita el desenfoque de las tarjetas que se desplazan, que provocaba tirones y parpadeos, sobre todo con fondo animado o vídeo." }
+    ]
+  },
+  {
     version: "0.6.7", headline: "Jaja 67",
     summary: "67676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767",
     items: [

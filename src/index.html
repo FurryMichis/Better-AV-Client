@@ -11,6 +11,16 @@
 </head>
 <body>
   <div id="bg-layer" data-bg="none"><div id="bg-art"></div><video id="bg-video" loop playsinline preload="auto"></video><canvas id="bg-canvas"></canvas><div id="bg-dim"></div></div>
+  <!-- ============ BARRA DE VENTANA PROPIA ============ -->
+  <div class="titlebar" id="titlebar">
+    <div class="tb-title"><img src="assets/logo.png" alt=""><span>NotXunta Client</span></div>
+    <div class="tb-controls">
+      <button class="tb-btn" id="win-min" type="button" title="Minimizar" aria-label="Minimizar"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5.5h8"/></svg></button>
+      <button class="tb-btn" id="win-max" type="button" title="Maximizar" aria-label="Maximizar"><svg class="i-max" viewBox="0 0 10 10" aria-hidden="true"><rect x="1.5" y="1.5" width="7" height="7" rx="1"/></svg><svg class="i-restore" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 3V1.5h5.5V7H7"/><rect x="1.5" y="3" width="5.5" height="5.5" rx="1"/></svg></button>
+      <button class="tb-btn tb-close" id="win-close" type="button" title="Cerrar" aria-label="Cerrar"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/></svg></button>
+    </div>
+  </div>
+  <div class="app-body">
   <!-- ============ LANZADOR (cuentas) ============ -->
   <div class="app-shell" id="launcher-shell">
     <aside class="sidebar">
@@ -26,7 +36,7 @@
       <button class="nav" data-view="settings"><span>⚙</span> Ajustes</button>
       <div class="sidebar-bottom">
         <button class="nav" id="open-overlay"><span>❖</span> Abrir overlay <small class="kbd">Shift+Tab</small></button>
-        <div class="version">NOTXUNTA CLIENT <span>v0.6.6</span></div>
+        <div class="version">NOTXUNTA CLIENT <span>v0.6.8</span></div>
       </div>
     </aside>
 
@@ -35,7 +45,7 @@
         <div class="breadcrumb">NOTXUNTA CLIENT <span>/</span> <b id="crumb">GESTOR DE CUENTAS</b></div>
         <div class="top-actions"><div class="sound-ctl" hidden></div><div class="zoom-ctl"></div><span class="status-dot"></span><span>Cliente local</span><div class="avatar" id="launcher-avatar">AC</div></div>
       </header>
-
+      <div class="scroller">
       <section class="view active" id="accounts-view">
         <div class="hero">
           <div>
@@ -64,6 +74,7 @@
       <section class="view" id="news-view"></section>
       <section class="view" id="appearance-view"></section>
       <section class="view" id="settings-view"></section>
+      </div>
     </main>
   </div>
 
@@ -101,6 +112,7 @@
         </div>
       </header>
       <div class="offline-banner" id="offline-banner" hidden></div>
+      <div class="scroller">
       <section class="view active" id="iv-courses"></section>
       <section class="view" id="iv-calendar"></section>
       <section class="view" id="iv-tasks"></section>
@@ -112,8 +124,10 @@
       <section class="view" id="iv-profile"></section>
       <section class="view" id="iv-appearance"></section>
       <section class="view" id="iv-settings"></section>
+      </div>
     </main>
   </div>
+  </div><!-- /.app-body -->
 
   <div class="loading-overlay" id="loading" hidden>
     <div class="spinner"></div><div id="loading-text">Conectando…</div>
