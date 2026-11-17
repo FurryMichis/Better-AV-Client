@@ -24,7 +24,7 @@ textarea:focus{border-color:var(--accent)}
 .chip.warn{background:#3a2d12;color:#f6d68a}
 .chip.bad{background:#3a1c26;color:#ff9fb2}
 .pic{width:40px;height:40px;border-radius:50%;background:#34284d center/cover no-repeat;color:#d8c5ff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
-.pic.sm{width:30px;height:30px;font-size:11px}.pic.lg{width:84px;height:84px;font-size:26px}
+.pic.sm{width:30px;height:30px;font-size:11px}.pic.md{width:36px;height:36px;font-size:13px}.pic.lg{width:84px;height:84px;font-size:26px}
 .avatar{background-size:cover;background-position:center}
 /* cursos */
 .course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
@@ -239,7 +239,7 @@ select:focus{border-color:var(--accent)}
 .avatar-actions{display:flex;gap:8px;margin-top:8px}
 
 /* tablón de novedades */
-.news-card{max-width:860px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:16px;backdrop-filter:blur(10px)}
+.news-card{max-width:860px;min-width:0;overflow-wrap:anywhere;word-break:break-word;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 24px;margin-bottom:16px;backdrop-filter:blur(10px)}
 .news-card.latest{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent),0 10px 40px #0005}
 .news-card h2{font-size:18px;margin:10px 0 4px}
 .news-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}

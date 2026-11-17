@@ -759,6 +759,12 @@ function setFriendBadge(n) {
 }
 aula.onCloudBadge(p => setFriendBadge((p && p.pending) || 0));
 
+function openNxMessages() {
+  const go = () => $('.nav[data-view="nxmessages"]').click();
+  if (!$("#instance-shell").hidden) { $("#back-launcher").click(); setTimeout(go, 150); } else go();
+}
+const nxViewOpen = () => $("#instance-shell").hidden && $("#nxmessages-view").classList.contains("active");
+
 function openFriends() {
   if (!$("#instance-shell").hidden) { state.courseId = null; state.sectionId = null; setIView("friends"); }
   else $('.nav[data-view="cloud"]').click();
@@ -795,17 +801,6 @@ async function renderNotXuntaMessages(root) {
   }
 
   const contactButtons = new Map();
-  // Las fotos de perfil de NotXunta se guardan como data URLs en profiles.avatar.
-  // No usar loadImage(): ese helper es para imágenes de Moodle y necesita una cuenta de aula.
-  function dmAvatar(url, name, cls = "") {
-    const el = h("span", { class: `nx-dm-avatar ${cls}`, text: initials(name) });
-    if (typeof url === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(url)) {
-      el.style.backgroundImage = `url("${url}")`;
-      el.classList.add("has-img");
-      el.textContent = "";
-    }
-    return el;
-  }
   async function loadThread(friend, btn, keepScroll = false) {
     selected = friend;
     contactButtons.forEach(b => b.classList.toggle("active", b === btn));
@@ -829,7 +824,7 @@ async function renderNotXuntaMessages(root) {
       finally { send.disabled = false; }
     } });
     input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send.click(); } });
-    clear(thread).append(h("div", { class: "nx-dm-head" }, dmAvatar(friend.avatar, friend.display_name || friend.username, "large"), h("div", { class: "nx-dm-head-name" }, h("b", { text: friend.display_name || friend.username }), h("span", { class: "muted", text: `@${friend.username}` }))), history, h("div", { class: "nx-dm-compose" }, input, send));
+    clear(thread).append(h("div", { class: "nx-dm-head" }, h("div", { class: "nx-dm-who" }, cloudPic(friend, "md"), h("div", { class: "nx-dm-who-txt" }, h("b", { text: friend.display_name || friend.username }), h("span", { class: "muted", text: `@${friend.username}` })))), history, h("div", { class: "nx-dm-compose" }, input, send));
     history.scrollTop = oldScroll == null ? history.scrollHeight : oldScroll;
     if (unread) btn.querySelector(".chip")?.remove();
     btn._unread = unread;
@@ -850,7 +845,7 @@ async function renderNotXuntaMessages(root) {
   for (const item of summaries) {
     const f = item.friend, last = item.msgs.at(-1);
     const btn = h("button", { class: "nx-dm-contact" },
-      dmAvatar(f.avatar, f.display_name || f.username),
+      cloudPic(f, "md"),
       h("span", { class: "item-main" }, h("b", { text: f.display_name || f.username }), h("span", { class: "muted", text: last ? `${last.sender_id === status.profile.id ? "Tú: " : ""}${last.body}`.slice(0, 58) : "Sin mensajes todavía" })),
       item.unread ? chip(String(item.unread), "new") : null);
     btn.addEventListener("click", () => loadThread(f, btn).catch(e => notify(e.message)));
@@ -1543,7 +1538,7 @@ async function renderSettings(root) {
     row("Seguir en segundo plano al cerrar la ventana", "NotXunta Client se queda en la bandeja del sistema (junto al reloj, o en la barra de menú en Mac). Para salir del todo, usa «Salir» en su menú.", "keepBackground"),
     row("Buscar novedades en segundo plano", "Comprueba tus aulas sin tener la ventana abierta y te avisa si hay contenido nuevo.", "bgSync", true),
     h("div", { class: "switch-row" }, h("span", {}, h("b", { text: "Frecuencia de comprobación" }), h("small", { text: "Con menos comprobaciones se gasta menos batería y datos." })), intSel),
-    row("Avisar de mensajes nuevos", "Comprueba tus chats cada minuto mientras NotXunta Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje.", "msgNotify"),
+    row("Avisar de mensajes nuevos", "Comprueba tus chats cada minuto mientras NotXunta Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje (de tus aulas y de NotXunta).", "msgNotify"),
     row("Avisos emergentes estilo Steam", "Una notificación en la esquina de la pantalla. Si la desactivas se usan las notificaciones normales del sistema.", "toasts")));
   root.append(videoSettingsPanel(row));
   root.append(updatesPanel(row));
@@ -1611,10 +1606,21 @@ aula.onMessages(p => {
     notify(p.fresh.length > 1 ? `✉ ${p.fresh.length} mensajes nuevos` : `✉ ${f.name}: ${f.text}`.slice(0, 140));
   }
 });
+// Mensajes directos de NotXunta: actualiza el contador de la barra lateral y, con la app delante, avisa dentro de ella.
+aula.onNxMessages(p => {
+  const n = Math.max(0, Number(p && p.unread) || 0);
+  const b = $('[data-badge="nxmessages"]');
+  if (b) { b.textContent = n > 99 ? "99+" : String(n); b.hidden = n === 0; }
+  const fresh = (p && p.fresh) || [];
+  if (!fresh.length || nxViewOpen()) return;
+  notify(fresh.length > 1 ? `✉ ${fresh.reduce((t, g) => t + (g.count || 1), 0)} mensajes NotXunta nuevos` : `✉ ${fresh[0].name}: ${fresh[0].text}`.slice(0, 140));
+});
+
 // Clic en un aviso de mensaje: abre esa aula en «Mensajes».
 aula.onNavigate(async p => {
   try {
     if (p && p.view === "friends") { openFriends(); return; }
+    if (p && p.view === "nxmessages") { openNxMessages(); return; }
     if (!p || !IVIEWS[p.view]) return;
     if (state.accountId === p.accountId && state.data) { state.courseId = null; state.sectionId = null; setIView(p.view); return; }
     const acc = (await api("listAccounts")).find(a => a.id === p.accountId);

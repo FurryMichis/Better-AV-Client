@@ -234,7 +234,7 @@ async function linkAllAccounts() {
     if (c && c.data && c.data.user) await linkAccountToCloud(acc.id, c.data.user);
   }
 }
-function afterCloudLogin() { cloud.invalidateProfile(); setTimeout(() => { linkAllAccounts(); pollFriends(); beat(); }, 1500); sync.schedule(1500); }
+function afterCloudLogin() { cloud.invalidateProfile(); setTimeout(() => { linkAllAccounts(); pollFriends(); pollNxMessages(); beat(); }, 1500); sync.schedule(1500); }
 
 let knownIncoming = null, friendsTimer = null;
 function sendFriendBadge(n) {
@@ -274,6 +274,53 @@ function scheduleFriends() {
   clearInterval(friendsTimer);
   setTimeout(() => { pollFriends(); linkAllAccounts(); }, 25000);
   friendsTimer = setInterval(pollFriends, 3 * 60 * 1000);
+}
+
+// Mensajes directos de NotXunta: se comprueban cada 30 s (también con la app en la bandeja) y avisan al llegar uno nuevo.
+// La primera comprobación solo fija la referencia: no avisa de lo que ya estaba sin leer.
+let nxSeen = null, nxTimer = null, nxBusy = false;
+function sendNx(payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("nx:update", payload);
+}
+async function nxNames() {
+  const names = new Map();
+  try { for (const f of (await cloud.rpc("list_friends")) || []) names.set(f.other_id, f.display_name || f.username); } catch { /* sin nombres: se usa «Un amigo» */ }
+  return names;
+}
+async function pollNxMessages() {
+  if (nxBusy) return;
+  nxBusy = true;
+  try {
+    if (!cloud.configured() || !cloud.isSignedIn()) { nxSeen = null; sendNx({ unread: 0, fresh: [] }); return; }
+    const me = cloud.userId();
+    if (!me) return;
+    const rows = (await cloud.rest("GET", `/rest/v1/direct_messages?recipient_id=eq.${me}&read_at=is.null&select=id,sender_id,body,created_at&order=created_at.asc&limit=100`)) || [];
+    const fresh = nxSeen ? rows.filter(r => !nxSeen.has(r.id)) : [];
+    nxSeen = new Set(rows.map(r => r.id));
+    let groups = [];
+    if (fresh.length) {
+      const names = await nxNames();
+      const bySender = new Map();
+      for (const r of fresh) {
+        const g = bySender.get(r.sender_id) || { name: names.get(r.sender_id) || "Un amigo", count: 0, text: "" };
+        g.count++; g.text = String(r.body || "").slice(0, 120);
+        bySender.set(r.sender_id, g);
+      }
+      groups = [...bySender.values()];
+    }
+    const focused = mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() && mainWindow.isFocused();
+    // Con la app delante el aviso lo muestra la propia interfaz; si no, sale una notificación del sistema.
+    sendNx({ unread: rows.length, fresh: focused ? groups : [] });
+    if (!focused && groups.length && settings.get().msgNotify) {
+      if (groups.length > 3) announce(`${fresh.length} mensajes NotXunta nuevos`, groups.map(g => g.name).slice(0, 4).join(", "), "", "nxmessages");
+      else for (const g of groups) announce(`Mensaje de ${g.name}`, `${g.count > 1 ? `${g.count} mensajes nuevos · ` : ""}${g.text}`, "", "nxmessages");
+    }
+  } catch { /* sin conexión: se reintenta */ } finally { nxBusy = false; }
+}
+function scheduleNxMessages() {
+  clearInterval(nxTimer);
+  setTimeout(pollNxMessages, 15000);
+  nxTimer = setInterval(pollNxMessages, 30 * 1000);
 }
 
 // ---------------------------------------------------------------- ajustes sincronizados con la cuenta NotXunta
@@ -382,6 +429,12 @@ function handleToastAction(action) {
   if (action === "friends") {
     showMain();
     const go = () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("app:navigate", { view: "friends" }); };
+    if (mainWindow && mainWindow.webContents.isLoading()) mainWindow.webContents.once("did-finish-load", go); else go();
+    return;
+  }
+  if (action === "nxmessages") {
+    showMain();
+    const go = () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("app:navigate", { view: "nxmessages" }); };
     if (mainWindow && mainWindow.webContents.isLoading()) mainWindow.webContents.once("did-finish-load", go); else go();
     return;
   }
@@ -623,6 +676,7 @@ handle("chat:read", async (_e, userId) => {
   if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
   const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en NotXunta.");
   await cloud.rest("PATCH", `/rest/v1/direct_messages?sender_id=eq.${userId}&recipient_id=eq.${me}&read_at=is.null`, { body: { read_at: new Date().toISOString() }, headers: { Prefer: "return=minimal" } });
+  setTimeout(pollNxMessages, 300);
   return true;
 });
 
@@ -992,6 +1046,7 @@ if (!app.requestSingleInstanceLock()) {
     purgeOldDocs();
     updater.schedule(result === "error" || result === "timeout" ? 20000 : null); // si ya se comprobó al arrancar, no se repite enseguida
     scheduleFriends();
+    scheduleNxMessages();
     schedulePresence();
     sync.schedule(8000);       // trae los ajustes de tu cuenta NotXunta (si has iniciado sesión)
     if (bootNote) setTimeout(() => announce(bootNote.title, bootNote.body, "", "releases"), 3500);

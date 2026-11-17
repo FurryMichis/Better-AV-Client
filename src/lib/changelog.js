@@ -3,6 +3,14 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.6.7", headline: "Jaja 67",
+    summary: "67676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767",
+    items: [
+      { kind: "fix", title: "Mensajes NotXunta ya no se estiran sin fin", text: "La ventana de la conversación tenía una altura sin límite y crecía con cada mensaje. Ahora ocupa solo la pantalla y el historial se desplaza por dentro, con el cuadro para escribir siempre a la vista." },
+      { kind: "improve", title: "Aviso de mensajes NotXunta", text: "Cuando un amigo te escribe, salta una notificación (con la app en segundo plano) o un aviso dentro de la app, y el contador de «Mensajes NotXunta» se actualiza solo. Se activa con «Avisar de mensajes nuevos» en Ajustes." }
+    ]
+  },
+  {
     version: "0.6.6", headline: "Mensajes, arranque automático y fin de macOS",
     summary: "NotXunta puede iniciarse con el ordenador e incluye mensajes directos entre amigos. Desde esta versión ya no hay compatibilidad con macOS.",
     items: [

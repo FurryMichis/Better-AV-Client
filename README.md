@@ -47,6 +47,10 @@ Para probar sin compilar: `npm start`.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
 - Las tareas se abren en el navegador para entregarlas (no se suben archivos desde la app).
 
+## Novedades de la 0.6.7
+- **Mensajes NotXunta**: arreglado el chat que se estiraba sin límite; ahora el historial se desplaza por dentro.
+- **Aviso de mensajes NotXunta**: notificación (o aviso dentro de la app) cuando un amigo te escribe, y el contador se actualiza solo.
+
 ## Novedades de la 0.6.5 — actualizaciones fiables
 - **Freno anti-bucle**: si tras reiniciar para actualizar la app sigue en la versión anterior, ya no repite la instalación en bucle (solo reintenta pasadas 24 h) y avisa con un enlace a la página de versiones.
 - **Tope de descarga**: si la descarga no avanza en 60 s, la app se abre igualmente.

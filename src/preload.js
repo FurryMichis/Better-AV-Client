@@ -92,6 +92,12 @@ contextBridge.exposeInMainWorld("notxuntaClient", {
     ipcRenderer.on("msg:update", fn);
     return () => ipcRenderer.removeListener("msg:update", fn);
   },
+  // Mensajes directos de NotXunta: { unread, fresh: [{ name, text, count }] }
+  onNxMessages: cb => {
+    const fn = (_e, p) => cb(p);
+    ipcRenderer.on("nx:update", fn);
+    return () => ipcRenderer.removeListener("nx:update", fn);
+  },
   // Clic en un aviso: { view, accountId }
   onNavigate: cb => {
     const fn = (_e, p) => cb(p);
