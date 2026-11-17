@@ -3,6 +3,14 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.6.9", headline: "Sonido de notificación y tutorial de bienvenida",
+    summary: "Todas las notificaciones suenan con el mismo sonido de NotXunta y la primera vez que abres la app en un dispositivo te la enseña un tutorial con pestañas.",
+    items: [
+      { kind: "new", title: "Sonido en todas las notificaciones", text: "Suena en los avisos emergentes, en las notificaciones del sistema y en los avisos dentro de la app, incluso con la ventana cerrada en la bandeja. Se puede quitar o probar en Ajustes → «Sonido de notificación»." },
+      { kind: "new", title: "Tutorial de la primera vez", text: "La primera vez que se abre NotXunta en un dispositivo aparece un tutorial con pestañas (cuentas, overlay, amigos, apariencia y avisos). Puedes saltarlo con «Saltar tutorial» y volver a verlo en Ajustes." }
+    ]
+  },
+  {
     version: "0.6.8", headline: "Barra de ventana propia y scroll arreglado",
     summary: "La ventana ahora tiene su propia barra (minimizar, maximizar y cerrar) integrada en la app, las barras de desplazamiento tienen el estilo de NotXunta y se arreglan los fallos al desplazarse.",
     items: [

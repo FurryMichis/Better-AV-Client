@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("notxuntaClient", {
-  version: "0.6.8",
+  version: "0.6.9",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
   addAccount: acc => call("accounts:add", acc),
@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("notxuntaClient", {
   getSettings: () => call("settings:get"),
   setSettings: patch => call("settings:set", patch),
   openOverlay: () => call("app:overlay"),
+  playSound: force => call("sound:play", !!force),
   // Barra de ventana propia (la ventana no tiene marco nativo)
   winMinimize: () => call("win:minimize"),
   winToggleMaximize: () => call("win:toggleMaximize"),

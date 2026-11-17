@@ -1553,7 +1553,11 @@ async function renderSettings(root) {
     row("Buscar novedades en segundo plano", "Comprueba tus aulas sin tener la ventana abierta y te avisa si hay contenido nuevo.", "bgSync", true),
     h("div", { class: "switch-row" }, h("span", {}, h("b", { text: "Frecuencia de comprobación" }), h("small", { text: "Con menos comprobaciones se gasta menos batería y datos." })), intSel),
     row("Avisar de mensajes nuevos", "Comprueba tus chats cada minuto mientras NotXunta Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje (de tus aulas y de NotXunta).", "msgNotify"),
-    row("Avisos emergentes estilo Steam", "Una notificación en la esquina de la pantalla. Si la desactivas se usan las notificaciones normales del sistema.", "toasts")));
+    row("Avisos emergentes estilo Steam", "Una notificación en la esquina de la pantalla. Si la desactivas se usan las notificaciones normales del sistema.", "toasts"),
+    row("Sonido de notificación", "Suena un aviso en todas las notificaciones: emergentes, del sistema y los avisos dentro de la app.", "notifySound"),
+    h("div", { class: "zoom-row" },
+      h("button", { class: "secondary small", text: "▶ Probar sonido", onclick: () => api("playSound", true).catch(e => notify(e.message)) }),
+      h("button", { class: "secondary small", text: "Ver el tutorial otra vez", onclick: () => { openTutorial(); } }))));
   root.append(videoSettingsPanel(row));
   root.append(updatesPanel(row));
 }
@@ -1605,6 +1609,62 @@ $("#ai-close").addEventListener("click", skipAi);
 $("#ai-skip").addEventListener("click", skipAi);
 aiDialog.addEventListener("close", () => { api("setSettings", { aiAsked: true }).catch(() => {}); }); // no se vuelve a preguntar
 
+// ------------------------------------------------------------------ tutorial de la primera vez (por dispositivo)
+const tutDialog = $("#tutorial-dialog");
+const TUT_STEPS = [
+  { tab: "Bienvenida", icon: "👋", title: "Bienvenido a NotXunta Client",
+    lead: "Tu Aula Virtual, tus amigos y tus herramientas de estudio en una sola app. Este recorrido dura un minuto; puedes saltarlo cuando quieras y volver a verlo desde Ajustes.",
+    points: [["Cuentas y aulas", "conecta tu Aula Virtual y mira cursos, tareas y notas."], ["Overlay", "un navegador sobre cualquier ventana con Shift+Tab."], ["Amigos y archivos", "tu cuenta NotXunta con mensajes y nube."], ["Apariencia y avisos", "personaliza la app y entérate de todo."]] },
+  { tab: "Cuentas y aulas", icon: "▦", title: "Conecta tu Aula Virtual",
+    lead: "En «Gestor de cuentas» pulsa «Añadir cuenta» y rellena el nombre, el enlace de tu aula, tu usuario y tu contraseña.",
+    points: [["Contraseña segura", "se guarda cifrada con el almacén seguro de tu sistema y solo se envía a tu aula."], ["Tu aula", "al abrirla tienes Mis cursos, Calendario, Tareas, Calificaciones, Mensajes, Notificaciones y Perfil."], ["Novedades", "lo que es nuevo desde tu última visita aparece marcado como NUEVO; «Sincronizar» vuelve a comprobarlo."], ["Iconos", "pulsa el icono de una cuenta para ponerle un emoji o una imagen."]] },
+  { tab: "Overlay", icon: "❖", title: "El overlay: Shift+Tab",
+    lead: "Una capa sobre cualquier ventana con Google, Gmail, tu aula original y tu IA favorita. Se abre y se cierra con Shift+Tab.",
+    points: [["Pestañas", "«+» o Ctrl+T abre una nueva, Ctrl+W la cierra y Ctrl+Tab cambia de una a otra."], ["IA", "elige la tuya y ábrela con el botón de IA del overlay (se cambia en Ajustes)."], ["Desde cualquier programa", "en Ajustes → Overlay puedes hacer que la tecla funcione en todo el sistema."]] },
+  { tab: "Amigos y archivos", icon: "☁", title: "Cuenta NotXunta, amigos y archivos",
+    lead: "Crea una cuenta NotXunta (gratis) en «Cuenta y amigos» para ir más allá del aula.",
+    points: [["Amigos", "busca a otras personas por su nombre de usuario y envía solicitudes."], ["Mensajes NotXunta", "chatea con tus amigos; el contador te dice cuántos tienes sin leer."], ["Archivos NotXunta", "tu espacio en la nube para subir y abrir apuntes desde cualquier ordenador."], ["Sincronización", "tu aspecto y tus ajustes te siguen a cada ordenador donde inicies sesión."]] },
+  { tab: "Apariencia", icon: "✦", title: "Hazla tuya",
+    lead: "En «Apariencia» eliges cómo se ve la app.",
+    points: [["Fondos", "nebulosa, atardecer, aurora, galaxia, tu propia imagen, un GIF o un vídeo con sonido."], ["Color de acento", "cambia el color de botones, scrollbars y detalles."], ["Tamaño de la interfaz", `${MOD} + y ${MOD} − para ampliar o reducir, ${MOD} 0 para volver al 100 %.`]] },
+  { tab: "Avisos", icon: "🔔", title: "Avisos y segundo plano",
+    lead: "Al cerrar la ventana, NotXunta se queda en la bandeja del sistema y sigue pendiente de lo tuyo.",
+    points: [["Notificaciones", "avisos emergentes con sonido cuando hay novedades en tus aulas o te escribe alguien."], ["Ajustes", "activa o quita el sonido, los avisos, el inicio con el ordenador y la frecuencia de comprobación."], ["Salir del todo", "clic derecho en el icono de la bandeja → «Salir»."], ["Listo", "puedes volver a ver este tutorial en Ajustes → «Ver el tutorial otra vez»."]] }
+];
+let tutIdx = 0;
+function renderTutorial() {
+  const last = TUT_STEPS.length - 1, st = TUT_STEPS[tutIdx];
+  $("#tut-eyebrow").textContent = `TUTORIAL · ${tutIdx + 1} DE ${TUT_STEPS.length}`;
+  const tabs = clear($("#tut-tabs"));
+  TUT_STEPS.forEach((s, i) => tabs.append(h("button", { type: "button", role: "tab", class: `tut-tab${i === tutIdx ? " on" : ""}`, "aria-selected": String(i === tutIdx), text: s.tab, onclick: () => { tutIdx = i; renderTutorial(); } })));
+  clear($("#tut-body")).append(
+    h("div", { class: "tut-icon", text: st.icon }),
+    h("div", { class: "tut-text" },
+      h("h2", { text: st.title }),
+      h("p", { class: "tut-lead", text: st.lead }),
+      h("ul", { class: "tut-points" }, st.points.map(([b, t]) => h("li", {}, h("b", { text: b }), " — ", t)))));
+  const dots = clear($("#tut-dots"));
+  TUT_STEPS.forEach((_s, i) => dots.append(h("i", { class: i === tutIdx ? "on" : "" })));
+  $("#tut-prev").disabled = tutIdx === 0;
+  $("#tut-next").textContent = tutIdx === last ? "¡Empezar!" : "Siguiente →";
+}
+function openTutorial() {
+  tutIdx = 0; renderTutorial();
+  if (!tutDialog.open) tutDialog.showModal();
+  return new Promise(res => tutDialog.addEventListener("close", res, { once: true }));
+}
+$("#tut-prev").addEventListener("click", () => { if (tutIdx > 0) { tutIdx--; renderTutorial(); } });
+$("#tut-next").addEventListener("click", () => { if (tutIdx < TUT_STEPS.length - 1) { tutIdx++; renderTutorial(); } else tutDialog.close(); });
+$("#tut-skip").addEventListener("click", () => tutDialog.close());
+tutDialog.addEventListener("close", () => { api("setSettings", { tutorialDone: true }).catch(() => {}); }); // terminar o saltar = no vuelve a salir solo
+async function maybeTutorial() {
+  try {
+    const { settings: st } = await api("getSettings");
+    if (st.tutorialDone) return;
+    await openTutorial();
+  } catch { /* se mostrará la próxima vez */ }
+}
+
 // Botones para abrir el overlay
 for (const id of ["#open-overlay", "#open-overlay-2"]) $(id).addEventListener("click", () => api("openOverlay").catch(e => notify(e.message)));
 
@@ -1617,6 +1677,7 @@ aula.onMessages(p => {
   }
   if (p.fresh.length && document.hasFocus()) {
     const f = p.fresh[0];
+    aula.playSound(false).catch(() => {});
     notify(p.fresh.length > 1 ? `✉ ${p.fresh.length} mensajes nuevos` : `✉ ${f.name}: ${f.text}`.slice(0, 140));
   }
 });
@@ -1627,6 +1688,7 @@ aula.onNxMessages(p => {
   if (b) { b.textContent = n > 99 ? "99+" : String(n); b.hidden = n === 0; }
   const fresh = (p && p.fresh) || [];
   if (!fresh.length || nxViewOpen()) return;
+  aula.playSound(false).catch(() => {});
   notify(fresh.length > 1 ? `✉ ${fresh.reduce((t, g) => t + (g.count || 1), 0)} mensajes NotXunta nuevos` : `✉ ${fresh[0].name}: ${fresh[0].text}`.slice(0, 140));
 });
 
@@ -1670,7 +1732,7 @@ api("changelog").then(c => setNewsBadge(c.seen !== c.current)).catch(() => {});
 
 // ------------------------------------------------------------------ arranque
 renderAccounts();
-maybeAskAi();
+maybeTutorial().then(maybeAskAi); // primero el tutorial (solo la primera vez en este dispositivo) y después la elección de IA
 
 
 // ------------------------------------------------------------------ estado «en línea»

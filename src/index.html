@@ -36,7 +36,7 @@
       <button class="nav" data-view="settings"><span>⚙</span> Ajustes</button>
       <div class="sidebar-bottom">
         <button class="nav" id="open-overlay"><span>❖</span> Abrir overlay <small class="kbd">Shift+Tab</small></button>
-        <div class="version">NOTXUNTA CLIENT <span>v0.6.8</span></div>
+        <div class="version">NOTXUNTA CLIENT <span>v0.6.9</span></div>
       </div>
     </aside>
 
@@ -178,6 +178,20 @@
       </div>
       <input type="file" id="icon-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
     </form>
+  </dialog>
+
+  <dialog id="tutorial-dialog" class="tut" aria-label="Tutorial">
+    <div class="tut-head">
+      <div><div class="eyebrow" id="tut-eyebrow">TUTORIAL</div></div>
+      <button class="tut-skip" id="tut-skip" type="button">Saltar tutorial ✕</button>
+    </div>
+    <div class="tut-tabs" id="tut-tabs" role="tablist"></div>
+    <div class="tut-body" id="tut-body" role="tabpanel"></div>
+    <div class="tut-foot">
+      <button class="secondary" id="tut-prev" type="button">← Anterior</button>
+      <div class="tut-dots" id="tut-dots" aria-hidden="true"></div>
+      <button class="primary" id="tut-next" type="button">Siguiente →</button>
+    </div>
   </dialog>
 
   <dialog id="ai-dialog">

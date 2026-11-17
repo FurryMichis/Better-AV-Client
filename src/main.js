@@ -11,6 +11,7 @@ const settings = require("./lib/settings");
 const { AI_LIST } = require("./lib/ai");
 const overlay = require("./lib/overlay");
 const toasts = require("./lib/toasts");
+const sound = require("./lib/sound");
 const updater = require("./lib/updater");
 const cloud = require("./lib/cloud");
 const sync = require("./lib/sync");
@@ -414,9 +415,10 @@ async function doSync(id, sender, { background = false } = {}) {
 let mainWindow = null, tray = null, quitting = false, hintedTray = false;
 
 function announce(title, body, icon, action = "app") {
+  sound.play(); // el mismo sonido para todos los avisos (si está activado en Ajustes)
   if (settings.get().toasts) toasts.show({ title, body, icon: icon || "🎓", action });
   else if (Notification.isSupported()) {
-    const n = new Notification({ title, body });
+    const n = new Notification({ title, body, silent: true }); // el sonido lo pone NotXunta (sound.play)
     n.on("click", () => handleToastAction(action));
     n.show();
   }
@@ -546,6 +548,8 @@ handle("win:toggleMaximize", () => {
 });
 handle("win:close", () => { if (mainWindow) mainWindow.close(); }); // respeta «mantener en segundo plano»
 handle("win:isMaximized", () => !!mainWindow && (mainWindow.isMaximized() || mainWindow.isFullScreen()));
+
+handle("sound:play", (_e, force) => { sound.play(!!force); });
 
 handle("accounts:list", () => loadAccounts().map(publicAccount));
 
@@ -1027,7 +1031,7 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.on("second-instance", showMain);
   app.on("before-quit", () => { quitting = true; cloud.goOffline().catch(() => {}); }); // mejor esfuerzo: si no llega, el estado caduca solo en 2 min
-  app.on("will-quit", () => { overlay.destroy(); toasts.destroy(); });
+  app.on("will-quit", () => { overlay.destroy(); toasts.destroy(); sound.destroy(); });
   app.whenReady().then(async () => {
     // Windows/Linux: sin menú (los atajos de zoom los gestiona la propia app). macOS necesita un menú mínimo (Salir, copiar/pegar).
     if (process.platform === "darwin") Menu.setApplicationMenu(Menu.buildFromTemplate([
@@ -1045,6 +1049,7 @@ if (!app.requestSingleInstanceLock()) {
       getAccounts: () => loadAccounts().map(publicAccount)
     });
     toasts.init(handleToastAction);
+    sound.init(() => settings.get().notifySound);
     overlay.applyHotkey(settings.get().overlayKey);
     updater.init({
       enabled: () => settings.get().autoUpdate,

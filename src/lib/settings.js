@@ -13,6 +13,8 @@ const DEFAULTS = {
   bgSync: true,           // buscar novedades en segundo plano
   syncMinutes: 15,
   toasts: true,           // avisos estilo Steam
+  notifySound: true,      // sonido en todas las notificaciones
+  tutorialDone: false,    // el tutorial de la primera vez ya se vio (o se saltó) en este dispositivo
   msgNotify: true,        // avisar de mensajes nuevos (se comprueba cada minuto)
   autoUpdate: true,       // buscar e instalar actualizaciones automáticamente
   lastSeenVersion: "",   // última versión cuyo tablón de novedades ya se abrió
@@ -42,6 +44,8 @@ function sanitize(s) {
     bgSync: !!s.bgSync,
     syncMinutes: SYNC_CHOICES.includes(Number(s.syncMinutes)) ? Number(s.syncMinutes) : DEFAULTS.syncMinutes,
     toasts: !!s.toasts,
+    notifySound: s.notifySound !== false,
+    tutorialDone: !!s.tutorialDone,
     msgNotify: !!s.msgNotify,
     autoUpdate: s.autoUpdate !== false,
     videoCompat: !!s.videoCompat,

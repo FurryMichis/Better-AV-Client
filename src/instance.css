@@ -327,3 +327,28 @@ body{display:flex;flex-direction:column;background:var(--bg)}
 ::-webkit-scrollbar-corner{background:transparent}
 ::-webkit-scrollbar-button{display:none;width:0;height:0}
 ::-webkit-resizer{background:transparent}
+
+/* ---- tutorial de la primera vez (0.6.9) ---- */
+.tut{width:min(740px,calc(100% - 30px));padding:0;overflow:hidden}
+.tut[open]{display:flex;flex-direction:column}
+.tut-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px 0}
+.tut-skip{border:1px solid #443a59;background:#2a2339;color:#e7dfff;border-radius:20px;padding:7px 14px;font:600 11px Inter,Segoe UI,sans-serif;cursor:pointer}
+.tut-skip:hover{border-color:var(--accent);background:#372e4b}
+.tut-tabs{display:flex;gap:6px;padding:14px 22px 0;overflow-x:auto;border-bottom:1px solid var(--line)}
+.tut-tab{flex:none;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);padding:9px 12px;font:600 12px Inter,Segoe UI,sans-serif;cursor:pointer;margin-bottom:-1px;white-space:nowrap}
+.tut-tab:hover{color:var(--text)}
+.tut-tab.on{color:#fff;border-bottom-color:var(--accent)}
+.tut-body{display:flex;gap:24px;align-items:flex-start;padding:26px 28px;min-height:330px}
+.tut-icon{flex:none;width:76px;height:76px;border-radius:20px;display:grid;place-items:center;font-size:36px;background:linear-gradient(135deg,#3a2a5c,#241d38);border:1px solid #4a3f61;color:#d8c5ff;box-shadow:0 8px 30px #8a5de94d}
+.tut-text{min-width:0;flex:1}
+.tut-text h2{margin:2px 0 8px;font-size:22px;letter-spacing:-.5px}
+.tut-lead{margin:0 0 16px;color:#cfc4e1;font-size:13px;line-height:1.6}
+.tut-points{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.tut-points li{background:#211d2e;border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:12px;line-height:1.5;color:#c8bfd8}
+.tut-points b{color:#fff}
+.tut-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px 20px;border-top:1px solid var(--line)}
+.tut-dots{display:flex;gap:7px}
+.tut-dots i{width:7px;height:7px;border-radius:50%;background:#3b3349}
+.tut-dots i.on{background:var(--accent)}
+.tut-foot button:disabled{opacity:.4;cursor:default}
+@media(max-width:620px){.tut-body{flex-direction:column;padding:20px}}

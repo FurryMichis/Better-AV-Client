@@ -1,4 +1,4 @@
-# NotXunta Client 0.6.8
+# NotXunta Client 0.6.9
 
 Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
@@ -46,6 +46,10 @@ Para probar sin compilar: `npm start`.
   activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
 - Las tareas se abren en el navegador para entregarlas (no se suben archivos desde la app).
+
+## Novedades de la 0.6.9
+- **Sonido de notificación** (`src/assets/notification.mp3`): suena en todos los avisos (emergentes, del sistema y dentro de la app). Se activa/desactiva y se prueba en Ajustes. Para cambiar el sonido, sustituye ese archivo por otro con el mismo nombre.
+- **Tutorial de la primera vez**: ventana con pestañas, botones Anterior/Siguiente y «Saltar tutorial». Se guarda por dispositivo (`tutorialDone` en settings.json) y se puede repetir desde Ajustes.
 
 ## Novedades de la 0.6.8
 - **Barra de ventana propia**: minimizar, maximizar/restaurar y cerrar están dentro de la app (sin marco nativo). Se arrastra desde la barra y el doble clic maximiza.
