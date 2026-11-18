@@ -51,7 +51,13 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
+      # Los runners de GitHub ya traen el SDK de Android: solo se aceptan licencias y se asegura la plataforma que usa Capacitor 6.
+      - name: Preparar Android SDK
+        run: |
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKM" ] || SDKM="$(ls -d $ANDROID_HOME/cmdline-tools/*/bin/sdkmanager | head -n1)"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-34" "build-tools;34.0.0" > /dev/null
 
       - name: Instalar ImageMagick (icono de la app)
         run: sudo apt-get update -y && sudo apt-get install -y imagemagick
