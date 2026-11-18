@@ -4,7 +4,7 @@
 const { BrowserWindow } = require("electron");
 const path = require("node:path");
 
-let win = null, ready = false, pending = false, last = 0, isEnabled = () => true;
+let win = null, ready = false, pending = false, last = 0, isEnabled = () => true, getVolume = () => 35;
 
 function ensure() {
   if (win && !win.isDestroyed()) return win;
@@ -21,14 +21,16 @@ function ensure() {
   win.webContents.on("will-navigate", e => e.preventDefault());
   win.webContents.once("did-finish-load", () => {
     ready = true;
-    if (pending) { pending = false; win.webContents.send("sound:play"); }
+    if (pending) { pending = false; win.webContents.send("sound:play", vol()); }
   });
   win.on("closed", () => { win = null; ready = false; });
   win.loadFile(path.join(__dirname, "..", "sound", "sound.html"));
   return win;
 }
 
-function init(enabledFn) { isEnabled = enabledFn; ensure(); } // se crea al arrancar para que el primer aviso suene al instante
+const vol = () => Math.min(1, Math.max(0, Number(getVolume()) / 100 || 0));
+
+function init(enabledFn, volumeFn) { isEnabled = enabledFn; if (volumeFn) getVolume = volumeFn; ensure(); } // se crea al arrancar para que el primer aviso suene al instante
 
 // force = true ignora el ajuste (botón «Probar sonido»)
 function play(force = false) {
@@ -37,7 +39,7 @@ function play(force = false) {
   if (now - last < 450) return; // varios avisos seguidos suenan una sola vez
   last = now;
   const w = ensure();
-  if (ready) w.webContents.send("sound:play"); else pending = true;
+  if (ready) w.webContents.send("sound:play", vol()); else pending = true;
 }
 
 function destroy() { if (win && !win.isDestroyed()) win.destroy(); }

@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("notxuntaClient", {
-  version: "0.7.0",
+  version: "0.7.1",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
   addAccount: acc => call("accounts:add", acc),
@@ -38,6 +38,9 @@ contextBridge.exposeInMainWorld("notxuntaClient", {
   openFile: (id, url, filename, version) => call("instance:openFile", id, url, filename, version),
   prefetchFiles: (id, files) => call("instance:prefetch", id, files),
   relaunch: () => call("app:relaunch"),
+  legalGet: () => call("legal:get"),
+  legalAccept: () => call("legal:accept"),
+  legalDismiss: () => call("legal:dismiss"),
   cloudStatus: () => call("cloud:status"),
   cloudSignUp: (email, pw) => call("cloud:signUp", email, pw),
   cloudSignIn: (email, pw) => call("cloud:signIn", email, pw),

@@ -1,4 +1,4 @@
-# NotXunta Client 0.7.0
+# NotXunta Client 0.7.1
 
 Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
@@ -46,6 +46,10 @@ Para probar sin compilar: `npm start`.
   activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
 - Las tareas se abren en el navegador para entregarlas (no se suben archivos desde la app).
+
+## Novedades de la 0.7.1
+- **Volumen de notificación ajustable** en Ajustes → «Segundo plano y avisos» (0–100 %). El valor por defecto baja al 35 % (antes sonaba al máximo).
+- **Popup de inicio «Crea tu cuenta NotXunta»**: muestra en un desplazable la política de privacidad y los términos (los `PRIVACY.md` y `TERMS.md` de este repositorio, leídos de GitHub; sin conexión usa la última copia o la que lleva la app en `src/legal/`). Hay que aceptarlos para crear la cuenta o entrar en ella; «Ahora no» lo deja para más tarde.
 
 ## Novedades de la 0.7.0
 - **Versión para Android (APK)**, generada con GitHub Actions desde la carpeta `mobile/` (ver `mobile/LEEME-ANDROID.md`). La app de escritorio no cambia.

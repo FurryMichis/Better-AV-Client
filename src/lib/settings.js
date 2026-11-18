@@ -14,6 +14,9 @@ const DEFAULTS = {
   syncMinutes: 15,
   toasts: true,           // avisos estilo Steam
   notifySound: true,      // sonido en todas las notificaciones
+  notifyVolume: 35,       // volumen del sonido de notificación (0–100)
+  legalAccepted: "",      // fecha (ISO) en que se aceptaron la política de privacidad y los términos; vacío = no aceptados
+  accountPrompted: false, // ya se mostró el popup de inicio «Crea tu cuenta NotXunta»
   tutorialDone: false,    // el tutorial de la primera vez ya se vio (o se saltó) en este dispositivo
   msgNotify: true,        // avisar de mensajes nuevos (se comprueba cada minuto)
   autoUpdate: true,       // buscar e instalar actualizaciones automáticamente
@@ -45,6 +48,9 @@ function sanitize(s) {
     syncMinutes: SYNC_CHOICES.includes(Number(s.syncMinutes)) ? Number(s.syncMinutes) : DEFAULTS.syncMinutes,
     toasts: !!s.toasts,
     notifySound: s.notifySound !== false,
+    notifyVolume: Number.isFinite(Number(s.notifyVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.notifyVolume)))) : DEFAULTS.notifyVolume,
+    legalAccepted: typeof s.legalAccepted === "string" && !Number.isNaN(Date.parse(s.legalAccepted)) ? s.legalAccepted.slice(0, 40) : "",
+    accountPrompted: !!s.accountPrompted,
     tutorialDone: !!s.tutorialDone,
     msgNotify: !!s.msgNotify,
     autoUpdate: s.autoUpdate !== false,

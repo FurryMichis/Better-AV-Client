@@ -3,6 +3,16 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.7.1", headline: "Volumen de notificación y cuenta con política de privacidad",
+    summary: "Ahora puedes ajustar el volumen del aviso (por defecto más bajo) y, al crear una cuenta NotXunta, lees y aceptas la política de privacidad y los términos.",
+    items: [
+      { kind: "new", title: "Volumen de notificación ajustable", text: "En Ajustes → «Segundo plano y avisos» hay un deslizador de 0 a 100 % y el botón «Probar sonido» usa ese volumen." },
+      { kind: "improve", title: "Sonido más bajo por defecto", text: "El aviso ya no suena al máximo: por defecto está al 35 %. Puedes subirlo cuando quieras." },
+      { kind: "new", title: "Popup «Crea tu cuenta NotXunta»", text: "Al abrir la app sin cuenta aparece un popup con la política de privacidad y los términos en un desplazable. Hay que aceptarlos para crear la cuenta o entrar; «Ahora no» lo deja para más tarde." },
+      { kind: "improve", title: "Textos siempre actualizados", text: "Los textos legales se leen de GitHub; sin conexión se muestra la última copia descargada o la incluida en la app." }
+    ]
+  },
+  {
     version: "0.7.0", headline: "NotXunta Client llega a Android",
     summary: "Ahora hay una versión para Android (APK) que usa las mismas cuentas, aulas y amigos que la de escritorio.",
     items: [

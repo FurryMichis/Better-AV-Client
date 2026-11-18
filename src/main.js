@@ -12,6 +12,7 @@ const { AI_LIST } = require("./lib/ai");
 const overlay = require("./lib/overlay");
 const toasts = require("./lib/toasts");
 const sound = require("./lib/sound");
+const legal = require("./lib/legal");
 const updater = require("./lib/updater");
 const cloud = require("./lib/cloud");
 const sync = require("./lib/sync");
@@ -630,9 +631,14 @@ handle("sync:look", (_e, look, changed) => { sync.reportLook(look, !!changed); r
 handle("sync:now", async () => { await sync.run(); return sync.getInfo(); });
 handle("sync:info", () => sync.getInfo());
 handle("cloud:status", () => cloud.status());
-handle("cloud:signUp", async (_e, email, pw) => { const r = await cloud.signUp(email, pw); if (!r.needsConfirmation) afterCloudLogin(); return r; });
-handle("cloud:signIn", async (_e, email, pw) => { await cloud.signIn(email, pw); afterCloudLogin(); return true; });
-handle("cloud:oauth", async (_e, provider) => { await cloud.signInOAuth(provider); afterCloudLogin(); return true; });
+// Puerta legal: sin aceptar la política de privacidad y los términos no se puede crear la cuenta NotXunta ni entrar en ella.
+const requireLegal = () => { if (!settings.get().legalAccepted) throw new Error("Debes aceptar la política de privacidad y los términos para usar una cuenta NotXunta."); };
+handle("legal:get", () => legal.get());
+handle("legal:accept", () => { settings.set({ legalAccepted: new Date().toISOString(), accountPrompted: true }); return true; });
+handle("legal:dismiss", () => { settings.set({ accountPrompted: true }); return true; });
+handle("cloud:signUp", async (_e, email, pw) => { requireLegal(); const r = await cloud.signUp(email, pw); if (!r.needsConfirmation) afterCloudLogin(); return r; });
+handle("cloud:signIn", async (_e, email, pw) => { requireLegal(); await cloud.signIn(email, pw); afterCloudLogin(); return true; });
+handle("cloud:oauth", async (_e, provider) => { requireLegal(); await cloud.signInOAuth(provider); afterCloudLogin(); return true; });
 handle("cloud:oauthCancel", () => { cloud.cancelOAuth(); return true; });
 handle("cloud:signOut", async () => { try { await cloud.goOffline(); } catch { /* da igual */ } await cloud.signOut(); sync.forget(); knownIncoming = null; sendFriendBadge(0); return true; });
 handle("cloud:createProfile", async (_e, p) => { await cloud.createProfile(p || {}); setTimeout(linkAllAccounts, 500); sync.schedule(800); return cloud.status(); });
@@ -1049,7 +1055,7 @@ if (!app.requestSingleInstanceLock()) {
       getAccounts: () => loadAccounts().map(publicAccount)
     });
     toasts.init(handleToastAction);
-    sound.init(() => settings.get().notifySound);
+    sound.init(() => settings.get().notifySound, () => settings.get().notifyVolume);
     overlay.applyHotkey(settings.get().overlayKey);
     updater.init({
       enabled: () => settings.get().autoUpdate,

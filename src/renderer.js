@@ -1026,8 +1026,9 @@ function paintLauncherAvatar(st) {
 }
 api("cloudStatus").then(paintLauncherAvatar).catch(() => {});
 
+let authStartMode = null; // «up» / «in»: lo fija el popup de inicio para abrir la pestaña correcta
 function authCard(redo) {
-  let mode = "in", info = "";
+  let mode = authStartMode || "in", info = ""; authStartMode = null;
   const card = h("div", { class: "cloud-card" });
   const draw = () => {
     clear(card);
@@ -1038,7 +1039,9 @@ function authCard(redo) {
     const form = h("form", {}, h("label", {}, "Correo electrónico", email), h("label", {}, "Contraseña", pw), err,
       h("div", { class: "cloud-actions" }, btn));
     form.addEventListener("submit", async e => {
-      e.preventDefault(); err.hidden = true; btn.disabled = true;
+      e.preventDefault(); err.hidden = true;
+      if (!(await legalOk())) { err.textContent = "Para usar una cuenta NotXunta debes aceptar la política de privacidad y los términos."; err.hidden = false; return; }
+      btn.disabled = true;
       try {
         if (mode === "in") { await api("cloudSignIn", email.value, pw.value); redo(); return; }
         const r = await api("cloudSignUp", email.value, pw.value);
@@ -1051,6 +1054,7 @@ function authCard(redo) {
       h("button", { type: "button", class: "secondary", text: "Cancelar", onclick: () => { api("cloudOAuthCancel").catch(() => {}); } }));
     for (const [prov, label] of [["google", "Google"], ["discord", "Discord"], ["github", "GitHub"]]) {
       oauth.append(h("button", { type: "button", class: "secondary", text: label, onclick: async () => {
+        if (!(await legalOk())) { err.textContent = "Para usar una cuenta NotXunta debes aceptar la política de privacidad y los términos."; err.hidden = false; return; }
         $$("button", oauth).forEach(b => { b.disabled = true; }); wait.hidden = false; err.hidden = true;
         try { await api("cloudOAuth", prov); redo(); }
         catch (er) { err.textContent = er.message; err.hidden = false; $$("button", oauth).forEach(b => { b.disabled = false; }); wait.hidden = true; }
@@ -1555,11 +1559,23 @@ async function renderSettings(root) {
     row("Avisar de mensajes nuevos", "Comprueba tus chats cada minuto mientras NotXunta Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje (de tus aulas y de NotXunta).", "msgNotify"),
     row("Avisos emergentes estilo Steam", "Una notificación en la esquina de la pantalla. Si la desactivas se usan las notificaciones normales del sistema.", "toasts"),
     row("Sonido de notificación", "Suena un aviso en todas las notificaciones: emergentes, del sistema y los avisos dentro de la app.", "notifySound"),
+    volumeRow(cur.notifyVolume, v => patch({ notifyVolume: v })),
     h("div", { class: "zoom-row" },
       h("button", { class: "secondary small", text: "▶ Probar sonido", onclick: () => api("playSound", true).catch(e => notify(e.message)) }),
       h("button", { class: "secondary small", text: "Ver el tutorial otra vez", onclick: () => { openTutorial(); } }))));
   root.append(videoSettingsPanel(row));
   root.append(updatesPanel(row));
+}
+
+// Control del volumen del sonido de notificación (0–100 %). Se guarda al soltar el deslizador.
+function volumeRow(value, save) {
+  const label = h("b", { text: `${value}%` });
+  const slider = h("input", { type: "range", min: "0", max: "100", step: "5", value: String(value), "aria-label": "Volumen de notificación" });
+  slider.addEventListener("input", () => { label.textContent = `${slider.value}%`; });
+  slider.addEventListener("change", () => save(Number(slider.value)));
+  return h("div", { class: "switch-row" },
+    h("span", {}, h("b", { text: "Volumen de notificación" }), h("small", { text: "Qué tan fuerte suena el aviso. Pulsa «Probar sonido» para oírlo." })),
+    h("span", { class: "zoom-row" }, slider, label));
 }
 
 // (se añade al final de Ajustes) vídeo de fondo
@@ -1602,6 +1618,7 @@ async function maybeAskAi() {
       } }, h("b", { text: a.name }), h("small", { text: a.host })));
     }
     aiDialog.showModal();
+    return new Promise(res => aiDialog.addEventListener("close", res, { once: true })); // el siguiente popup espera a que este se cierre
   } catch { /* se preguntará la próxima vez */ }
 }
 const skipAi = () => aiDialog.close();
@@ -1707,6 +1724,64 @@ aula.onNavigate(async p => {
   } catch (e) { notify(e.message); }
 });
 
+// ------------------------------------------------------------------ popup legal: cuenta NotXunta + política de privacidad + términos
+const legalDialog = $("#legal-dialog");
+// Muestra el popup y devuelve "up" (crear cuenta), "in" (ya tengo cuenta) o "later" (no aceptó). Siempre se resuelve: la única salida es el evento «close» del diálogo.
+// «mode»: "account" (aún sin sesión) o "accept" (ya hay sesión, solo falta aceptar).
+function openLegal(mode = "account") {
+  return new Promise(resolve => {
+    let choice = "later";
+    const check = $("#legal-check"), up = $("#legal-signup"), inn = $("#legal-signin"), later = $("#legal-later"), err = $("#legal-error"), box = clear($("#legal-scroll"));
+    const accept = mode === "accept";
+    $("#legal-eyebrow").textContent = accept ? "ANTES DE SEGUIR" : "CUENTA NOTXUNTA";
+    $("#legal-title").textContent = accept ? "Acepta la política y los términos" : "Crea tu cuenta NotXunta";
+    check.checked = false; up.disabled = inn.disabled = true; err.hidden = true;
+    up.textContent = accept ? "Aceptar y continuar" : "Crear cuenta";
+    inn.hidden = accept;
+    box.append(h("p", { class: "legal-note", text: "Cargando los textos…" }));
+    box.scrollTop = 0;
+    const sync = () => { up.disabled = inn.disabled = !check.checked; };
+    const choose = async c => {
+      try { await api("legalAccept"); choice = c; legalDialog.close(); }
+      catch (e) { err.textContent = e.message; err.hidden = false; }
+    };
+    const onUp = () => choose("up"), onIn = () => choose("in"), onLater = () => legalDialog.close();
+    check.addEventListener("change", sync); up.addEventListener("click", onUp); inn.addEventListener("click", onIn); later.addEventListener("click", onLater);
+    legalDialog.addEventListener("close", () => {
+      check.removeEventListener("change", sync); up.removeEventListener("click", onUp); inn.removeEventListener("click", onIn); later.removeEventListener("click", onLater);
+      if (choice === "later") api("legalDismiss").catch(() => {});
+      resolve(choice);
+    }, { once: true });
+    try { legalDialog.showModal(); }
+    catch { resolve("later"); return; } // si no se puede mostrar, no se queda colgada la promesa
+    api("legalGet").then(d => {
+      clear(box).append(
+        h("p", { class: "legal-note", text: d.source === "github" ? "Textos leídos de GitHub (PRIVACY.md y TERMS.md)." : "Sin conexión con GitHub: se muestra la última copia disponible de los textos." }),
+        NXMarkdown.render(d.privacy), h("hr", { class: "legal-sep" }), NXMarkdown.render(d.terms));
+      box.scrollTop = 0;
+    }).catch(e => { clear(box).append(h("p", { class: "legal-note", text: `No se pudieron cargar los textos: ${e.message}` })); });
+  });
+}
+// ¿Hay aceptación guardada? Si no, abre el popup (para entrar o crear cuenta desde cualquier sitio).
+async function legalOk() {
+  try {
+    const { settings: st } = await api("getSettings");
+    if (st.legalAccepted) return true;
+    return (await openLegal()) !== "later";
+  } catch { return false; }
+}
+// Popup de inicio: si no tienes sesión (y no lo has descartado) te ofrece crear cuenta; si ya la tienes y falta aceptar, te pide aceptar.
+async function maybeOfferAccount() {
+  try {
+    const [{ settings: st }, cs] = await Promise.all([api("getSettings"), api("cloudStatus")]);
+    if (!cs.configured || st.legalAccepted && (cs.signedIn || st.accountPrompted)) return;
+    if (cs.signedIn) { await openLegal("accept"); return; }
+    if (st.accountPrompted) return;
+    const r = await openLegal();
+    if (r === "up" || r === "in") { authStartMode = r; $('.nav[data-view="cloud"]').click(); }
+  } catch { /* se ofrecerá la próxima vez */ }
+}
+
 // ------------------------------------------------------------------ tablón de novedades
 const KIND_LABEL = { new: "NUEVO", fix: "ARREGLO", improve: "MEJORA" };
 async function renderNews(root) {
@@ -1732,7 +1807,8 @@ api("changelog").then(c => setNewsBadge(c.seen !== c.current)).catch(() => {});
 
 // ------------------------------------------------------------------ arranque
 renderAccounts();
-maybeTutorial().then(maybeAskAi); // primero el tutorial (solo la primera vez en este dispositivo) y después la elección de IA
+// Popups de inicio, uno detrás de otro: tutorial (solo la primera vez en este dispositivo) → elección de IA → crear cuenta NotXunta (política y términos)
+maybeTutorial().then(maybeAskAi).then(maybeOfferAccount).catch(() => {});
 
 
 // ------------------------------------------------------------------ estado «en línea»

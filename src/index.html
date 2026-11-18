@@ -36,7 +36,7 @@
       <button class="nav" data-view="settings"><span>⚙</span> Ajustes</button>
       <div class="sidebar-bottom">
         <button class="nav" id="open-overlay"><span>❖</span> Abrir overlay <small class="kbd">Shift+Tab</small></button>
-        <div class="version">NOTXUNTA CLIENT <span>v0.7.0</span></div>
+        <div class="version">NOTXUNTA CLIENT <span>v0.7.1</span></div>
       </div>
     </aside>
 
@@ -203,7 +203,26 @@
     </form>
   </dialog>
 
+  <dialog id="legal-dialog" class="legal" aria-label="Crea tu cuenta NotXunta">
+    <div class="legal-head">
+      <div class="eyebrow" id="legal-eyebrow">CUENTA NOTXUNTA</div>
+      <h2 id="legal-title">Crea tu cuenta NotXunta</h2>
+      <p class="muted">Para tener amigos, mensajes, archivos y tus ajustes en cualquier ordenador. Antes de empezar, lee y acepta la política de privacidad y los términos.</p>
+    </div>
+    <div class="legal-scroll" id="legal-scroll" tabindex="0" aria-label="Política de privacidad y términos del servicio"></div>
+    <div class="legal-foot">
+      <label class="legal-check"><input type="checkbox" id="legal-check"><span>He leído y acepto la política de privacidad y los términos del servicio.</span></label>
+      <div class="form-error" id="legal-error" hidden></div>
+      <div class="dialog-actions">
+        <button class="secondary" id="legal-later" type="button">Ahora no</button>
+        <button class="secondary" id="legal-signin" type="button" disabled>Ya tengo cuenta</button>
+        <button class="primary" id="legal-signup" type="button" disabled>Crear cuenta</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="toast" id="toast"></div>
+  <script src="markdown.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

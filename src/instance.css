@@ -352,3 +352,25 @@ body{display:flex;flex-direction:column;background:var(--bg)}
 .tut-dots i.on{background:var(--accent)}
 .tut-foot button:disabled{opacity:.4;cursor:default}
 @media(max-width:620px){.tut-body{flex-direction:column;padding:20px}}
+
+/* Popup legal de inicio (cuenta NotXunta + política de privacidad + términos) */
+.legal{width:min(720px,calc(100% - 30px));max-height:calc(100vh - 40px);padding:0;overflow:hidden}
+.legal[open]{display:flex;flex-direction:column}
+.legal-head{padding:22px 26px 14px}
+.legal-head h2{font-size:21px;margin:8px 0 6px}
+.legal-scroll{flex:1 1 auto;min-height:160px;overflow-y:auto;margin:0 26px;padding:6px 18px 14px;background:#110f18;border:1px solid var(--line);border-radius:10px;font-size:12.5px;line-height:1.6;color:#d9d0ea}
+.legal-scroll h2,.legal-scroll h3,.legal-scroll h4{color:#fff;margin:18px 0 6px}
+.legal-scroll h2{font-size:17px}.legal-scroll h3{font-size:14px}.legal-scroll h4{font-size:13px}
+.legal-scroll p{margin:0 0 9px}
+.legal-scroll ul,.legal-scroll ol{margin:0 0 10px;padding-left:20px}
+.legal-scroll li{margin:3px 0}
+.legal-scroll code{background:#241f31;padding:1px 5px;border-radius:4px}
+.legal-scroll hr.legal-sep{border:0;border-top:1px solid var(--line);margin:22px 0}
+.legal-note{color:var(--muted);font-size:11px}
+.legal-foot{padding:14px 26px 22px}
+.legal-check{display:flex;align-items:flex-start;gap:10px;margin:0;font-size:12px;color:#e0d8f0;cursor:pointer}
+.legal-check input{width:40px;height:22px;margin:0;flex:none}
+.legal-check span{padding-top:2px}
+.legal-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.legal-foot .dialog-actions{margin-top:14px;flex-wrap:wrap}
+.legal button:disabled{opacity:.45;cursor:not-allowed}
