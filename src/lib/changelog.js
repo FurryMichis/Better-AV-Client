@@ -3,6 +3,14 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.7.0", headline: "NotXunta Client llega a Android",
+    summary: "Ahora hay una versión para Android (APK) que usa las mismas cuentas, aulas y amigos que la de escritorio.",
+    items: [
+      { kind: "new", title: "App para Android", text: "Mismo aula virtual, mensajes, archivos NotXunta y amigos, con menú lateral y botón «atrás» de Android. En el móvil los avisos funcionan con la app abierta y no hay vídeo de fondo." },
+      { kind: "new", title: "APK con GitHub Actions", text: "El flujo «Compilar APK de Android» genera el APK y lo adjunta a la release. La versión de escritorio no cambia." }
+    ]
+  },
+  {
     version: "0.6.9", headline: "Sonido de notificación y tutorial de bienvenida",
     summary: "Todas las notificaciones suenan con el mismo sonido de NotXunta y la primera vez que abres la app en un dispositivo te la enseña un tutorial con pestañas.",
     items: [

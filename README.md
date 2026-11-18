@@ -1,4 +1,4 @@
-# NotXunta Client 0.6.9
+# NotXunta Client 0.7.0
 
 Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
@@ -46,6 +46,9 @@ Para probar sin compilar: `npm start`.
   activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
 - Las tareas se abren en el navegador para entregarlas (no se suben archivos desde la app).
+
+## Novedades de la 0.7.0
+- **Versión para Android (APK)**, generada con GitHub Actions desde la carpeta `mobile/` (ver `mobile/LEEME-ANDROID.md`). La app de escritorio no cambia.
 
 ## Novedades de la 0.6.9
 - **Sonido de notificación** (`src/assets/notification.mp3`): suena en todos los avisos (emergentes, del sistema y dentro de la app). Se activa/desactiva y se prueba en Ajustes. Para cambiar el sonido, sustituye ese archivo por otro con el mismo nombre.

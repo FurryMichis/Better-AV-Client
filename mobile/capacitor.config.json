@@ -1,0 +1,13 @@
+{
+  "appId": "com.notxunta.client",
+  "appName": "NotXunta Client",
+  "webDir": "www",
+  "backgroundColor": "#100e18",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  }
+}
