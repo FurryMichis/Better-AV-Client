@@ -11,8 +11,8 @@ input,textarea,select{font-size:16px!important} /* evita el zoom automático al 
   transform:translateX(-104%);transition:transform .22s ease;padding-top:calc(18px + env(safe-area-inset-top));
   padding-bottom:calc(14px + env(safe-area-inset-bottom))}
 body.nx-nav-open .sidebar{transform:none;box-shadow:14px 0 44px #000b}
-#nx-scrim{position:fixed;inset:0;z-index:55;background:#000b;opacity:0;pointer-events:none;transition:opacity .2s}
-body.nx-nav-open #nx-scrim{opacity:1;pointer-events:auto}
+.nx-scrim{position:fixed;inset:0;z-index:55;background:#000b;opacity:0;pointer-events:none;transition:opacity .2s}
+body.nx-nav-open .nx-scrim{opacity:1;pointer-events:auto}
 .nav{padding:14px 12px;font-size:14px}
 .kbd{display:none}
 .brand{padding-bottom:26px}

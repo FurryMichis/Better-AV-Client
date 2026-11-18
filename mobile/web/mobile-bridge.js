@@ -1014,12 +1014,15 @@
   // ------------------------------------------------------------------ interfaz móvil: menú lateral, botón «atrás»
   function initMobileUi() {
     document.documentElement.classList.add("nx-mobile");
-    const scrim = document.createElement("div");
-    scrim.id = "nx-scrim";
-    // Dentro de .app-body (que crea su propio contexto de apilado): así el menú (z-index 60) queda POR ENCIMA del fondo oscuro (55).
-    (document.querySelector(".app-body") || document.body).append(scrim);
     const setOpen = open => document.body.classList.toggle("nx-nav-open", !!open);
-    scrim.addEventListener("click", () => setOpen(false));
+    // Cada .app-shell crea su propio contexto de apilado (position:relative + z-index:1), y el menú (z-index 60) vive dentro.
+    // El fondo oscuro tiene que estar DENTRO de la misma pantalla para quedar por debajo del menú (55 < 60).
+    document.querySelectorAll(".app-shell").forEach(shell => {
+      const scrim = document.createElement("div");
+      scrim.className = "nx-scrim";
+      scrim.addEventListener("click", () => setOpen(false));
+      shell.append(scrim);
+    });
     document.querySelectorAll(".topbar").forEach(bar => {
       const b = document.createElement("button");
       b.type = "button"; b.className = "nx-menu-btn"; b.setAttribute("aria-label", "Menú"); b.textContent = "☰";
