@@ -1,0 +1,129 @@
+name: Compilar APK de Android
+
+# Genera el APK de NotXunta Client (Capacitor) y lo deja:
+#  · como «artifact» descargable en cada ejecución,
+#  · adjunto a la Release cuando se sube una etiqueta de versión (p. ej. v0.7.0) o se indica una a mano.
+#
+# FIRMA: para poder ACTUALIZAR la app sin desinstalarla, el APK tiene que firmarse siempre con la MISMA clave.
+# Crea tu keystore una vez (ver mobile/LEEME-ANDROID.md) y guarda estos 4 «secrets» en el repositorio
+# (Settings → Secrets and variables → Actions): ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. Sin ellos se compila un APK «debug» (se instala igual, pero la
+# clave cambia en cada compilación y Android no deja actualizar encima: habría que desinstalar la anterior).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Etiqueta donde adjuntar el APK (p. ej. v0.7.0). Vacío = solo artifact"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que la etiqueta coincide con package.json
+        if: ${{ startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag != '' }}
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if [ "v$V" != "$TAG" ]; then
+            echo "::error::La etiqueta $TAG no coincide con la versión de package.json ($V)."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalar ImageMagick (icono de la app)
+        run: sudo apt-get update -y && sudo apt-get install -y imagemagick
+
+      - name: Dependencias (Capacitor)
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+
+      - name: Preparar la web (copia src → mobile/www + puente Android)
+        working-directory: mobile
+        run: node build-web.js
+
+      - name: Crear el proyecto Android
+        working-directory: mobile
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Preparar keystore
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/nx.keystore"
+          echo "NX_KEYSTORE=$RUNNER_TEMP/nx.keystore" >> "$GITHUB_ENV"
+          echo "NX_KS_PASS=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "NX_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "NX_KEY_PASS=${{ secrets.ANDROID_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+
+      - name: Ajustar el proyecto Android (plugin, manifiesto, icono, versión, firma)
+        working-directory: mobile
+        run: node patch-android.js
+
+      - name: Compilar APK firmado (release)
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          mkdir -p ../../out
+          cp app/build/outputs/apk/release/app-release.apk ../../out/NotXuntaClient-Android.apk
+
+      - name: Compilar APK debug (sin keystore)
+        if: ${{ env.HAS_KEYSTORE != 'true' }}
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          mkdir -p ../../out
+          cp app/build/outputs/apk/debug/app-debug.apk ../../out/NotXuntaClient-Android.apk
+          echo "::warning::APK compilado con clave de depuración: para actualizar la app sin desinstalar, configura los secrets de firma (mobile/LEEME-ANDROID.md)."
+
+      - name: Mostrar lo generado
+        run: ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NotXuntaClient-Android
+          path: out/NotXuntaClient-Android.apk
+          if-no-files-found: error
+
+      - name: Adjuntar a la Release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Etiqueta no válida: $TAG (formato vX.Y.Z)"; exit 1; }
+          # El flujo de escritorio (build.yml) también crea/edita esta release: si ya existe, solo se sube el APK.
+          for i in 1 2 3; do
+            if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then break; fi
+            gh release create "$TAG" --repo "$REPO" --title "${TAG#v}" --notes "NotXunta Client ${TAG#v}" --latest && break || sleep $((i*5))
+          done
+          gh release upload "$TAG" out/NotXuntaClient-Android.apk --repo "$REPO" --clobber
+          echo "### APK adjuntado a $TAG" >> "$GITHUB_STEP_SUMMARY"
