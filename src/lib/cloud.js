@@ -223,12 +223,12 @@ async function signOut() {
 // ------------------------------------------------------------------ perfil
 const cleanName = s => String(s || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40);
 
-// Niveles del esquema: 0 = base · 1 = con foto/ajustes (0.5.6) · 2 = con estado «en línea» y Archivos NotXunta (0.6.1).
+// Niveles del esquema: 0 = base · 1 = con foto/ajustes (0.5.6) · 2 = con estado «en línea» y Archivos NotXunta (0.6.1) · 3 = con descripción, estado, banner y color (0.7.2).
 // Si la base de datos aún no está al día, el perfil se carga con lo que haya en lugar de dejar toda la cuenta inutilizable.
-let schemaLevel = 2;
+let schemaLevel = 3;
 async function loadProfile() {
   const base = `/rest/v1/profiles?id=eq.${session.user.id}&select=id,username,display_name,discoverable`;
-  const tiers = [[`${base},avatar,show_online`, 2], [`${base},avatar`, 1], [base, 0]];
+  const tiers = [[`${base},avatar,show_online,bio,status_text,pronouns,banner,accent`, 3], [`${base},avatar,show_online`, 2], [`${base},avatar`, 1], [base, 0]];
   let rows, lastErr;
   for (const [url, level] of tiers) {
     try { rows = await request("GET", url); schemaLevel = level; lastErr = null; break; }
@@ -243,7 +243,7 @@ async function status() {
   const base = { configured: configured(), signedIn: false, email: "", profile: null };
   if (!base.configured || !session) return base;
   if (profile === undefined) await loadProfile();
-  return { ...base, signedIn: true, email: session.user.email, profile, schemaOutdated: schemaLevel < 1, presenceOutdated: schemaLevel < 2, schemaLevel };
+  return { ...base, signedIn: true, email: session.user.email, profile, schemaOutdated: schemaLevel < 1, presenceOutdated: schemaLevel < 2, extrasOutdated: schemaLevel < 3, schemaLevel };
 }
 async function createProfile({ username, display_name, discoverable }) {
   username = String(username || "").trim().toLowerCase().replace(/^@/, "");
@@ -258,8 +258,28 @@ async function createProfile({ username, display_name, discoverable }) {
 async function updateProfile(patch) {
   if (patch.avatar !== undefined && schemaLevel < 1) throw new Error("Para usar foto de perfil falta ejecutar supabase/migration-0.5.6.sql en Supabase.");
   if (patch.show_online !== undefined && schemaLevel < 2) throw new Error("Para el estado «en línea» falta ejecutar supabase/migration-0.6.1.sql en Supabase.");
+  const EXTRAS = ["bio", "status_text", "pronouns", "banner", "accent"];
+  if (EXTRAS.some(k => patch[k] !== undefined) && schemaLevel < 3) throw new Error("Para personalizar tu perfil falta ejecutar supabase/migration-0.7.2.sql en Supabase.");
   const body = {};
   if (patch.display_name !== undefined) body.display_name = cleanName(patch.display_name);
+  // Personalización (0.7.2): se limpia aquí y la base de datos vuelve a comprobarlo con sus propias restricciones.
+  const oneLine = (v, n) => String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
+  if (patch.bio !== undefined) {
+    const t = String(patch.bio == null ? "" : patch.bio).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000b-\u001f\u007f<>]/g, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, 200);
+    body.bio = t || null;
+  }
+  if (patch.status_text !== undefined) body.status_text = oneLine(patch.status_text, 60) || null;
+  if (patch.pronouns !== undefined) body.pronouns = oneLine(patch.pronouns, 20) || null;
+  if (patch.accent !== undefined) {
+    if (patch.accent === null || patch.accent === "") body.accent = null;
+    else if (typeof patch.accent === "string" && /^#[0-9a-fA-F]{6}$/.test(patch.accent)) body.accent = patch.accent.toLowerCase();
+    else throw new Error("El color no es válido.");
+  }
+  if (patch.banner !== undefined) {
+    if (patch.banner === null || patch.banner === "") body.banner = null;
+    else if (typeof patch.banner === "string" && patch.banner.length <= 100000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(patch.banner)) body.banner = patch.banner;
+    else throw new Error("El banner no es válido o es demasiado grande.");
+  }
   if (patch.discoverable !== undefined) body.discoverable = !!patch.discoverable;
   if (patch.show_online !== undefined) body.show_online = !!patch.show_online;
   if (patch.avatar !== undefined) {   // foto de perfil: imagen pequeña en data URL, o null para quitarla

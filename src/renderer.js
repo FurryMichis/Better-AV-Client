@@ -57,6 +57,16 @@ function paintIcon(el, icon, fallback = "M") {
   else el.textContent = icon || fallback;
   return el;
 }
+// Icono del gorrito de graduación (sin cara y sin emoji). Toma el color del texto (currentColor).
+function capIcon(cls = "cap-ico") {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 64 64"); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("class", cls);
+  for (const d of ["M32 8 63 24 32 40 1 24Z", "M13 33.5 32 43l19-9.5V47c0 6-8.5 9-19 9s-19-3-19-9Z", "M57 27h3v18h-3Z", "M58.5 43l3.5 11h-7Z"]) {
+    const p = document.createElementNS(NS, "path"); p.setAttribute("d", d); svg.append(p);
+  }
+  return svg;
+}
 const initials = name => String(name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 
 // Carga una imagen del aula (con token, desde el proceso principal) y la pone como fondo.
@@ -978,11 +988,12 @@ async function renderCloud(root) {
   }
   if (!st.signedIn) { root.append(authCard(redo)); return; }
   if (!st.profile) { root.append(profileSetupCard(redo, st)); return; }
-  let card, panel;
+  let card, custom, panel;
   try { card = accountCard(redo, st); } catch (e) { card = empty("!", "No se pudo mostrar tu cuenta", e.message); }
+  try { custom = customizeCard(redo, st); } catch (e) { custom = empty("!", "No se pudo mostrar la personalización", e.message); }
   try { panel = await friendsPanel(redo); } catch (e) { panel = empty("!", "No se pudieron cargar tus amigos", e.message); }
   if (stale()) return;
-  root.append(card);
+  root.append(card, custom);
   if (st.schemaOutdated || st.presenceOutdated) root.append(h("div", { class: "cloud-card" }, h("h2", { text: "Falta actualizar el servidor" }),
     h("p", { text: `Tu cuenta funciona, pero ${st.schemaOutdated ? "la foto de perfil, la sincronización de ajustes, " : ""}el estado «en línea» y los Archivos NotXunta necesitan una actualización de la base de datos de Supabase: abre el SQL Editor, pega el contenido de supabase/migration-0.6.1.sql${st.schemaOutdated ? " (y antes el de migration-0.5.6.sql)" : ""} y pulsa Run. No hace falta reinstalar la app.` })));
   root.append(panel);
@@ -1025,6 +1036,118 @@ function paintLauncherAvatar(st) {
   if (p && typeof p.avatar === "string" && AVATAR_RE.test(p.avatar)) { el.style.backgroundImage = `url("${p.avatar}")`; el.textContent = ""; }
 }
 api("cloudStatus").then(paintLauncherAvatar).catch(() => {});
+
+// ---- Personalización de la cuenta NotXunta (0.7.2): descripción, estado, pronombres, color y banner
+const BANNER_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+function readBanner(file) { // recorta al centro y reduce a 480×160 (la base de datos admite hasta ~100 KB)
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith("image/")) return reject(new Error("Elige un archivo de imagen."));
+    if (file.size > 20e6) return reject(new Error("La imagen es demasiado grande."));
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("No se pudo abrir la imagen."));
+      img.onload = () => {
+        const W = 480, H = 160, k = Math.max(W / img.width, H / img.height), w = img.width * k, ht = img.height * k;
+        const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+        const cx = cv.getContext("2d"); cx.fillStyle = "#2a2238"; cx.fillRect(0, 0, W, H);
+        cx.drawImage(img, (W - w) / 2, (H - ht) / 2, w, ht);
+        for (const q of [0.85, 0.7, 0.55, 0.4]) { const out = cv.toDataURL("image/jpeg", q); if (out.length <= 90000) return resolve(out); }
+        reject(new Error("La imagen sigue siendo demasiado pesada. Prueba con otra."));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+// Tarjeta de perfil NotXunta: la que ven tus amigos (y la vista previa al editar la tuya).
+function profileCardEl(p) {
+  const card = h("div", { class: "pcard" });
+  if (typeof p.accent === "string" && HEX_RE.test(p.accent)) card.style.setProperty("--pc", p.accent);
+  const banner = h("div", { class: "pcard-banner" });
+  if (typeof p.banner === "string" && BANNER_RE.test(p.banner)) banner.style.backgroundImage = `url("${p.banner}")`;
+  const name = p.display_name || p.username;
+  card.append(banner, h("div", { class: "pcard-body" },
+    cloudPic(p, "lg"),
+    h("div", { class: "pcard-name" }, h("b", { text: name }), p.pronouns && h("span", { class: "chip", text: p.pronouns })),
+    h("div", { class: "muted", text: `@${p.username}` }),
+    p.status_text && h("div", { class: "pcard-status", text: p.status_text }),
+    p.bio ? h("p", { class: "pcard-bio", text: p.bio }) : h("p", { class: "muted", text: "Sin descripción todavía." })));
+  return card;
+}
+function openProfileCard(userId) {
+  api("friendCard", userId).then(card => {
+    if (!card) { notify("No se pudo cargar ese perfil."); return; }
+    const dlg = h("dialog", { class: "pcard-dialog" }, profileCardEl(card),
+      h("div", { class: "dialog-actions pad" }, h("button", { class: "secondary", text: "Cerrar", onclick: () => dlg.close() })));
+    dlg.addEventListener("close", () => dlg.remove());
+    dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+    document.body.append(dlg); dlg.showModal();
+  }).catch(e => notify(e.message));
+}
+
+function customizeCard(redo, st) {
+  const p = st.profile;
+  const box = h("div", { class: "cloud-card" }, h("h2", { text: "Personaliza tu perfil" }),
+    h("p", { class: "muted", text: "Así te ven tus amigos. Tu estado, descripción, pronombres, color y banner son visibles para tus amigos y para quien te encuentre (si lo permites)." }));
+  if (st.extrasOutdated) {
+    box.append(h("p", { text: "Para personalizar tu perfil falta actualizar la base de datos: abre el SQL Editor de Supabase, pega el contenido de supabase/migration-0.7.2.sql y pulsa Run. No hace falta reinstalar la app." }));
+    return box;
+  }
+  const draft = { ...p };
+  const preview = h("div", { class: "pcard-preview" });
+  const paint = () => { clear(preview).append(profileCardEl(draft)); };
+
+  const nameIn = h("input", { maxlength: "40", value: p.display_name || "", placeholder: "Cómo quieres que te vean" });
+  const statusIn = h("input", { maxlength: "60", value: p.status_text || "", placeholder: "Ej.: estudiando mates 📚" });
+  const pronIn = h("input", { maxlength: "20", value: p.pronouns || "", placeholder: "Ej.: ella / él / elle" });
+  const bioIn = h("textarea", { maxlength: "200", rows: "4", placeholder: "Cuéntales algo sobre ti…" }); bioIn.value = p.bio || "";
+  const count = h("small", { class: "muted", text: `${bioIn.value.length}/200` });
+  const colorIn = h("input", { type: "color", value: HEX_RE.test(p.accent || "") ? p.accent : "#9b72f2" });
+  let colorOn = HEX_RE.test(p.accent || "");
+  const colorNote = h("small", { class: "muted", text: colorOn ? "" : "Sin color propio (se usa el de la app)." });
+  const sync = () => {
+    draft.display_name = nameIn.value; draft.status_text = statusIn.value.trim(); draft.pronouns = pronIn.value.trim();
+    draft.bio = bioIn.value.trim(); draft.accent = colorOn ? colorIn.value : null; count.textContent = `${bioIn.value.length}/200`; paint();
+  };
+  for (const el of [nameIn, statusIn, pronIn, bioIn]) el.addEventListener("input", sync);
+  colorIn.addEventListener("input", () => { colorOn = true; colorNote.textContent = ""; sync(); });
+
+  const bannerFile = h("input", { type: "file", accept: "image/*", hidden: "" });
+  bannerFile.addEventListener("change", async () => {
+    const f = bannerFile.files[0]; bannerFile.value = "";
+    if (!f) return;
+    try { await api("cloudUpdateProfile", { banner: await readBanner(f) }); notify("Banner actualizado."); redo(); }
+    catch (e) { notify(e.message); }
+  });
+  const err = h("div", { class: "form-error", hidden: "" });
+  const save = h("button", { class: "primary", type: "button", text: "Guardar cambios", onclick: async () => {
+    err.hidden = true; save.disabled = true;
+    try {
+      await api("cloudUpdateProfile", { display_name: nameIn.value, status_text: statusIn.value, pronouns: pronIn.value, bio: bioIn.value, accent: colorOn ? colorIn.value : null });
+      notify("Perfil guardado."); redo();
+    } catch (e) { err.textContent = e.message; err.hidden = false; save.disabled = false; }
+  } });
+
+  paint();
+  box.append(preview,
+    h("div", { class: "avatar-actions" },
+      h("button", { class: "secondary small", type: "button", text: p.banner ? "Cambiar banner" : "Poner banner", onclick: () => bannerFile.click() }),
+      p.banner && h("button", { class: "secondary small", type: "button", text: "Quitar banner", onclick: async () => {
+        try { await api("cloudUpdateProfile", { banner: null }); notify("Banner quitado."); redo(); } catch (e) { notify(e.message); }
+      } }), bannerFile),
+    h("label", {}, "Nombre para mostrar", nameIn),
+    h("label", {}, "Estado (una frase corta)", statusIn),
+    h("label", {}, "Pronombres (opcional)", pronIn),
+    h("label", {}, "Descripción", bioIn, count),
+    h("label", {}, "Color del perfil", h("div", { class: "color-row" }, colorIn,
+      h("button", { class: "secondary small", type: "button", text: "Quitar color", onclick: () => { colorOn = false; colorNote.textContent = "Sin color propio (se usa el de la app)."; sync(); } }), colorNote)),
+    err, h("div", { class: "cloud-actions" }, save));
+  return box;
+}
 
 let authStartMode = null; // «up» / «in»: lo fija el popup de inicio para abrir la pestaña correcta
 function authCard(redo) {
@@ -1199,9 +1322,15 @@ async function friendsPanel(redo) {
     await refresh(); chatTimer = setInterval(() => { if (chatHost.isConnected && !chatHost.hidden) refresh(); }, 10000); input.focus();
   };
 
-  const person = (r, ...acts) => h("div", { class: "friend-row" }, cloudPic(r, "sm"),
-    h("span", { class: "item-main" }, h("b", { text: r.display_name || r.username }),
-      h("span", { class: "muted" }, `@${r.username}`, r.status === "accepted" && presenceBit(r))), h("div", { class: "acts" }, ...acts));
+  const person = (r, ...acts) => {
+    const open = () => openProfileCard(r.other_id || r.id);
+    const pic = cloudPic(r, "sm"); pic.classList.add("clickable"); pic.title = "Ver perfil"; pic.addEventListener("click", open);
+    const name = h("b", { class: "clickable", title: "Ver perfil", text: r.display_name || r.username, onclick: open });
+    return h("div", { class: "friend-row" }, pic,
+      h("span", { class: "item-main" }, name,
+        h("span", { class: "muted" }, `@${r.username}`, r.status === "accepted" && presenceBit(r)),
+        r.status_text && h("span", { class: "muted friend-status", text: r.status_text })), h("div", { class: "acts" }, ...acts));
+  };
   const act = (text, cls, fn) => h("button", { class: `${cls} small`, text, onclick: async e => {
     e.currentTarget.disabled = true;
     try { await fn(); redo(); } catch (er) { notify(er.message); e.currentTarget.disabled = false; }
@@ -1441,14 +1570,60 @@ async function renderNotifications(root) {
 }
 
 // ------------------------------------------------------------------ perfil
+// Perfil de tu aula virtual original (descripción, datos y resumen) y el acceso a tu cuenta NotXunta.
+// Los datos del perfil se leen del aula al sincronizar; si el aula oculta un campo, simplemente no sale.
+const fmtWhen = ts => ts ? new Date(ts * 1000).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" }) : "";
+function countryName(code) {
+  if (!/^[A-Z]{2}$/.test(code || "")) return code || "";
+  try { return new Intl.DisplayNames(["es"], { type: "region" }).of(code) || code; } catch { return code; }
+}
 function renderProfile(root) {
-  const u = state.data.user;
-  root.append(pageTitle("CUENTA", "Perfil"));
+  const d = state.data, u = d.user, p = u.profile || null, site = d.site || {};
+  root.append(pageTitle("CUENTA", "Perfil", "Tu perfil y la información de tu aula virtual original."));
+
+  // Cabecera
+  const where = [p && p.city, p && countryName(p.country)].filter(Boolean).join(", ");
   root.append(h("div", { class: "profile-card" }, avatar(u.pic, u.fullname, "lg"),
-    h("div", {}, h("h2", { text: u.fullname }), h("div", { class: "muted", text: `Usuario: ${u.username}` }),
-      h("div", { class: "muted", text: state.data.site.name || state.data.site.url }))));
+    h("div", { class: "profile-main" },
+      h("h2", { text: u.fullname }),
+      h("div", { class: "muted", text: `Usuario: ${u.username}` }),
+      h("div", { class: "muted", text: site.name || site.url }),
+      where && h("div", { class: "muted", text: `📍 ${where}` }))));
+
+  // Sobre mí (descripción del perfil del aula)
+  const about = h("div", { class: "profile-section" }, h("h3", { text: "SOBRE MÍ" }));
+  if (p && p.description) about.append(h("p", { class: "profile-about", text: p.description }));
+  else about.append(h("p", { class: "muted", text: p ? "No tienes descripción en tu perfil del aula. Puedes escribirla en el aula original (Perfil → Editar perfil)." : "Aún no se ha leído tu perfil del aula. Pulsa «Actualizar perfil» o «Sincronizar»." }));
+  if (p && p.interests && p.interests.length) about.append(h("div", { class: "profile-tags" }, p.interests.map(t => chip(t))));
+  root.append(about);
+
+  // Información
+  const rows = [
+    ["Nombre completo", u.fullname], ["Usuario", u.username], ["Correo", p && p.email],
+    ["Ciudad", p && p.city], ["País", p && countryName(p.country)],
+    ["Centro / institución", p && p.institution], ["Departamento", p && p.department],
+    ["Primer acceso", p && fmtWhen(p.firstaccess)], ["Último acceso", p && fmtWhen(p.lastaccess)],
+    ...((p && p.custom) || []).map(f => [f.name, f.value])
+  ].filter(([, v]) => v);
+  if (rows.length) root.append(h("div", { class: "profile-section" }, h("h3", { text: "INFORMACIÓN" }),
+    h("div", { class: "info-grid" }, rows.map(([k, v]) => h("div", { class: "info-row" }, h("span", { class: "muted", text: k }), h("b", { text: v }))))));
+
+  // Resumen de tus cursos y tareas
+  const mods = d.courses.flatMap(c => c.sections.flatMap(s => s.modules));
+  const pending = mods.filter(m => m.kind === "task" && m.status !== "submitted").length;
+  const stats = [[d.courses.length, "cursos"], [mods.filter(m => m.kind === "doc").length, "documentos"], [pending, "tareas pendientes"], [state.unseen.size, "novedades sin ver"]];
+  root.append(h("div", { class: "profile-section" }, h("h3", { text: "RESUMEN" }),
+    h("div", { class: "stat-grid" }, stats.map(([n, l]) => h("div", { class: "stat" }, h("b", { text: String(n) }), h("span", { class: "muted", text: l }))))));
+
+  // Tu aula
+  const aulaRows = [["Aula", site.name], ["Dirección", site.url], ["Versión de Moodle", site.release], ["Última sincronización", d.syncedAt ? new Date(d.syncedAt).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" }) : ""]].filter(([, v]) => v);
+  root.append(h("div", { class: "profile-section" }, h("h3", { text: "TU AULA" }),
+    h("div", { class: "info-grid" }, aulaRows.map(([k, v]) => h("div", { class: "info-row" }, h("span", { class: "muted", text: k }), h("b", { text: v }))))));
+
   root.append(h("div", { class: "row-actions pad" },
-    h("button", { class: "secondary", text: "Abrir el aula en el navegador", onclick: () => api("openExternal", state.data.site.url).catch(e => notify(e.message)) }),
+    h("button", { class: "primary", text: "Actualizar perfil", onclick: () => $("#sync-btn").click() }),
+    h("button", { class: "secondary", text: "Abrir el aula en el navegador", onclick: () => api("openExternal", site.url).catch(e => notify(e.message)) }),
+    h("button", { class: "secondary", text: "Mi cuenta NotXunta", onclick: () => setIView("friends") }),
     h("button", { class: "secondary", text: "Cambiar de cuenta", onclick: () => $("#back-launcher").click() })));
 }
 
@@ -1511,7 +1686,7 @@ const OVERLAY_KEY_OPTIONS = [
   ["global-safe", `Desde cualquier programa: ${MOD}+Mayús+Espacio (y Shift+Tab en la app)`],
   ["global-shift-tab", "Desde cualquier programa con Shift+Tab (bloquea Shift+Tab en el resto de programas)"]
 ];
-const SYNC_OPTIONS = [[5, "cada 5 minutos"], [15, "cada 15 minutos"], [30, "cada 30 minutos"], [60, "cada hora"]];
+const SYNC_OPTIONS = [[2, "cada 2 minutos"], [5, "cada 5 minutos"], [10, "cada 10 minutos"], [15, "cada 15 minutos"], [30, "cada 30 minutos"], [60, "cada hora"]];
 
 async function renderSettings(root) {
   clear(root).append(pageTitle("PREFERENCIAS", "Ajustes", "IA del overlay, atajo de teclado y segundo plano."));
@@ -1555,8 +1730,8 @@ async function renderSettings(root) {
     row("Iniciar NotXunta al encender el ordenador", "Abre NotXunta automáticamente al iniciar sesión en Windows, macOS o Linux.", "launchAtStartup"),
     row("Seguir en segundo plano al cerrar la ventana", "NotXunta Client se queda en la bandeja del sistema (junto al reloj, o en la barra de menú en Mac). Para salir del todo, usa «Salir» en su menú.", "keepBackground"),
     row("Buscar novedades en segundo plano", "Comprueba tus aulas sin tener la ventana abierta y te avisa si hay contenido nuevo.", "bgSync", true),
-    h("div", { class: "switch-row" }, h("span", {}, h("b", { text: "Frecuencia de comprobación" }), h("small", { text: "Con menos comprobaciones se gasta menos batería y datos." })), intSel),
-    row("Avisar de mensajes nuevos", "Comprueba tus chats cada minuto mientras NotXunta Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje (de tus aulas y de NotXunta).", "msgNotify"),
+    h("div", { class: "switch-row" }, h("span", {}, h("b", { text: "Frecuencia de comprobación" }), h("small", { text: "Por defecto cada 5 minutos. Además, al volver a la ventana se comprueba todo al momento. Con menos comprobaciones se gasta menos batería y datos." })), intSel),
+    row("Avisar de mensajes nuevos", "Comprueba tus chats cada 30 segundos mientras NotXunta Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje (de tus aulas y de NotXunta).", "msgNotify"),
     row("Avisos emergentes estilo Steam", "Una notificación en la esquina de la pantalla. Si la desactivas se usan las notificaciones normales del sistema.", "toasts"),
     row("Sonido de notificación", "Suena un aviso en todas las notificaciones: emergentes, del sistema y los avisos dentro de la app.", "notifySound"),
     volumeRow(cur.notifyVolume, v => patch({ notifyVolume: v })),
@@ -1632,9 +1807,9 @@ const TUT_STEPS = [
   { tab: "Bienvenida", icon: "👋", title: "Bienvenido a NotXunta Client",
     lead: "Tu Aula Virtual, tus amigos y tus herramientas de estudio en una sola app. Este recorrido dura un minuto; puedes saltarlo cuando quieras y volver a verlo desde Ajustes.",
     points: [["Cuentas y aulas", "conecta tu Aula Virtual y mira cursos, tareas y notas."], ["Overlay", "un navegador sobre cualquier ventana con Shift+Tab."], ["Amigos y archivos", "tu cuenta NotXunta con mensajes y nube."], ["Apariencia y avisos", "personaliza la app y entérate de todo."]] },
-  { tab: "Cuentas y aulas", icon: "▦", title: "Conecta tu Aula Virtual",
+  { tab: "Cuentas y aulas", icon: "cap", title: "Conecta tu Aula Virtual",
     lead: "En «Gestor de cuentas» pulsa «Añadir cuenta» y rellena el nombre, el enlace de tu aula, tu usuario y tu contraseña.",
-    points: [["Contraseña segura", "se guarda cifrada con el almacén seguro de tu sistema y solo se envía a tu aula."], ["Tu aula", "al abrirla tienes Mis cursos, Calendario, Tareas, Calificaciones, Mensajes, Notificaciones y Perfil."], ["Novedades", "lo que es nuevo desde tu última visita aparece marcado como NUEVO; «Sincronizar» vuelve a comprobarlo."], ["Iconos", "pulsa el icono de una cuenta para ponerle un emoji o una imagen."]] },
+    points: [["Contraseña segura", "se guarda cifrada con el almacén seguro de tu sistema y solo se envía a tu aula."], ["Tu aula", "al abrirla tienes Mis cursos, Calendario, Tareas, Calificaciones, Mensajes, Notificaciones y Perfil (con tu descripción y datos del aula original)."], ["Novedades", "lo que es nuevo desde tu última visita aparece marcado como NUEVO; «Sincronizar» vuelve a comprobarlo."], ["Iconos", "pulsa el icono de una cuenta para ponerle un emoji o una imagen."]] },
   { tab: "Overlay", icon: "❖", title: "El overlay: Shift+Tab",
     lead: "Una capa sobre cualquier ventana con Google, Gmail, tu aula original y tu IA favorita. Se abre y se cierra con Shift+Tab.",
     points: [["Pestañas", "«+» o Ctrl+T abre una nueva, Ctrl+W la cierra y Ctrl+Tab cambia de una a otra."], ["IA", "elige la tuya y ábrela con el botón de IA del overlay (se cambia en Ajustes)."], ["Desde cualquier programa", "en Ajustes → Overlay puedes hacer que la tecla funcione en todo el sistema."]] },
@@ -1655,7 +1830,7 @@ function renderTutorial() {
   const tabs = clear($("#tut-tabs"));
   TUT_STEPS.forEach((s, i) => tabs.append(h("button", { type: "button", role: "tab", class: `tut-tab${i === tutIdx ? " on" : ""}`, "aria-selected": String(i === tutIdx), text: s.tab, onclick: () => { tutIdx = i; renderTutorial(); } })));
   clear($("#tut-body")).append(
-    h("div", { class: "tut-icon", text: st.icon }),
+    h("div", { class: "tut-icon" }, st.icon === "cap" ? capIcon("cap-ico big") : st.icon),
     h("div", { class: "tut-text" },
       h("h2", { text: st.title }),
       h("p", { class: "tut-lead", text: st.lead }),

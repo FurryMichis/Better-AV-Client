@@ -10,6 +10,7 @@ NotXunta Client es una aplicación de escritorio gratuita, creada por FurryMichi
 - Correo electrónico (al registrarte con correo, o el que nos facilite Google, Discord o GitHub al iniciar sesión con ellos).
 - Un identificador interno de la cuenta.
 - Nombre de usuario (@usuario) y nombre para mostrar que tú eliges.
+- Si decides personalizar tu perfil: descripción, estado, pronombres, color y banner (opcionales; los ves y los cambias o borras cuando quieras).
 - Tu preferencia «Que mis compañeros me encuentren».
 - Si lo permites: qué usuario eres en cada aula (identificador del aula, identificador de usuario de Moodle y nombre completo), para que tus compañeros que también usan la app puedan encontrarte.
 - Tus solicitudes de amistad y lista de amigos.
@@ -37,7 +38,7 @@ Solo para: identificarte en tu cuenta, permitir que otros usuarios te encuentren
 - **Tu aula virtual** (servidor de la Xunta/Moodle), con la que la app se comunica directamente desde tu ordenador.
 
 ## 5. Quién ve tus datos
-Otros usuarios solo pueden buscarte por tu @usuario o, si has activado «Que mis compañeros me encuentren», verte como compañero de aula, mostrando tu nombre para mostrar y @usuario. Puedes desactivarlo cuando quieras en la app, y los vínculos con las aulas se borran.
+Otros usuarios solo pueden buscarte por tu @usuario o, si has activado «Que mis compañeros me encuentren», verte como compañero de aula, mostrando tu nombre para mostrar y @usuario. Tus amigos (y quien pueda encontrarte) también ven la foto, el estado, los pronombres, la descripción, el color y el banner si los has puesto. Puedes desactivarlo cuando quieras en la app, y los vínculos con las aulas se borran.
 
 ## 6. Conservación y eliminación
 Conservamos tus datos mientras tengas la cuenta. Puedes **eliminar tu cuenta desde la app** («Cuenta y amigos»), lo que borra tu perfil, vínculos y amistades. También puedes pedirlo por correo.

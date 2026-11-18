@@ -1,4 +1,4 @@
-# NotXunta Client 0.7.1
+# NotXunta Client 0.7.2
 
 Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
@@ -46,6 +46,12 @@ Para probar sin compilar: `npm start`.
   activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
 - Las tareas se abren en el navegador para entregarlas (no se suben archivos desde la app).
+
+## Novedades de la 0.7.2
+- **Perfil con la información del aula original**: la página «Perfil» de cada instancia muestra tu descripción, intereses, ciudad, país, centro, departamento, primer/último acceso, campos personalizados, un resumen de cursos y tareas y los datos del aula (nombre, dirección y versión de Moodle). Se lee con `core_user_get_users_by_field` al sincronizar; si tu aula oculta un campo, no se muestra. Botón «Actualizar perfil».
+- **Revisión de novedades más frecuente**: frecuencia por defecto de 5 minutos (antes 15; quien seguía con 15 pasa a 5 una sola vez) con opciones desde cada 2 minutos; mensajes del aula cada 30 s, mensajes NotXunta cada 20 s y amigos cada 90 s. Al volver a la ventana o al despertar el equipo se comprueba todo enseguida (como máximo una vez cada 45 s).
+- **Más personalización de la cuenta NotXunta**: descripción (200 caracteres), estado (60), pronombres, color de perfil y banner, con vista previa en «Cuenta y amigos». Tus amigos ven la tarjeta al pulsar su foto o nombre. **Antes de publicar, ejecuta `supabase/migration-0.7.2.sql`** en Supabase → SQL Editor (añade las columnas y la función `get_profile_card`). Sin ejecutarlo, la app sigue funcionando y avisa de que falta.
+- **Icono**: «Gestor de cuentas», «Mis cursos» y el popup «Conecta tu Aula Virtual» usan solo el gorrito de graduación (SVG propio, sin cara y sin emoji). Hay una copia en `src/assets/cap.svg`.
 
 ## Novedades de la 0.7.1
 - **Volumen de notificación ajustable** en Ajustes → «Segundo plano y avisos» (0–100 %). El valor por defecto baja al 35 % (antes sonaba al máximo).

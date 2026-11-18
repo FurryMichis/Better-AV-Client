@@ -11,7 +11,8 @@ const DEFAULTS = {
   keepBackground: true,   // al cerrar la ventana, seguir en la bandeja
   launchAtStartup: false, // iniciar sesión al arrancar el sistema
   bgSync: true,           // buscar novedades en segundo plano
-  syncMinutes: 15,
+  syncMinutes: 5,         // cada cuántos minutos se buscan novedades en las aulas (0.7.2: antes 15)
+  freqV2: false,          // marca interna: la frecuencia por defecto subió de 15 a 5 min en la 0.7.2 (se aplica una sola vez)
   toasts: true,           // avisos estilo Steam
   notifySound: true,      // sonido en todas las notificaciones
   notifyVolume: 35,       // volumen del sonido de notificación (0–100)
@@ -24,7 +25,7 @@ const DEFAULTS = {
   videoCompat: false      // modo compatible del vídeo de fondo (sin decodificación por hardware; requiere reiniciar)
 };
 const OVERLAY_KEYS = ["focus", "global-safe", "global-shift-tab"];
-const SYNC_CHOICES = [5, 15, 30, 60];
+const SYNC_CHOICES = [2, 5, 10, 15, 30, 60];
 
 const file = () => path.join(app.getPath("userData"), "settings.json");
 let cache = null;
@@ -33,6 +34,8 @@ function load() {
   if (cache) return cache;
   let raw = {};
   try { raw = JSON.parse(fs.readFileSync(file(), "utf8")); } catch { /* primera vez */ }
+  // 0.7.2: quien seguía con los 15 minutos de antes pasa a los 5 nuevos (una sola vez; si luego elige otro valor, se respeta)
+  if (!raw.freqV2) { if (raw.syncMinutes === undefined || Number(raw.syncMinutes) === 15) raw.syncMinutes = DEFAULTS.syncMinutes; raw.freqV2 = true; }
   cache = sanitize({ ...DEFAULTS, ...raw });
   return cache;
 }
@@ -52,6 +55,7 @@ function sanitize(s) {
     legalAccepted: typeof s.legalAccepted === "string" && !Number.isNaN(Date.parse(s.legalAccepted)) ? s.legalAccepted.slice(0, 40) : "",
     accountPrompted: !!s.accountPrompted,
     tutorialDone: !!s.tutorialDone,
+    freqV2: true,
     msgNotify: !!s.msgNotify,
     autoUpdate: s.autoUpdate !== false,
     videoCompat: !!s.videoCompat,

@@ -1,5 +1,5 @@
 "use strict";
-const { app, BrowserWindow, ipcMain, safeStorage, shell, Notification, Tray, Menu, nativeImage, dialog, protocol, session } = require("electron");
+const { app, BrowserWindow, ipcMain, safeStorage, shell, Notification, Tray, Menu, nativeImage, dialog, protocol, session, powerMonitor } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -213,7 +213,7 @@ function announceMessages(acc, multi, fresh) {
 }
 function scheduleMessages(firstDelayMs) {
   clearTimeout(msgTimer);
-  msgTimer = setTimeout(async () => { await pollMessages(); scheduleMessages(); }, firstDelayMs || 60000);
+  msgTimer = setTimeout(async () => { await pollMessages(); scheduleMessages(); }, firstDelayMs || 30000);
 }
 
 // ---------------------------------------------------------------- cuenta NotXunta (nube): vínculos y solicitudes de amistad
@@ -275,7 +275,7 @@ function schedulePresence() {
 function scheduleFriends() {
   clearInterval(friendsTimer);
   setTimeout(() => { pollFriends(); linkAllAccounts(); }, 25000);
-  friendsTimer = setInterval(pollFriends, 3 * 60 * 1000);
+  friendsTimer = setInterval(pollFriends, 90 * 1000);
 }
 
 // Mensajes directos de NotXunta: se comprueban cada 30 s (también con la app en la bandeja) y avisan al llegar uno nuevo.
@@ -322,7 +322,7 @@ async function pollNxMessages() {
 function scheduleNxMessages() {
   clearInterval(nxTimer);
   setTimeout(pollNxMessages, 15000);
-  nxTimer = setInterval(pollNxMessages, 30 * 1000);
+  nxTimer = setInterval(pollNxMessages, 20 * 1000);
 }
 
 // ---------------------------------------------------------------- ajustes sincronizados con la cuenta NotXunta
@@ -448,10 +448,10 @@ function handleToastAction(action) {
   }
 }
 
-let bgTimer = null, bgBusy = false;
+let bgTimer = null, bgBusy = false, lastBgRun = 0, lastQuick = 0;
 async function backgroundSync() {
   if (bgBusy) return;
-  bgBusy = true;
+  bgBusy = true; lastBgRun = Date.now();
   try {
     for (const acc of loadAccounts()) {
       if (bgBlocked.has(acc.id) || acc.needsPassword) continue;
@@ -463,6 +463,16 @@ async function backgroundSync() {
       }
     }
   } finally { bgBusy = false; }
+}
+// Al volver a la ventana (o al despertar el equipo) se comprueba todo enseguida, sin esperar al próximo ciclo.
+// Máximo una vez cada 45 s, y las novedades de las aulas solo si la última búsqueda tiene más de 2 minutos.
+function quickCheck() {
+  if (booting || Date.now() - lastQuick < 45000) return;
+  lastQuick = Date.now();
+  pollMessages().catch(() => {});
+  pollNxMessages().catch(() => {});
+  pollFriends().catch(() => {});
+  if (settings.get().bgSync && Date.now() - lastBgRun > 2 * 60000) backgroundSync().catch(() => {});
 }
 function scheduleBackground(firstDelayMs) {
   clearTimeout(bgTimer);
@@ -669,6 +679,16 @@ handle("friends:find", async (_e, username) => {
   const name = String(username || "").trim().toLowerCase().replace(/^@/, "");
   if (!/^[a-z0-9_]{3,20}$/.test(name)) throw new Error("Escribe un nombre de usuario válido (letras, números y _).");
   const rows = await cloud.rpc("find_user", { p_username: name });
+  return (rows && rows[0]) || null;
+});
+handle("friends:card", async (_e, userId) => {
+  if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
+  let rows;
+  try { rows = await cloud.rpc("get_profile_card", { p_user: userId }); }
+  catch (e) {
+    if (/get_profile_card|PGRST202|Could not find/i.test(String(e && e.message))) throw new Error("Para ver tarjetas de perfil falta ejecutar supabase/migration-0.7.2.sql en Supabase.");
+    throw e;
+  }
   return (rows && rows[0]) || null;
 });
 handle("friends:request", async (_e, userId) => {
@@ -973,6 +993,7 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, "index.html"));
   const reveal = () => { if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) mainWindow.show(); splash.close(); };
   mainWindow.once("ready-to-show", reveal);
+  mainWindow.on("focus", quickCheck);
   setTimeout(reveal, 8000); // por si acaso: nunca se queda la pantalla de inicio para siempre
   mainWindow.on("close", e => {
     if (quitting || !settings.get().keepBackground) return;
@@ -1071,12 +1092,13 @@ if (!app.requestSingleInstanceLock()) {
     createTray();
     createWindow();
     scheduleBackground(30000); // primera búsqueda de novedades poco después de abrir
-    scheduleMessages(20000);   // y la de mensajes nuevos (después, cada minuto)
+    scheduleMessages(20000);   // y la de mensajes nuevos (después, cada 30 s)
     purgeOldDocs();
     updater.schedule(result === "error" || result === "timeout" ? 20000 : null); // si ya se comprobó al arrancar, no se repite enseguida
     scheduleFriends();
     scheduleNxMessages();
     schedulePresence();
+    try { powerMonitor.on("resume", () => setTimeout(quickCheck, 6000)); } catch { /* sin gestor de energía */ }
     sync.schedule(8000);       // trae los ajustes de tu cuenta NotXunta (si has iniciado sesión)
     if (bootNote) setTimeout(() => announce(bootNote.title, bootNote.body, "", "releases"), 3500);
     setTimeout(() => {

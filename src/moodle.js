@@ -123,6 +123,26 @@ class MoodleClient {
   }
 
   siteInfo() { return this.call("core_webservice_get_site_info"); }
+
+  // Perfil del usuario en el aula original (descripción, ciudad, país, intereses, campos personalizados…).
+  // Depende de lo que el aula deje ver: cualquier campo puede faltar.
+  async userProfile(userid) {
+    const r = await this.call("core_user_get_users_by_field", { field: "id", values: [userid] });
+    const u = Array.isArray(r) ? r[0] : null;
+    if (!u) return null;
+    const clip = (v, n) => String(v == null ? "" : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim().slice(0, n);
+    const interests = String(u.interests || "").split(",").map(x => clip(x, 40)).filter(Boolean).slice(0, 30);
+    const custom = (Array.isArray(u.customfields) ? u.customfields : [])
+      .map(f => ({ name: clip(f.name, 60), value: htmlToText(f.value).slice(0, 300) }))
+      .filter(f => f.name && f.value).slice(0, 20);
+    return {
+      description: htmlToText(u.description).slice(0, 3000),
+      email: clip(u.email, 120), city: clip(u.city, 80), country: clip(u.country, 4).toUpperCase(),
+      institution: clip(u.institution, 120), department: clip(u.department, 120),
+      lang: clip(u.lang, 10), interests, custom,
+      firstaccess: Number(u.firstaccess) || 0, lastaccess: Number(u.lastaccess) || 0
+    };
+  }
   courses(userid) { return this.call("core_enrol_get_users_courses", { userid }); }
   courseContents(courseid) { return this.call("core_course_get_contents", { courseid }); }
   assignments(courseids) { return this.call("mod_assign_get_assignments", { courseids }); }
@@ -193,6 +213,21 @@ class MoodleClient {
 // ---------------------------------------------------------------------------
 // Sincronización completa de una cuenta.
 
+// HTML del aula → texto plano (la interfaz solo usa textContent, esto es para que se lea bien).
+const ENTITIES = { nbsp: " ", amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'" };
+function htmlToText(html) {
+  return String(html == null ? "" : html)
+    .replace(/<\s*br\s*\/?>/gi, "\n").replace(/<\/(p|div|h[1-6]|tr|li)>/gi, "\n").replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
+      e = e.toLowerCase();
+      if (ENTITIES[e] !== undefined) return ENTITIES[e];
+      const code = e.startsWith("#x") ? parseInt(e.slice(2), 16) : e.startsWith("#") ? parseInt(e.slice(1), 10) : NaN;
+      return Number.isFinite(code) && code > 31 && code < 0x110000 ? String.fromCodePoint(code) : m;
+    })
+    .replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 const DOC_MODS = new Set(["resource", "folder", "page", "book", "imscp"]);
 const TASK_MODS = new Set(["assign"]);
 
@@ -208,6 +243,7 @@ async function syncAll(client, onProgress = () => {}) {
   const info = await client.siteInfo();
   onProgress("Buscando tus asignaturas…");
   const courses = await client.courses(info.userid);
+  const profile = await client.userProfile(info.userid).catch(() => null); // opcional: si el aula no lo permite, se omite
 
   const assignByCm = {};
   if (courses.length) {
@@ -275,8 +311,8 @@ async function syncAll(client, onProgress = () => {}) {
   });
 
   return {
-    site: { name: info.sitename, url: client.base },
-    user: { id: info.userid, fullname: info.fullname, username: info.username, pic: info.userpictureurl || "" },
+    site: { name: info.sitename, url: client.base, release: String(info.release || "").slice(0, 40), moodleVersion: String(info.version || "").slice(0, 20) },
+    user: { id: info.userid, fullname: info.fullname, username: info.username, pic: info.userpictureurl || "", profile },
     courses: outCourses,
     syncedAt: Date.now()
   };

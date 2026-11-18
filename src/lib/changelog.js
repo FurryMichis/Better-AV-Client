@@ -3,6 +3,16 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.7.2", headline: "Perfil del aula, novedades más rápidas y cuentas más personales",
+    summary: "Tu perfil dentro de la instancia enseña ahora la descripción y los datos de tu aula original, las novedades se revisan con más frecuencia y tu cuenta NotXunta se puede personalizar con descripción, estado, color y banner.",
+    items: [
+      { kind: "new", title: "Perfil con los datos de tu aula original", text: "En «Perfil» (al abrir una instancia) ves tu descripción, intereses, ciudad, país, centro, último acceso, el resumen de tus cursos y tareas y los datos del aula. Se lee al sincronizar; si el aula oculta un dato, no aparece." },
+      { kind: "improve", title: "Revisión de novedades más frecuente", text: "Por defecto se buscan novedades cada 5 minutos (antes 15) y puedes elegir desde cada 2. Los mensajes se comprueban cada 30 s, los de NotXunta cada 20 s y los amigos cada 90 s. Al volver a la ventana o al despertar el equipo se comprueba todo al momento." },
+      { kind: "new", title: "Personaliza tu cuenta NotXunta", text: "En «Cuenta y amigos» puedes poner descripción, estado, pronombres, color de perfil y banner, con vista previa. Tus amigos lo ven al pulsar su foto o nombre. Hay que ejecutar supabase/migration-0.7.2.sql una vez en Supabase." },
+      { kind: "fix", title: "Icono del gorrito", text: "«Gestor de cuentas», «Mis cursos» y el popup «Conecta tu Aula Virtual» usan ahora solo el gorrito de graduación (sin cara y sin emoji)." }
+    ]
+  },
+  {
     version: "0.7.1", headline: "Volumen de notificación y cuenta con política de privacidad",
     summary: "Ahora puedes ajustar el volumen del aviso (por defecto más bajo) y, al crear una cuenta NotXunta, lees y aceptas la política de privacidad y los términos.",
     items: [
