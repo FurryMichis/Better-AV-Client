@@ -1,4 +1,4 @@
-name: Compilar APK de Android
+name: APK Android (NotXunta)
 
 # Genera el APK de NotXunta Client (Capacitor) y lo deja:
 #  · como «artifact» descargable en cada ejecución,
@@ -24,6 +24,7 @@ permissions:
 
 jobs:
   apk:
+    name: Construir APK Android
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:

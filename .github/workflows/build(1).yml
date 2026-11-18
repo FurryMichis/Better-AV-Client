@@ -1,0 +1,103 @@
+name: Compilar NotXunta Client
+
+# Se ejecuta al crear una Release / subir una etiqueta de versión (p. ej. v0.6.5): compila Windows y Linux
+# y SUBE los instaladores a la Release de esa etiqueta (la crea si no existe).
+# A mano (Actions → Run workflow):
+#   · sin escribir nada  → solo deja los instaladores como «artifacts» descargables (no publica).
+#   · escribiendo una etiqueta (p. ej. v0.6.4) → compila y PUBLICA en esa release (sirve para arreglar una release vacía).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Etiqueta donde publicar (p. ej. v0.6.4). Vacío = no publicar"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: --win --x64
+          - os: ubuntu-latest
+            args: --linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Comprobar que la etiqueta coincide con package.json
+        if: ${{ startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag != '' }}
+        shell: bash
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if [ "v$V" != "$TAG" ]; then
+            echo "::error::La etiqueta $TAG no coincide con la versión de package.json ($V). Sube primero package.json con la versión nueva y vuelve a publicar."
+            exit 1
+          fi
+      - run: npm install --no-audit --no-fund
+      - name: Compilar
+        run: npx electron-builder ${{ matrix.args }} --publish never
+      - name: Mostrar lo generado
+        if: always()
+        shell: bash
+        run: ls -la dist || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instaladores-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.AppImage
+            dist/*.deb
+            dist/latest*.yml
+            dist/*.blockmap
+          if-no-files-found: error
+
+  publicar:
+    needs: build
+    # «!cancelled()» = se publica aunque un sistema falle (antes, si fallaba Mac o Linux, NO se publicaba nada, ni Windows).
+    if: ${{ !cancelled() && (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag != '') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: instaladores-*
+          merge-multiple: true
+      - name: Publicar en la Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Etiqueta no válida: $TAG (formato vX.Y.Z)"; exit 1; }
+          shopt -s nullglob
+          files=(dist/*)
+          [ ${#files[@]} -gt 0 ] || { echo "::error::No hay ningún instalador que publicar"; exit 1; }
+          ls -la dist
+
+          # La release tiene que quedar PUBLICADA (ni borrador ni «pre-release»), porque el actualizador solo ve la última release normal.
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$REPO" --draft=false --prerelease=false --latest
+          else
+            gh release create "$TAG" --repo "$REPO" --title "${TAG#v}" --notes "NotXunta Client ${TAG#v}" --latest
+          fi
+          gh release upload "$TAG" "${files[@]}" --repo "$REPO" --clobber
+
+          # Sin estos archivos el actualizador de cada sistema no encuentra la versión nueva.
+          [ -f dist/latest.yml ]       || echo "::warning::Falta latest.yml: Windows NO se actualizará solo"
+          [ -f dist/latest-linux.yml ] || echo "::warning::Falta latest-linux.yml: Linux no se actualizará solo"
+          { echo "### Publicado en $TAG"; gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name' | sed 's/^/- /'; } >> "$GITHUB_STEP_SUMMARY"
