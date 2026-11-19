@@ -5,7 +5,7 @@
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; img-src 'self' data:; media-src nx-media:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NotXunta Client</title>
+  <title>Better AV Client</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="instance.css">
 </head>
@@ -13,7 +13,7 @@
   <div id="bg-layer" data-bg="none"><div id="bg-art"></div><video id="bg-video" loop playsinline preload="auto"></video><canvas id="bg-canvas"></canvas><div id="bg-dim"></div></div>
   <!-- ============ BARRA DE VENTANA PROPIA ============ -->
   <div class="titlebar" id="titlebar">
-    <div class="tb-title"><img src="assets/logo.png" alt=""><span>NotXunta Client</span></div>
+    <div class="tb-title"><img src="assets/logo.png" alt=""><span>Better AV Client</span></div>
     <div class="tb-controls">
       <button class="tb-btn" id="win-min" type="button" title="Minimizar" aria-label="Minimizar"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5.5h8"/></svg></button>
       <button class="tb-btn" id="win-max" type="button" title="Maximizar" aria-label="Maximizar"><svg class="i-max" viewBox="0 0 10 10" aria-hidden="true"><rect x="1.5" y="1.5" width="7" height="7" rx="1"/></svg><svg class="i-restore" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 3V1.5h5.5V7H7"/><rect x="1.5" y="3" width="5.5" height="5.5" rx="1"/></svg></button>
@@ -24,25 +24,25 @@
   <!-- ============ LANZADOR (cuentas) ============ -->
   <div class="app-shell" id="launcher-shell">
     <aside class="sidebar">
-      <div class="brand"><img class="brand-mark" src="assets/logo.png" alt=""><span>NOTXUNTA<span class="brand-light">CLIENT</span></span></div>
+      <div class="brand"><img class="brand-mark" src="assets/logo.png" alt=""><span>BETTER AV<span class="brand-light">CLIENT</span></span></div>
       <div class="side-label">WORKSPACE</div>
       <button class="nav active" data-view="accounts"><span><svg class="cap-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8 63 24 32 40 1 24Z"/><path d="M13 33.5 32 43l19-9.5V47c0 6-8.500 9-19 9s-19-3-19-9Z"/><path d="M57 27h3v18h-3Z"/><path d="M58.500 43l3.500 11h-7Z"/></svg></span> Gestor de cuentas</button>
       <button class="nav" data-view="instances"><span>◈</span> Instancias</button>
       <button class="nav" data-view="cloud"><span>☁</span> Cuenta y amigos<em class="nav-badge" data-badge="friends" hidden></em></button>
-      <button class="nav" data-view="nxmessages"><span>✉</span> Mensajes NotXunta<em class="nav-badge" data-badge="nxmessages" hidden></em></button>
-      <button class="nav" data-view="nxfiles"><span>❐</span> Archivos NotXunta</button>
+      <button class="nav" data-view="nxmessages"><span>✉</span> Mensajes Better AV<em class="nav-badge" data-badge="nxmessages" hidden></em></button>
+      <button class="nav" data-view="nxfiles"><span>❐</span> Archivos Better AV</button>
       <button class="nav" data-view="news"><span>✧</span> Novedades<em class="nav-badge" data-badge="news" hidden>NUEVO</em></button>
       <button class="nav" data-view="appearance"><span>✦</span> Apariencia</button>
       <button class="nav" data-view="settings"><span>⚙</span> Ajustes</button>
       <div class="sidebar-bottom">
         <button class="nav" id="open-overlay"><span>❖</span> Abrir overlay <small class="kbd">Shift+Tab</small></button>
-        <div class="version">NOTXUNTA CLIENT <span>v0.7.2</span></div>
+        <div class="version">BETTER AV CLIENT <span>v0.8.0</span></div>
       </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
-        <div class="breadcrumb">NOTXUNTA CLIENT <span>/</span> <b id="crumb">GESTOR DE CUENTAS</b></div>
+        <div class="breadcrumb">BETTER AV CLIENT <span>/</span> <b id="crumb">GESTOR DE CUENTAS</b></div>
         <div class="top-actions"><div class="sound-ctl" hidden></div><div class="zoom-ctl"></div><span class="status-dot"></span><span>Cliente local</span><div class="avatar" id="launcher-avatar">AC</div></div>
       </header>
       <div class="scroller">
@@ -81,7 +81,7 @@
   <!-- ============ INSTANCIA (aula virtual) ============ -->
   <div class="app-shell" id="instance-shell" hidden>
     <aside class="sidebar">
-      <div class="brand"><img class="brand-mark" src="assets/logo.png" alt=""><span>NOTXUNTA<span class="brand-light">CLIENT</span></span></div>
+      <div class="brand"><img class="brand-mark" src="assets/logo.png" alt=""><span>BETTER AV<span class="brand-light">CLIENT</span></span></div>
       <div class="inst-head"><span class="moodle-icon sm" id="inst-icon">M</span><div class="side-label" id="inst-name">AULA</div></div>
       <button class="nav active" data-iview="courses"><span><svg class="cap-ico" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8 63 24 32 40 1 24Z"/><path d="M13 33.5 32 43l19-9.5V47c0 6-8.500 9-19 9s-19-3-19-9Z"/><path d="M57 27h3v18h-3Z"/><path d="M58.500 43l3.500 11h-7Z"/></svg></span> Mis cursos</button>
       <button class="nav" data-iview="calendar"><span>◷</span> Calendario</button>
@@ -89,7 +89,7 @@
       <button class="nav" data-iview="grades"><span>★</span> Calificaciones</button>
       <button class="nav" data-iview="messages"><span>✉</span> Mensajes<em class="nav-badge" id="badge-messages" hidden></em></button>
       <button class="nav" data-iview="notifications"><span>⚑</span> Notificaciones</button>
-      <button class="nav" data-iview="files"><span>❐</span> Archivos NotXunta</button>
+      <button class="nav" data-iview="files"><span>❐</span> Archivos Better AV</button>
       <button class="nav" data-iview="friends"><span>♥</span> Amigos<em class="nav-badge" data-badge="friends" hidden></em></button>
       <button class="nav" data-iview="profile"><span>☺</span> Perfil</button>
       <button class="nav" data-iview="appearance"><span>✦</span> Apariencia</button>
@@ -148,7 +148,7 @@
 
   <dialog id="pw-dialog">
     <form method="dialog" id="pw-form">
-      <div class="dialog-head"><div><div class="eyebrow">AULA IMPORTADA DE TU CUENTA NOTXUNTA</div><h2 id="pw-title">Contraseña del aula</h2></div><button class="close" type="button" id="pw-close" aria-label="Cerrar">×</button></div>
+      <div class="dialog-head"><div><div class="eyebrow">AULA IMPORTADA DE TU CUENTA BETTER AV</div><h2 id="pw-title">Contraseña del aula</h2></div><button class="close" type="button" id="pw-close" aria-label="Cerrar">×</button></div>
       <p class="muted dlg-text" id="pw-text"></p>
       <label>Contraseña<input id="pw-input" type="password" autocomplete="current-password" placeholder="Tu contraseña del aula" required></label>
       <div class="form-hint">Las contraseñas nunca se sincronizan: se piden una vez en cada ordenador y se guardan cifradas con el almacén seguro de tu sistema.</div>
@@ -203,10 +203,10 @@
     </form>
   </dialog>
 
-  <dialog id="legal-dialog" class="legal" aria-label="Crea tu cuenta NotXunta">
+  <dialog id="legal-dialog" class="legal" aria-label="Crea tu cuenta Better AV">
     <div class="legal-head">
-      <div class="eyebrow" id="legal-eyebrow">CUENTA NOTXUNTA</div>
-      <h2 id="legal-title">Crea tu cuenta NotXunta</h2>
+      <div class="eyebrow" id="legal-eyebrow">CUENTA BETTER AV</div>
+      <h2 id="legal-title">Crea tu cuenta Better AV</h2>
       <p class="muted">Para tener amigos, mensajes, archivos y tus ajustes en cualquier ordenador. Antes de empezar, lee y acepta la política de privacidad y los términos.</p>
     </div>
     <div class="legal-scroll" id="legal-scroll" tabindex="0" aria-label="Política de privacidad y términos del servicio"></div>

@@ -27,16 +27,16 @@ function init(d) {
   autoUpdater.on("update-available", info => {
     if (manualOnly()) {
       set({ state: "available", version: info.version, percent: 0, message: `Hay una versión nueva: ${info.version}. En Linux .deb, actualiza desde el gestor de paquetes.` });
-      deps.notify("Nueva versión disponible", `NotXunta Client ${info.version}: actualiza desde el gestor de paquetes.`, "app");
+      deps.notify("Nueva versión disponible", `Better AV Client ${info.version}: actualiza desde el gestor de paquetes.`, "app");
       return;
     }
     set({ state: "downloading", version: info.version, percent: 0, message: `Descargando la versión ${info.version}…` });
-    deps.notify("Actualización disponible", `Descargando NotXunta Client ${info.version} en segundo plano.`, "app");
+    deps.notify("Actualización disponible", `Descargando Better AV Client ${info.version} en segundo plano.`, "app");
   });
   autoUpdater.on("download-progress", p => set({ state: "downloading", percent: Math.round(p.percent || 0), message: `Descargando la versión ${status.version}… ${Math.round(p.percent || 0)} %` }));
   autoUpdater.on("update-downloaded", info => {
     set({ state: "ready", version: info.version, percent: 100, message: `La versión ${info.version} está lista.` });
-    deps.notify("Actualización lista", `NotXunta Client ${info.version}: pulsa para reiniciar e instalar (o se instalará al cerrar).`, "update");
+    deps.notify("Actualización lista", `Better AV Client ${info.version}: pulsa para reiniciar e instalar (o se instalará al cerrar).`, "update");
   });
   autoUpdater.on("error", e => set({ state: "error", message: `No se pudo comprobar: ${(e && e.message || "error").split("\n")[0].slice(0, 160)}` }));
 }

@@ -1,4 +1,4 @@
-# NotXunta Client 0.7.2
+# Better AV Client 0.8.0
 
 Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
@@ -7,8 +7,8 @@ Necesitas Node.js LTS e internet. Cada sistema se compila **desde ese mismo sist
 
 | Sistema | Cómo | Resultado en `dist/` |
 |---|---|---|
-| Windows 10/11 | doble clic en `build.bat` (o `npm install` + `npm run dist`) | `NotXuntaClient-Setup.exe` (instalador), `NotXuntaClient-Portable.exe`, `latest.yml` y `.blockmap` |
-| Linux | `./build.sh` (o `npm run dist:linux`) | `NotXuntaClient-Linux-x64.AppImage` y `.deb` |
+| Windows 10/11 | doble clic en `build.bat` (o `npm install` + `npm run dist`) | `BetterAVClient-Setup.exe` (instalador), `BetterAVClient-Portable.exe`, `latest.yml` y `.blockmap` |
+| Linux | `./build.sh` (o `npm run dist:linux`) | `BetterAVClient-Linux-x64.AppImage` y `.deb` |
 
 Para probar sin compilar: `npm start`.
 
@@ -47,15 +47,21 @@ Para probar sin compilar: `npm start`.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
 - Las tareas se abren en el navegador para entregarlas (no se suben archivos desde la app).
 
+## Novedades de la 0.8.0
+
+- **Nuevo nombre: Better AV Client** (antes NotXunta Client). El repositorio pasa a `Better-AV-Client` y los instaladores a `BetterAVClient-Setup.exe`, `BetterAVClient-Portable.exe` y `BetterAVClient-Linux-x64.*`. Se conservan el identificador interno de la app (`com.notxunta.client`) y la carpeta de datos anterior, así que las aulas, los ajustes y la sesión siguen donde estaban y las actualizaciones automáticas siguen funcionando.
+- **Grupos de chat** en «Mensajes Better AV»: hasta 25 personas (solo amigos), 20 grupos por persona. Quien lo crea gestiona miembros y nombre; cualquiera puede salir. **Ejecuta `supabase/migration-0.8.0.sql`** en el SQL Editor de Supabase para activarlos.
+- El inicio de sesión con Google, Discord y GitHub no cambia (mismas URLs de redirección); solo conviene actualizar el nombre de la app en cada proveedor.
+
 ## Novedades de la 0.7.2
 - **Perfil con la información del aula original**: la página «Perfil» de cada instancia muestra tu descripción, intereses, ciudad, país, centro, departamento, primer/último acceso, campos personalizados, un resumen de cursos y tareas y los datos del aula (nombre, dirección y versión de Moodle). Se lee con `core_user_get_users_by_field` al sincronizar; si tu aula oculta un campo, no se muestra. Botón «Actualizar perfil».
-- **Revisión de novedades más frecuente**: frecuencia por defecto de 5 minutos (antes 15; quien seguía con 15 pasa a 5 una sola vez) con opciones desde cada 2 minutos; mensajes del aula cada 30 s, mensajes NotXunta cada 20 s y amigos cada 90 s. Al volver a la ventana o al despertar el equipo se comprueba todo enseguida (como máximo una vez cada 45 s).
-- **Más personalización de la cuenta NotXunta**: descripción (200 caracteres), estado (60), pronombres, color de perfil y banner, con vista previa en «Cuenta y amigos». Tus amigos ven la tarjeta al pulsar su foto o nombre. **Antes de publicar, ejecuta `supabase/migration-0.7.2.sql`** en Supabase → SQL Editor (añade las columnas y la función `get_profile_card`). Sin ejecutarlo, la app sigue funcionando y avisa de que falta.
+- **Revisión de novedades más frecuente**: frecuencia por defecto de 5 minutos (antes 15; quien seguía con 15 pasa a 5 una sola vez) con opciones desde cada 2 minutos; mensajes del aula cada 30 s, mensajes Better AV cada 20 s y amigos cada 90 s. Al volver a la ventana o al despertar el equipo se comprueba todo enseguida (como máximo una vez cada 45 s).
+- **Más personalización de la cuenta Better AV**: descripción (200 caracteres), estado (60), pronombres, color de perfil y banner, con vista previa en «Cuenta y amigos». Tus amigos ven la tarjeta al pulsar su foto o nombre. **Antes de publicar, ejecuta `supabase/migration-0.7.2.sql`** en Supabase → SQL Editor (añade las columnas y la función `get_profile_card`). Sin ejecutarlo, la app sigue funcionando y avisa de que falta.
 - **Icono**: «Gestor de cuentas», «Mis cursos» y el popup «Conecta tu Aula Virtual» usan solo el gorrito de graduación (SVG propio, sin cara y sin emoji). Hay una copia en `src/assets/cap.svg`.
 
 ## Novedades de la 0.7.1
 - **Volumen de notificación ajustable** en Ajustes → «Segundo plano y avisos» (0–100 %). El valor por defecto baja al 35 % (antes sonaba al máximo).
-- **Popup de inicio «Crea tu cuenta NotXunta»**: muestra en un desplazable la política de privacidad y los términos (los `PRIVACY.md` y `TERMS.md` de este repositorio, leídos de GitHub; sin conexión usa la última copia o la que lleva la app en `src/legal/`). Hay que aceptarlos para crear la cuenta o entrar en ella; «Ahora no» lo deja para más tarde.
+- **Popup de inicio «Crea tu cuenta Better AV»**: muestra en un desplazable la política de privacidad y los términos (los `PRIVACY.md` y `TERMS.md` de este repositorio, leídos de GitHub; sin conexión usa la última copia o la que lleva la app en `src/legal/`). Hay que aceptarlos para crear la cuenta o entrar en ella; «Ahora no» lo deja para más tarde.
 
 ## Novedades de la 0.7.0
 - **Versión para Android (APK)**, generada con GitHub Actions desde la carpeta `mobile/` (ver `mobile/LEEME-ANDROID.md`). La app de escritorio no cambia.
@@ -71,8 +77,8 @@ Para probar sin compilar: `npm start`.
 - **Mejora**: sin desenfoque en las tarjetas que se desplazan (menos tirones).
 
 ## Novedades de la 0.6.7
-- **Mensajes NotXunta**: arreglado el chat que se estiraba sin límite; ahora el historial se desplaza por dentro.
-- **Aviso de mensajes NotXunta**: notificación (o aviso dentro de la app) cuando un amigo te escribe, y el contador se actualiza solo.
+- **Mensajes Better AV**: arreglado el chat que se estiraba sin límite; ahora el historial se desplaza por dentro.
+- **Aviso de mensajes Better AV**: notificación (o aviso dentro de la app) cuando un amigo te escribe, y el contador se actualiza solo.
 
 ## Novedades de la 0.6.5 — actualizaciones fiables
 - **Freno anti-bucle**: si tras reiniciar para actualizar la app sigue en la versión anterior, ya no repite la instalación en bucle (solo reintenta pasadas 24 h) y avisa con un enlace a la página de versiones.
@@ -93,13 +99,13 @@ Para probar sin compilar: `npm start`.
 
 ## Novedades de la 0.6.2 — arreglos
 - **Arreglado**: la pestaña «Cuenta y amigos» salía vacía (solo el título) y «Apariencia» no se abría. Causa: el interruptor «Mostrar cuando estoy en línea» (0.6.1) estaba definido en la función equivocada, así que al dibujar la pantalla saltaba un error. Además, si una parte de «Cuenta y amigos» falla, ahora se muestra el motivo en vez de dejar la pantalla en blanco.
-- **Quitados los archivos privados del aula virtual** (Área personal → Archivos privados de Moodle). «Archivos» ahora es solo **Archivos NotXunta** (tu cuenta, Supabase Storage). No hace falta ejecutar ningún SQL nuevo: sigue valiendo `supabase/migration-0.6.1.sql`.
+- **Quitados los archivos privados del aula virtual** (Área personal → Archivos privados de Moodle). «Archivos» ahora es solo **Archivos Better AV** (tu cuenta, Supabase Storage). No hace falta ejecutar ningún SQL nuevo: sigue valiendo `supabase/migration-0.6.1.sql`.
 
 ## Novedades de la 0.6.1 — amigos en línea y archivos
 - **Estado «en línea» entre amigos**: en «Amigos» aparece un punto verde junto a quien tiene la app abierta (o «Visto hace 5 min»). Solo lo ven los amigos aceptados. Se desactiva en «Cuenta y amigos» → «Mostrar cuando estoy en línea». La app avisa cada 45 s; si se cierra o se apaga el PC, el punto desaparece en unos 2 minutos.
 - ~~**Archivos privados del aula**~~ _(quitado en la 0.6.2)_ (sección «Archivos» dentro del aula): lista (con carpetas), abrir, subir y eliminar los archivos de *Área personal → Archivos privados* de Moodle, con la barra de espacio usado y el límite del aula (`userquota`) y el máximo por archivo. Antes de subir se comprueba que cabe.
   - Depende de lo que permita cada aula: si tiene desactivado el acceso a archivos privados desde aplicaciones externas, la app lo explica. Borrar necesita una función de Moodle que no todas las aulas ofrecen; si no se puede, la app lo avisa y hay que borrar desde la web. **No se ha podido probar contra el Aula Virtual real de la Xunta**: pruébalo con un archivo de prueba.
-- **Archivos NotXunta** (también en el menú del lanzador): archivos privados guardados en tu cuenta (Supabase Storage). Se ven desde cualquier ordenador; subir, abrir, «Guardar como…» y eliminar. Límites por defecto: 100 MB por cuenta y 25 MB por archivo (se cambian en `supabase/migration-0.6.1.sql`: `nx_quota()` y `nx_max_file()`; y el límite por archivo del bucket, una línea más abajo).
+- **Archivos Better AV** (también en el menú del lanzador): archivos privados guardados en tu cuenta (Supabase Storage). Se ven desde cualquier ordenador; subir, abrir, «Guardar como…» y eliminar. Límites por defecto: 100 MB por cuenta y 25 MB por archivo (se cambian en `supabase/migration-0.6.1.sql`: `nx_quota()` y `nx_max_file()`; y el límite por archivo del bucket, una línea más abajo).
 - **Actualiza el servidor antes de publicar**: ejecuta `supabase/migration-0.6.1.sql` en Supabase → SQL Editor (crea el estado en línea, el bucket privado `nx-files` y sus reglas). Sin esto la app sigue funcionando, pero esas dos funciones avisarán de que falta.
 - Ojo con el plan gratuito de Supabase: 1 GB de Storage en total para todos los usuarios.
 
@@ -114,8 +120,8 @@ Para probar sin compilar: `npm start`.
 
 ## Novedades de la 0.5.6
 - **Pantalla de inicio**: antes de abrir la app aparece un recuadro con el logo y «Buscando actualizaciones…». Si hay una versión nueva se descarga ahí mismo (con barra de progreso y botón «Continuar sin actualizar») y se instala sola al terminar. Sin conexión o con la app sin instalar (`npm start`, portable) se abre igualmente.
-- **Foto de perfil** de la cuenta NotXunta: «Poner foto / Cambiar foto / Quitar foto» en «Cuenta y amigos». Se ve en tu perfil, en la barra superior del lanzador y en las listas de amigos.
-- **Ajustes sincronizados con la cuenta NotXunta**: fondo (imagen), oscurecimiento, color de acento, sonido, IA elegida, avisos, segundo plano y tus aulas se suben solos y se importan al iniciar sesión en otro ordenador (gana siempre el cambio más reciente). **Las contraseñas del aula nunca se suben**: las aulas importadas piden su contraseña una vez en cada ordenador. No se sincronizan los ajustes que dependen del equipo: tamaño de la interfaz, atajo del overlay, modo compatible de vídeo ni el archivo del vídeo de fondo (pesa hasta 1 GB).
+- **Foto de perfil** de la cuenta Better AV: «Poner foto / Cambiar foto / Quitar foto» en «Cuenta y amigos». Se ve en tu perfil, en la barra superior del lanzador y en las listas de amigos.
+- **Ajustes sincronizados con la cuenta Better AV**: fondo (imagen), oscurecimiento, color de acento, sonido, IA elegida, avisos, segundo plano y tus aulas se suben solos y se importan al iniciar sesión en otro ordenador (gana siempre el cambio más reciente). **Las contraseñas del aula nunca se suben**: las aulas importadas piden su contraseña una vez en cada ordenador. No se sincronizan los ajustes que dependen del equipo: tamaño de la interfaz, atajo del overlay, modo compatible de vídeo ni el archivo del vídeo de fondo (pesa hasta 1 GB).
 - Arreglado: en «Amigos» y en «Apariencia» aparecía el texto «false» (varias veces seguidas) cuando una sección estaba vacía.
 - Arreglado: en «Cuenta y amigos» del lanzador los apartados salían duplicados al volver a entrar en la pestaña.
 - **Actualiza el servidor antes de publicar**: ejecuta `supabase/migration-0.5.6.sql` en Supabase → SQL Editor (añade la foto y la tabla de ajustes). Sin esto la app sigue funcionando, pero la foto y la sincronización darán error.
@@ -138,7 +144,7 @@ La app instalada busca actualizaciones al abrir y cada 6 horas, las descarga en 
 Usa GitHub Releases (gratis):
 1. Crea un repositorio y pon tu usuario en `package.json` → `build.publish[0].owner` (y `repo` si lo llamas distinto).
 2. Sube la versión en `package.json` (p. ej. `0.6.1`) y ejecuta `npm run dist`.
-3. Crea una *Release* en GitHub con la etiqueta `v0.6.1` y sube de `dist/`: `NotXuntaClient-Setup.exe`, `NotXuntaClient-Setup.exe.blockmap` y `latest.yml`.
+3. Crea una *Release* en GitHub con la etiqueta `v0.6.1` y sube de `dist/`: `BetterAVClient-Setup.exe`, `BetterAVClient-Setup.exe.blockmap` y `latest.yml`.
    (Alternativa automática: `set GH_TOKEN=tu_token` y `npm run release`.) Si el repositorio es privado, las actualizaciones no funcionan sin token: usa uno público.
 4. Las apps instaladas con versión anterior se actualizan solas. **Esta versión (0.6.1) se actualiza sola desde la 0.5.5 en adelante; las anteriores a la primera con actualizador hay que instalarlas a mano una vez**; a partir de ahí, todo automático.
 
@@ -149,15 +155,15 @@ Usa GitHub Releases (gratis):
 
 ### Notas por sistema
 - **Windows**: sin firmar, SmartScreen mostrará «Windows protegió su PC» → *Más información → Ejecutar de todas formas*.
-- **macOS**: la app no está firmada ni notarizada (hace falta una cuenta de Apple Developer, 99 USD/año). Al abrirla: clic derecho → *Abrir*. Si en un Mac con Apple Silicon sale «está dañada», ejecuta en la Terminal `xattr -cr "/Applications/NotXunta Client.app"`. Las actualizaciones no son automáticas: la app avisa y abre la página de descarga. No se ha probado en un Mac real: revisa especialmente la bandeja (barra de menú) y los avisos emergentes.
-- **Linux**: AppImage (`chmod +x NotXuntaClient-Linux-x64.AppImage` y doble clic) o `.deb` (`sudo apt install ./NotXuntaClient-Linux-x64.deb`). En Ubuntu 23.10+/24.04 el AppImage puede negarse a arrancar por la restricción de «user namespaces»: ejecútalo con `--no-sandbox` o usa el `.deb`. Para guardar contraseñas necesitas un llavero (GNOME Keyring o KWallet, que casi todos los escritorios ya traen). El icono de bandeja en GNOME necesita la extensión *AppIndicator*. El atajo global (Shift+Tab / ⌃⇧Espacio «desde cualquier programa») no funciona en Wayland: usa «Solo con NotXunta Client en primer plano».
+- **macOS**: la app no está firmada ni notarizada (hace falta una cuenta de Apple Developer, 99 USD/año). Al abrirla: clic derecho → *Abrir*. Si en un Mac con Apple Silicon sale «está dañada», ejecuta en la Terminal `xattr -cr "/Applications/Better AV Client.app"`. Las actualizaciones no son automáticas: la app avisa y abre la página de descarga. No se ha probado en un Mac real: revisa especialmente la bandeja (barra de menú) y los avisos emergentes.
+- **Linux**: AppImage (`chmod +x BetterAVClient-Linux-x64.AppImage` y doble clic) o `.deb` (`sudo apt install ./BetterAVClient-Linux-x64.deb`). En Ubuntu 23.10+/24.04 el AppImage puede negarse a arrancar por la restricción de «user namespaces»: ejecútalo con `--no-sandbox` o usa el `.deb`. Para guardar contraseñas necesitas un llavero (GNOME Keyring o KWallet, que casi todos los escritorios ya traen). El icono de bandeja en GNOME necesita la extensión *AppIndicator*. El atajo global (Shift+Tab / ⌃⇧Espacio «desde cualquier programa») no funciona en Wayland: usa «Solo con Better AV Client en primer plano».
 
-## Cuentas NotXunta y amigos
-Cuenta propia de NotXunta Client, **independiente del aula virtual**: se crea con correo y contraseña o con Google / Discord / GitHub. Con ella:
-- En cada curso hay una pestaña **Participantes**; junto a cada persona que también usa NotXunta Client aparece **＋ Añadir amigo** (las que no, indican «Sin NotXunta Client»).
+## Cuentas Better AV y amigos
+Cuenta propia de Better AV Client, **independiente del aula virtual**: se crea con correo y contraseña o con Google / Discord / GitHub. Con ella:
+- En cada curso hay una pestaña **Participantes**; junto a cada persona que también usa Better AV Client aparece **＋ Añadir amigo** (las que no, indican «Sin Better AV Client»).
 - «Amigos» (barra lateral del aula) y «Cuenta y amigos» (pantalla principal): solicitudes recibidas/enviadas, lista de amigos y búsqueda por nombre de usuario. Avisa cuando llega una solicitud.
 - Privacidad: solo se guarda correo, usuario, nombre para mostrar, tu foto de perfil, tus ajustes de apariencia/app, la lista de tus aulas (nombre, enlace y usuario) y, si lo permites, qué usuario eres en cada aula (para que te encuentren). **Nunca se envían contraseñas ni contenido del aula.** Se puede desactivar «Que mis compañeros me encuentren» y eliminar la cuenta desde la app.
-- Limitación: el vínculo «esta cuenta es tal usuario del aula» lo declara la propia persona y no se verifica contra el aula; por eso se muestra también su @usuario de NotXunta.
+- Limitación: el vínculo «esta cuenta es tal usuario del aula» lo declara la propia persona y no se verifica contra el aula; por eso se muestra también su @usuario de Better AV.
 
 ### Puesta en marcha del servidor (una vez, gratis con Supabase)
 _(Si ya lo tenías montado con la 0.5.5, basta con ejecutar `supabase/migration-0.5.6.sql` en el SQL Editor.)_
@@ -184,8 +190,8 @@ Sin el paso 6 la app funciona igual, pero «Cuenta y amigos» avisa de que no ha
 
 ## 0.6.6 · Inicio automático, mensajería y actualizaciones
 
-- En **Ajustes → Segundo plano y avisos** puedes activar «Iniciar NotXunta al encender el ordenador». Windows usa los elementos de inicio de sesión; Linux crea un archivo `.desktop` en `~/.config/autostart`.
-- La mensajería directa está disponible entre amistades aceptadas desde **Cuenta NotXunta y amigos → Mensaje**. Para activarla, ejecuta `supabase/migration-0.6.6.sql` en Supabase → SQL Editor. Los mensajes se limitan a 2.000 caracteres y las políticas RLS restringen lectura y envío a los participantes/amigos.
+- En **Ajustes → Segundo plano y avisos** puedes activar «Iniciar Better AV al encender el ordenador». Windows usa los elementos de inicio de sesión; Linux crea un archivo `.desktop` en `~/.config/autostart`.
+- La mensajería directa está disponible entre amistades aceptadas desde **Cuenta Better AV y amigos → Mensaje**. Para activarla, ejecuta `supabase/migration-0.6.6.sql` en Supabase → SQL Editor. Los mensajes se limitan a 2.000 caracteres y las políticas RLS restringen lectura y envío a los participantes/amigos.
 - **Windows instalado** y **Linux AppImage** descargan e instalan actualizaciones con `electron-updater`. Linux `.deb` debe actualizarse con el gestor de paquetes.
 - Publica versiones creando una etiqueta `vX.Y.Z` que coincida con `package.json`; el workflow compila y adjunta los metadatos `latest*.yml` a GitHub Releases.
 - **Fin de la compatibilidad con macOS**: desde esta versión no se compila ni se publica la versión para Mac, ni habrá actualizaciones para ella.

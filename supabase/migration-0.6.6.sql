@@ -1,4 +1,4 @@
--- NotXunta Client 0.6.6 · Mensajería directa entre amigos
+-- Better AV Client 0.6.6 · Mensajería directa entre amigos
 -- Ejecutar en Supabase → SQL Editor → Run. Se puede ejecutar más de una vez.
 
 create table if not exists public.direct_messages (

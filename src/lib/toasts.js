@@ -61,7 +61,7 @@ function hide() {
 // payload: { title, body, icon?, action? }  (action: "app" | "overlay" | "messages:<idCuenta>")
 function show(payload) {
   const clean = {
-    title: String(payload.title || "NotXunta Client").slice(0, 80),
+    title: String(payload.title || "Better AV Client").slice(0, 80),
     body: String(payload.body || "").slice(0, 200),
     // Icono: una imagen «data:» sencilla (png/jpeg/gif/webp) o un texto corto/emoji. Nada que pueda salirse del CSS.
     icon: typeof payload.icon === "string"

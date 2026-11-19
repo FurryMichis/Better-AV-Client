@@ -1,5 +1,5 @@
 "use strict";
-// «Archivos NotXunta»: archivos privados guardados en tu cuenta NotXunta (Supabase Storage, bucket privado «nx-files»).
+// «Archivos Better AV»: archivos privados guardados en tu cuenta Better AV (Supabase Storage, bucket privado «nx-files»).
 // Se ven desde cualquier ordenador donde inicies sesión. Cada cuenta solo puede tocar su propia carpeta (reglas en
 // supabase/migration-0.6.1.sql). Los límites (por archivo y por cuenta) los marca el servidor y la app solo los lee.
 

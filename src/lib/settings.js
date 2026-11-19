@@ -17,7 +17,7 @@ const DEFAULTS = {
   notifySound: true,      // sonido en todas las notificaciones
   notifyVolume: 35,       // volumen del sonido de notificación (0–100)
   legalAccepted: "",      // fecha (ISO) en que se aceptaron la política de privacidad y los términos; vacío = no aceptados
-  accountPrompted: false, // ya se mostró el popup de inicio «Crea tu cuenta NotXunta»
+  accountPrompted: false, // ya se mostró el popup de inicio «Crea tu cuenta Better AV»
   tutorialDone: false,    // el tutorial de la primera vez ya se vio (o se saltó) en este dispositivo
   msgNotify: true,        // avisar de mensajes nuevos (se comprueba cada minuto)
   autoUpdate: true,       // buscar e instalar actualizaciones automáticamente

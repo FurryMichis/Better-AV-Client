@@ -1,5 +1,5 @@
 "use strict";
-// Sincronización de ajustes entre ordenadores con la cuenta NotXunta (tabla user_settings en Supabase).
+// Sincronización de ajustes entre ordenadores con la cuenta Better AV (tabla user_settings en Supabase).
 // Tres secciones independientes, cada una con su marca de tiempo (gana la modificación más reciente):
 //   look     → fondo (imagen), oscurecimiento, color de acento, sonido
 //   prefs    → ajustes de la app (IA elegida, avisos, segundo plano…)

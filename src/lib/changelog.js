@@ -3,44 +3,53 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.8.0", headline: "Better AV Client y grupos de chat",
+    summary: "NotXunta Client pasa a llamarse Better AV Client, y los mensajes de tu cuenta Better AV ahora admiten grupos con tus amigos.",
+    items: [
+      { kind: "new", title: "Grupos de chat", text: "En «Mensajes Better AV» pulsa «＋ Nuevo grupo», ponle nombre y elige a tus amigos (hasta 25 personas). Quien crea el grupo puede cambiar el nombre, añadir o quitar gente y borrarlo; cualquiera puede salirse. Los grupos avisan de mensajes nuevos y cuentan en el contador de la barra lateral." },
+      { kind: "improve", title: "Nuevo nombre", text: "El cliente pasa a llamarse Better AV Client, y tu cuenta, tus mensajes y tus archivos son ahora «Better AV». Tus aulas, ajustes y sesión se conservan tal cual." },
+      { kind: "improve", title: "Servidor", text: "Esta versión incluye supabase/migration-0.8.0.sql (tablas y permisos de los grupos). Ejecútalo una vez en Supabase → SQL Editor para activar los grupos." }
+    ]
+  },
+  {
     version: "0.7.2", headline: "Perfil del aula, novedades más rápidas y cuentas más personales",
-    summary: "Tu perfil dentro de la instancia enseña ahora la descripción y los datos de tu aula original, las novedades se revisan con más frecuencia y tu cuenta NotXunta se puede personalizar con descripción, estado, color y banner.",
+    summary: "Tu perfil dentro de la instancia enseña ahora la descripción y los datos de tu aula original, las novedades se revisan con más frecuencia y tu cuenta Better AV se puede personalizar con descripción, estado, color y banner.",
     items: [
       { kind: "new", title: "Perfil con los datos de tu aula original", text: "En «Perfil» (al abrir una instancia) ves tu descripción, intereses, ciudad, país, centro, último acceso, el resumen de tus cursos y tareas y los datos del aula. Se lee al sincronizar; si el aula oculta un dato, no aparece." },
-      { kind: "improve", title: "Revisión de novedades más frecuente", text: "Por defecto se buscan novedades cada 5 minutos (antes 15) y puedes elegir desde cada 2. Los mensajes se comprueban cada 30 s, los de NotXunta cada 20 s y los amigos cada 90 s. Al volver a la ventana o al despertar el equipo se comprueba todo al momento." },
-      { kind: "new", title: "Personaliza tu cuenta NotXunta", text: "En «Cuenta y amigos» puedes poner descripción, estado, pronombres, color de perfil y banner, con vista previa. Tus amigos lo ven al pulsar su foto o nombre. Hay que ejecutar supabase/migration-0.7.2.sql una vez en Supabase." },
+      { kind: "improve", title: "Revisión de novedades más frecuente", text: "Por defecto se buscan novedades cada 5 minutos (antes 15) y puedes elegir desde cada 2. Los mensajes se comprueban cada 30 s, los de Better AV cada 20 s y los amigos cada 90 s. Al volver a la ventana o al despertar el equipo se comprueba todo al momento." },
+      { kind: "new", title: "Personaliza tu cuenta Better AV", text: "En «Cuenta y amigos» puedes poner descripción, estado, pronombres, color de perfil y banner, con vista previa. Tus amigos lo ven al pulsar su foto o nombre. Hay que ejecutar supabase/migration-0.7.2.sql una vez en Supabase." },
       { kind: "fix", title: "Icono del gorrito", text: "«Gestor de cuentas», «Mis cursos» y el popup «Conecta tu Aula Virtual» usan ahora solo el gorrito de graduación (sin cara y sin emoji)." }
     ]
   },
   {
     version: "0.7.1", headline: "Volumen de notificación y cuenta con política de privacidad",
-    summary: "Ahora puedes ajustar el volumen del aviso (por defecto más bajo) y, al crear una cuenta NotXunta, lees y aceptas la política de privacidad y los términos.",
+    summary: "Ahora puedes ajustar el volumen del aviso (por defecto más bajo) y, al crear una cuenta Better AV, lees y aceptas la política de privacidad y los términos.",
     items: [
       { kind: "new", title: "Volumen de notificación ajustable", text: "En Ajustes → «Segundo plano y avisos» hay un deslizador de 0 a 100 % y el botón «Probar sonido» usa ese volumen." },
       { kind: "improve", title: "Sonido más bajo por defecto", text: "El aviso ya no suena al máximo: por defecto está al 35 %. Puedes subirlo cuando quieras." },
-      { kind: "new", title: "Popup «Crea tu cuenta NotXunta»", text: "Al abrir la app sin cuenta aparece un popup con la política de privacidad y los términos en un desplazable. Hay que aceptarlos para crear la cuenta o entrar; «Ahora no» lo deja para más tarde." },
+      { kind: "new", title: "Popup «Crea tu cuenta Better AV»", text: "Al abrir la app sin cuenta aparece un popup con la política de privacidad y los términos en un desplazable. Hay que aceptarlos para crear la cuenta o entrar; «Ahora no» lo deja para más tarde." },
       { kind: "improve", title: "Textos siempre actualizados", text: "Los textos legales se leen de GitHub; sin conexión se muestra la última copia descargada o la incluida en la app." }
     ]
   },
   {
-    version: "0.7.0", headline: "NotXunta Client llega a Android",
+    version: "0.7.0", headline: "Better AV Client llega a Android",
     summary: "Ahora hay una versión para Android (APK) que usa las mismas cuentas, aulas y amigos que la de escritorio.",
     items: [
-      { kind: "new", title: "App para Android", text: "Mismo aula virtual, mensajes, archivos NotXunta y amigos, con menú lateral y botón «atrás» de Android. En el móvil los avisos funcionan con la app abierta y no hay vídeo de fondo." },
+      { kind: "new", title: "App para Android", text: "Mismo aula virtual, mensajes, archivos Better AV y amigos, con menú lateral y botón «atrás» de Android. En el móvil los avisos funcionan con la app abierta y no hay vídeo de fondo." },
       { kind: "new", title: "APK con GitHub Actions", text: "El flujo «Compilar APK de Android» genera el APK y lo adjunta a la release. La versión de escritorio no cambia." }
     ]
   },
   {
     version: "0.6.9", headline: "Sonido de notificación y tutorial de bienvenida",
-    summary: "Todas las notificaciones suenan con el mismo sonido de NotXunta y la primera vez que abres la app en un dispositivo te la enseña un tutorial con pestañas.",
+    summary: "Todas las notificaciones suenan con el mismo sonido de Better AV y la primera vez que abres la app en un dispositivo te la enseña un tutorial con pestañas.",
     items: [
       { kind: "new", title: "Sonido en todas las notificaciones", text: "Suena en los avisos emergentes, en las notificaciones del sistema y en los avisos dentro de la app, incluso con la ventana cerrada en la bandeja. Se puede quitar o probar en Ajustes → «Sonido de notificación»." },
-      { kind: "new", title: "Tutorial de la primera vez", text: "La primera vez que se abre NotXunta en un dispositivo aparece un tutorial con pestañas (cuentas, overlay, amigos, apariencia y avisos). Puedes saltarlo con «Saltar tutorial» y volver a verlo en Ajustes." }
+      { kind: "new", title: "Tutorial de la primera vez", text: "La primera vez que se abre Better AV en un dispositivo aparece un tutorial con pestañas (cuentas, overlay, amigos, apariencia y avisos). Puedes saltarlo con «Saltar tutorial» y volver a verlo en Ajustes." }
     ]
   },
   {
     version: "0.6.8", headline: "Barra de ventana propia y scroll arreglado",
-    summary: "La ventana ahora tiene su propia barra (minimizar, maximizar y cerrar) integrada en la app, las barras de desplazamiento tienen el estilo de NotXunta y se arreglan los fallos al desplazarse.",
+    summary: "La ventana ahora tiene su propia barra (minimizar, maximizar y cerrar) integrada en la app, las barras de desplazamiento tienen el estilo de Better AV y se arreglan los fallos al desplazarse.",
     items: [
       { kind: "new", title: "Barra de ventana integrada", text: "Se quita el marco nativo de Windows/Linux y los botones de minimizar, maximizar/restaurar y cerrar están dentro de la app. Arrastra la barra para mover la ventana y haz doble clic para maximizar." },
       { kind: "new", title: "Barras de desplazamiento de la app", text: "Las barras verticales y horizontales (también en el overlay) usan el color de acento que elijas en Apariencia." },
@@ -52,17 +61,17 @@ module.exports = [
     version: "0.6.7", headline: "Jaja 67",
     summary: "67676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767676767",
     items: [
-      { kind: "fix", title: "Mensajes NotXunta ya no se estiran sin fin", text: "La ventana de la conversación tenía una altura sin límite y crecía con cada mensaje. Ahora ocupa solo la pantalla y el historial se desplaza por dentro, con el cuadro para escribir siempre a la vista." },
-      { kind: "improve", title: "Aviso de mensajes NotXunta", text: "Cuando un amigo te escribe, salta una notificación (con la app en segundo plano) o un aviso dentro de la app, y el contador de «Mensajes NotXunta» se actualiza solo. Se activa con «Avisar de mensajes nuevos» en Ajustes." }
+      { kind: "fix", title: "Mensajes Better AV ya no se estiran sin fin", text: "La ventana de la conversación tenía una altura sin límite y crecía con cada mensaje. Ahora ocupa solo la pantalla y el historial se desplaza por dentro, con el cuadro para escribir siempre a la vista." },
+      { kind: "improve", title: "Aviso de mensajes Better AV", text: "Cuando un amigo te escribe, salta una notificación (con la app en segundo plano) o un aviso dentro de la app, y el contador de «Mensajes Better AV» se actualiza solo. Se activa con «Avisar de mensajes nuevos» en Ajustes." }
     ]
   },
   {
     version: "0.6.6", headline: "Mensajes, arranque automático y fin de macOS",
-    summary: "NotXunta puede iniciarse con el ordenador e incluye mensajes directos entre amigos. Desde esta versión ya no hay compatibilidad con macOS.",
+    summary: "Better AV puede iniciarse con el ordenador e incluye mensajes directos entre amigos. Desde esta versión ya no hay compatibilidad con macOS.",
     items: [
-      { kind: "new", title: "Inicio automático", text: "Activa desde Ajustes que NotXunta se abra al iniciar sesión en Windows o Linux." },
-      { kind: "new", title: "Mensajería NotXunta", text: "Envía y recibe mensajes directos con tus amigos aceptados desde Cuenta NotXunta. Requiere ejecutar migration-0.6.6.sql en Supabase." },
-      { kind: "improve", title: "Fin de la compatibilidad con macOS", text: "NotXunta Client deja de compilarse para Mac: no habrá nuevas versiones ni actualizaciones para macOS. Windows y Linux siguen con soporte completo." },
+      { kind: "new", title: "Inicio automático", text: "Activa desde Ajustes que Better AV se abra al iniciar sesión en Windows o Linux." },
+      { kind: "new", title: "Mensajería Better AV", text: "Envía y recibe mensajes directos con tus amigos aceptados desde Cuenta Better AV. Requiere ejecutar migration-0.6.6.sql en Supabase." },
+      { kind: "improve", title: "Fin de la compatibilidad con macOS", text: "Better AV Client deja de compilarse para Mac: no habrá nuevas versiones ni actualizaciones para macOS. Windows y Linux siguen con soporte completo." },
       { kind: "improve", title: "Actualizaciones", text: "Windows instalado y Linux AppImage se actualizan solos; Linux .deb usa el gestor de paquetes." }
     ]
   },
@@ -79,7 +88,7 @@ module.exports = [
     version: "0.6.4", headline: "Actualización de seguridad",
     summary: "Revisión completa de seguridad: se cierran varios puntos débiles en descargas, inicio de sesión, datos de la nube y empaquetado. Se recomienda actualizar.",
     items: [
-      { kind: "fix", title: "Archivos descargados más seguros", text: "Los apuntes y Archivos NotXunta ahora se guardan en una carpeta privada de tu usuario (no en la carpeta temporal compartida), con nombres de archivo saneados. En Windows se marcan como «descargados de Internet», así Office y SmartScreen los comprueban antes de abrirlos." },
+      { kind: "fix", title: "Archivos descargados más seguros", text: "Los apuntes y Archivos Better AV ahora se guardan en una carpeta privada de tu usuario (no en la carpeta temporal compartida), con nombres de archivo saneados. En Windows se marcan como «descargados de Internet», así Office y SmartScreen los comprueban antes de abrirlos." },
       { kind: "fix", title: "Más tipos de archivo peligroso bloqueados", text: "Programas, scripts, accesos directos, instaladores, imágenes de disco y documentos con macros (.exe, .lnk, .ps1, .docm, .iso, .app, .sh…) nunca se abren solos: solo se muestran en su carpeta." },
       { kind: "fix", title: "Inicio de sesión con Google/Discord/GitHub más blindado", text: "La pequeña página local que recibe la respuesta del inicio de sesión ahora solo acepta peticiones de tu propio equipo, con cabeceras de seguridad, y descarta cualquier otra visita." },
       { kind: "fix", title: "Datos de la nube comprobados", text: "El aspecto (fondo, color, brillo), los avisos y los ajustes que llegan de la nube se validan uno a uno antes de aplicarse, para que un dato manipulado no pueda alterar la interfaz." },
@@ -91,27 +100,27 @@ module.exports = [
   },
   {
     version: "0.6.2", headline: "Arreglos: Amigos y Apariencia",
-    summary: "Vuelven a funcionar las pestañas «Cuenta y amigos» y «Apariencia», y los archivos pasan a ser solo los de tu cuenta NotXunta.",
+    summary: "Vuelven a funcionar las pestañas «Cuenta y amigos» y «Apariencia», y los archivos pasan a ser solo los de tu cuenta Better AV.",
     items: [
       { kind: "fix", title: "La pestaña «Cuenta y amigos» salía vacía", text: "Solo se veía el título. Un error al dibujar el interruptor «Mostrar cuando estoy en línea» cortaba la pantalla entera. Ya se ve tu cuenta, tu foto y la lista de amigos con su estado en línea." },
       { kind: "fix", title: "La pestaña «Apariencia» no se abría", text: "Tenía el mismo fallo (un bloque colocado en la pantalla equivocada). Corregido." },
       { kind: "improve", title: "Si algo falla, ya no se queda en blanco", text: "Cuando una parte de «Cuenta y amigos» no se puede cargar, ahora aparece un aviso con el motivo en lugar de dejar la pantalla vacía." },
-      { kind: "improve", title: "Solo Archivos NotXunta", text: "Se quita la gestión de los archivos privados del aula virtual original. «Archivos» ahora muestra únicamente tus Archivos NotXunta (los de tu cuenta), igual que en el menú del lanzador." }
+      { kind: "improve", title: "Solo Archivos Better AV", text: "Se quita la gestión de los archivos privados del aula virtual original. «Archivos» ahora muestra únicamente tus Archivos Better AV (los de tu cuenta), igual que en el menú del lanzador." }
     ]
   },
   {
     version: "0.6.1", headline: "Amigos en línea y archivos",
-    summary: "Ves cuándo están conectados tus amigos y ya puedes gestionar tus archivos privados del aula y los de tu cuenta NotXunta.",
+    summary: "Ves cuándo están conectados tus amigos y ya puedes gestionar tus archivos privados del aula y los de tu cuenta Better AV.",
     items: [
-      { kind: "new", title: "Amigos en línea", text: "En «Amigos» aparece un punto verde junto a quien tiene NotXunta Client abierto, o cuándo se le vio por última vez. Solo lo ven sus amigos y se puede desactivar en «Cuenta y amigos»." },
+      { kind: "new", title: "Amigos en línea", text: "En «Amigos» aparece un punto verde junto a quien tiene Better AV Client abierto, o cuándo se le vio por última vez. Solo lo ven sus amigos y se puede desactivar en «Cuenta y amigos»." },
       { kind: "new", title: "Archivos privados del aula", text: "Nueva sección «Archivos»: ves, abres, subes y eliminas tus archivos privados del aula, con la barra del espacio usado y el límite que te da el aula." },
-      { kind: "new", title: "Archivos NotXunta", text: "Tus propios archivos privados, guardados en tu cuenta NotXunta: los tienes en cualquier ordenador donde inicies sesión. También con barra de espacio." },
-      { kind: "improve", title: "Servidor", text: "Esta versión necesita ejecutar supabase/migration-0.6.1.sql en Supabase (una sola vez). Sin eso la app funciona, pero el estado en línea y los Archivos NotXunta avisarán de que falta." }
+      { kind: "new", title: "Archivos Better AV", text: "Tus propios archivos privados, guardados en tu cuenta Better AV: los tienes en cualquier ordenador donde inicies sesión. También con barra de espacio." },
+      { kind: "improve", title: "Servidor", text: "Esta versión necesita ejecutar supabase/migration-0.6.1.sql en Supabase (una sola vez). Sin eso la app funciona, pero el estado en línea y los Archivos Better AV avisarán de que falta." }
     ]
   },
   {
     version: "0.6.0", headline: "Ahora también para Linux y Mac",
-    summary: "NotXunta Client deja de ser solo para Windows: a partir de esta versión hay instaladores para Windows, Linux y macOS.",
+    summary: "Better AV Client deja de ser solo para Windows: a partir de esta versión hay instaladores para Windows, Linux y macOS.",
     items: [
       { kind: "new", title: "Windows, Linux y Mac", text: "Instalador y portable para Windows, .dmg y .zip para macOS (Intel y Apple Silicon), AppImage y .deb para Linux." },
       { kind: "new", title: "Tablón de novedades", text: "Nueva sección «Novedades» con cada función y arreglo de cada versión. Aparece una marca «NUEVO» hasta que la abres." },
@@ -133,7 +142,7 @@ module.exports = [
     version: "0.5.6", headline: "Pantalla de inicio, foto de perfil y ajustes en la nube",
     items: [
       { kind: "new", title: "Pantalla de inicio", text: "Antes de abrir la app aparece un recuadro con el logo y «Buscando actualizaciones…», con barra de progreso y botón «Continuar sin actualizar»." },
-      { kind: "new", title: "Foto de perfil", text: "Pon, cambia o quita la foto de tu cuenta NotXunta; se ve en tu perfil, en la barra superior y en las listas de amigos." },
+      { kind: "new", title: "Foto de perfil", text: "Pon, cambia o quita la foto de tu cuenta Better AV; se ve en tu perfil, en la barra superior y en las listas de amigos." },
       { kind: "new", title: "Ajustes sincronizados", text: "Fondo, oscurecimiento, color, sonido, IA, avisos, segundo plano y tus aulas se suben solos y se importan en otro ordenador. Las contraseñas nunca se suben." },
       { kind: "fix", title: "Texto «false» en Amigos y Apariencia", text: "Dejó de aparecer «false» cuando una sección estaba vacía." },
       { kind: "fix", title: "Apartados duplicados", text: "En «Cuenta y amigos» los apartados ya no se duplican al volver a entrar." }
@@ -155,7 +164,7 @@ module.exports = [
   {
     version: "0.5.3", headline: "Cuentas, amigos y actualizaciones automáticas",
     items: [
-      { kind: "new", title: "Cuenta NotXunta y amigos", text: "Cuenta propia (correo, Google, Discord o GitHub), pestaña «Participantes» en cada curso y solicitudes de amistad." },
+      { kind: "new", title: "Cuenta Better AV y amigos", text: "Cuenta propia (correo, Google, Discord o GitHub), pestaña «Participantes» en cada curso y solicitudes de amistad." },
       { kind: "new", title: "Actualizaciones automáticas", text: "La app busca versiones nuevas al abrir y cada 6 horas, y las instala al cerrar." },
       { kind: "new", title: "Overlay con pestañas", text: "Varias pestañas en el navegador del Shift+Tab (Ctrl+T, Ctrl+W, Ctrl+Tab, Ctrl+L)." },
       { kind: "improve", title: "Apuntes más rápidos", text: "«Abriendo los apuntes…», descarga a disco, caché de 3 días y precarga de los documentos del tema." },
@@ -174,7 +183,7 @@ module.exports = [
     ]
   },
   {
-    version: "0.3.0", headline: "NotXunta Client",
+    version: "0.3.0", headline: "Better AV Client",
     items: [
       { kind: "new", title: "Aula Virtual en tu escritorio", text: "Cursos, temas, documentos, enlaces, tareas, calendario, calificaciones y mensajes del aula de la Xunta." },
       { kind: "new", title: "Apariencia", text: "Fondos estáticos y animados, color de acento y banner del curso." }

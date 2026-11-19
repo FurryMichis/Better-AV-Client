@@ -1,6 +1,6 @@
 {
-  "name": "notxunta-client",
-  "version": "0.7.2",
+  "name": "better-av-client",
+  "version": "0.8.0",
   "description": "Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia · Windows y Linux",
   "main": "src/main.js",
   "scripts": {
@@ -23,7 +23,7 @@
   },
   "build": {
     "appId": "com.notxunta.client",
-    "productName": "NotXunta Client",
+    "productName": "Better AV Client",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -53,17 +53,17 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "NotXunta Client",
-      "artifactName": "NotXuntaClient-Setup.${ext}"
+      "shortcutName": "Better AV Client",
+      "artifactName": "BetterAVClient-Setup.${ext}"
     },
     "portable": {
-      "artifactName": "NotXuntaClient-Portable.${ext}"
+      "artifactName": "BetterAVClient-Portable.${ext}"
     },
     "publish": [
       {
         "provider": "github",
         "owner": "FurryMichis",
-        "repo": "notxunta-client"
+        "repo": "Better-AV-Client"
       }
     ],
     "linux": {
@@ -85,7 +85,7 @@
           ]
         }
       ],
-      "artifactName": "NotXuntaClient-Linux-${arch}.${ext}"
+      "artifactName": "BetterAVClient-Linux-${arch}.${ext}"
     },
     "afterPack": "build/afterPack.js",
     "asar": true
@@ -93,5 +93,5 @@
   "dependencies": {
     "electron-updater": "^6.3.9"
   },
-  "homepage": "https://github.com/FurryMichis/notxunta-client"
+  "homepage": "https://github.com/FurryMichis/Better-AV-Client"
 }

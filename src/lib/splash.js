@@ -10,7 +10,7 @@ let win = null, onSkip = () => {}, onClosed = () => {}, last = null;
 function create() {
   win = new BrowserWindow({
     width: 380, height: 270, frame: false, transparent: true, resizable: false, maximizable: false, minimizable: false,
-    show: false, center: true, alwaysOnTop: true, hasShadow: false, title: "NotXunta Client",
+    show: false, center: true, alwaysOnTop: true, hasShadow: false, title: "Better AV Client",
     icon: path.join(__dirname, "..", "..", "build", "icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "..", "splash", "splash-preload.js"),

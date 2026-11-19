@@ -1,4 +1,4 @@
--- NotXunta Client 0.6.4 · Actualización de seguridad (base de datos)
+-- Better AV Client 0.6.4 · Actualización de seguridad (base de datos)
 -- Pégalo entero en Supabase → SQL Editor → Run. Se puede ejecutar más de una vez sin problema.
 -- Pone límites para que nadie pueda llenar la base de datos de basura desde su cuenta.
 

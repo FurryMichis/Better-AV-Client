@@ -4,7 +4,7 @@
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const aula = window.notxuntaClient;
+const aula = window.betteravClient;
 const IS_MAC = aula.platform === "darwin" || /Mac/i.test(navigator.platform);
 const MOD = IS_MAC ? "⌘" : "Ctrl";   // tecla modificadora que se muestra en los textos
 
@@ -151,7 +151,7 @@ $$(".nav[data-view]").forEach(btn => btn.addEventListener("click", () => {
   const label = btn.cloneNode(true); label.querySelector(".nav-badge")?.remove();
   crumb.textContent = label.textContent.trim().replace(/^\S+\s+/, "").toUpperCase();
   if (btn.dataset.view === "cloud") renderCloud($("#cloud-view")).catch(e => notify(e.message));
-  if (btn.dataset.view === "nxmessages") renderNotXuntaMessages($("#nxmessages-view")).catch(e => notify(e.message));
+  if (btn.dataset.view === "nxmessages") renderBetterAVMessages($("#nxmessages-view")).catch(e => notify(e.message));
   if (btn.dataset.view === "nxfiles") renderNxFiles($("#nxfiles-view")).catch(e => notify(e.message));
   if (btn.dataset.view === "news") renderNews($("#news-view")).catch(e => notify(e.message));
   if (btn.dataset.view === "appearance") renderAppearance($("#appearance-view"));
@@ -217,7 +217,7 @@ function saveLookLocal() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(look)); return true; }
   catch { notify("No se pudo guardar (la imagen es demasiado grande)."); return false; }
 }
-// Guarda y avisa al proceso principal para que suba el aspecto a la cuenta NotXunta (si hay sesión iniciada).
+// Guarda y avisa al proceso principal para que suba el aspecto a la cuenta Better AV (si hay sesión iniciada).
 function saveLook() {
   const ok = saveLookLocal();
   if (ok) aula.syncLook(look, true).catch(() => {});
@@ -413,7 +413,7 @@ function compatPanel() {
 
 function renderAppearance(root) {
   clear(root);
-  root.append(pageTitle("PERSONALIZACIÓN", "Apariencia", "Elige un fondo (imagen, GIF o vídeo), el tamaño de la interfaz y el color principal de NotXunta Client."));
+  root.append(pageTitle("PERSONALIZACIÓN", "Apariencia", "Elige un fondo (imagen, GIF o vídeo), el tamaño de la interfaz y el color principal de Better AV Client."));
 
   const fileInput = h("input", { type: "file", accept: "image/*", hidden: "" });
   fileInput.addEventListener("change", async () => {
@@ -541,7 +541,7 @@ setZoom(look.zoom, false);
 })();
 
 // ------------------------------------------------------------------ entrar / salir de una instancia
-// Aula importada de la cuenta NotXunta: falta la contraseña en este ordenador (las contraseñas nunca se sincronizan).
+// Aula importada de la cuenta Better AV: falta la contraseña en este ordenador (las contraseñas nunca se sincronizan).
 const pwDialog = $("#pw-dialog");
 let pwAcc = null;
 function askPassword(acc) {
@@ -549,7 +549,7 @@ function askPassword(acc) {
   let host = acc.url;
   try { host = new URL(acc.url).host; } catch { /* se muestra tal cual */ }
   $("#pw-title").textContent = acc.name;
-  $("#pw-text").textContent = `Esta aula viene de tu cuenta NotXunta. Para usarla en este ordenador escribe la contraseña de «${acc.username}» en ${host}. Se enviará solo a ese sitio.`;
+  $("#pw-text").textContent = `Esta aula viene de tu cuenta Better AV. Para usarla en este ordenador escribe la contraseña de «${acc.username}» en ${host}. Se enviará solo a ese sitio.`;
   $("#pw-input").value = ""; $("#pw-error").hidden = true;
   pwDialog.showModal(); $("#pw-input").focus();
 }
@@ -777,7 +777,7 @@ function renderCourse(root) {
   if (pre.length) api("prefetchFiles", state.accountId, pre).catch(() => {}); // los apuntes del tema se descargan ya, en segundo plano
 }
 
-// ------------------------------------------------------------------ cuenta NotXunta y amigos
+// ------------------------------------------------------------------ cuenta Better AV y amigos
 function setFriendBadge(n) {
   $$('[data-badge="friends"]').forEach(b => { b.textContent = n > 99 ? "99+" : String(n); b.hidden = !n; });
 }
@@ -794,19 +794,21 @@ function openFriends() {
   else $('.nav[data-view="cloud"]').click();
 }
 
-// Mensajería propia de NotXunta: separada de los mensajes de cada aula Moodle.
-async function renderNotXuntaMessages(root) {
+// Mensajería propia de Better AV: separada de los mensajes de cada aula Moodle.
+let nxPendingSelect = null, nxRefreshTimer = null; // al volver a pintar la vista, qué conversación dejar abierta ({ kind: "group", id })
+async function renderBetterAVMessages(root) {
+  clearInterval(nxRefreshTimer); // al repintar, se para el refresco de la vista anterior
   clear(root);
-  root.append(pageTitle("COMUNIDAD NOTXUNTA", "Mensajes NotXunta", "Chats privados entre usuarios de NotXunta Client. Los mensajes de Moodle siguen en cada aula."));
+  root.append(pageTitle("COMUNIDAD BETTER AV", "Mensajes Better AV", "Chats privados y grupos entre usuarios de Better AV Client. Los mensajes de Moodle siguen en cada aula."));
   let status;
   try { status = await api("cloudStatus"); }
   catch (e) { root.append(empty("✉", "No se pudo conectar", e.message)); return; }
   if (!status.configured) {
-    root.append(empty("☁", "Mensajería no configurada", "El servidor de cuentas NotXunta todavía no está configurado."));
+    root.append(empty("☁", "Mensajería no configurada", "El servidor de cuentas Better AV todavía no está configurado."));
     return;
   }
   if (!status.signedIn || !status.profile) {
-    const panel = empty("✉", "Inicia sesión en NotXunta", "Para enviar y recibir mensajes necesitas una cuenta NotXunta. No es la misma cuenta que la del aula.");
+    const panel = empty("✉", "Inicia sesión en Better AV", "Para enviar y recibir mensajes necesitas una cuenta Better AV. No es la misma cuenta que la del aula.");
     panel.append(h("button", { class: "primary", text: "Ir a Cuenta y amigos", onclick: () => $('.nav[data-view="cloud"]').click() }));
     root.append(panel);
     return;
@@ -816,18 +818,24 @@ async function renderNotXuntaMessages(root) {
   const list = h("div", { class: "nx-dm-list" });
   const thread = h("div", { class: "nx-dm-thread" }, h("div", { class: "muted pad", text: "Selecciona un contacto para abrir la conversación." }));
   layout.append(list, thread); root.append(layout);
-  let selected = null;
+  let selected = null, selectedGroup = null;
   let refreshTimer = null;
+  const me = status.profile.id;
   const contacts = (await api("friendsList")).filter(f => f.status === "accepted");
-  if (!contacts.length) {
+  let groups = [], groupsHint = "";
+  try { groups = (await api("groupsList")) || []; }
+  catch (e) { groupsHint = /migration-0\.8\.0/.test(e.message) ? "Los grupos aún no están activados en el servidor (falta ejecutar migration-0.8.0.sql)." : ""; }
+  if (!contacts.length && !groups.length) {
     clear(list).append(h("div", { class: "muted pad", text: "Todavía no tienes amigos. Añade contactos desde «Cuenta y amigos»." }));
+    if (groupsHint) list.append(h("div", { class: "muted pad", text: groupsHint }));
     return;
   }
 
-  const contactButtons = new Map();
+  const contactButtons = new Map(), groupButtons = new Map();
+  const markActive = btn => { contactButtons.forEach(b => b.classList.toggle("active", b === btn)); groupButtons.forEach(b => b.classList.toggle("active", b === btn)); };
   async function loadThread(friend, btn, keepScroll = false) {
-    selected = friend;
-    contactButtons.forEach(b => b.classList.toggle("active", b === btn));
+    selected = friend; selectedGroup = null;
+    markActive(btn);
     const oldScroll = keepScroll ? thread.querySelector(".nx-dm-history")?.scrollTop : null;
     const msgs = await api("chatList", friend.other_id);
     const unread = msgs.filter(m => m.sender_id === friend.other_id && !m.read_at).length;
@@ -862,24 +870,180 @@ async function renderNotXuntaMessages(root) {
     } catch { return { friend, msgs: [], unread: 0 }; }
   }));
   summaries.sort((a, b) => new Date(b.msgs.at(-1)?.created_at || 0) - new Date(a.msgs.at(-1)?.created_at || 0));
-  const unreadTotal = summaries.reduce((n, item) => n + item.unread, 0);
+  const unreadTotal = summaries.reduce((n, item) => n + item.unread, 0) + groups.reduce((n, g) => n + (Number(g.unread) || 0), 0);
   const unreadBadge = $('[data-badge="nxmessages"]');
   if (unreadBadge) { unreadBadge.textContent = unreadTotal > 99 ? "99+" : String(unreadTotal); unreadBadge.hidden = unreadTotal === 0; }
+
+  // ---- grupos
+  const groupDialog = (title, eyebrow, build) => {
+    const dlg = h("dialog", { class: "nx-group-dialog" });
+    const form = h("form", { method: "dialog" });
+    form.append(h("div", { class: "dialog-head" }, h("div", {}, h("div", { class: "eyebrow", text: eyebrow }), h("h2", { text: title })),
+      h("button", { class: "close", type: "button", "aria-label": "Cerrar", text: "×", onclick: () => dlg.close() })));
+    build(form, dlg);
+    dlg.append(form); document.body.append(dlg);
+    dlg.addEventListener("close", () => dlg.remove());
+    dlg.showModal();
+    return dlg;
+  };
+  const pickList = (people, preselect) => people.map(f => {
+    const cb = h("input", { type: "checkbox", value: f.other_id || f.user_id });
+    return { id: f.other_id || f.user_id, cb, row: h("label", { class: "nx-pick" }, cb, cloudPic(f, "sm"), h("span", { text: f.display_name || f.username }), h("small", { class: "muted", text: `@${f.username}` })) };
+  });
+  const refreshView = async (select, msg) => { nxPendingSelect = select || null; if (msg) notify(msg); await renderBetterAVMessages(root).catch(e => notify(e.message)); };
+
+  function openNewGroup() {
+    groupDialog("Nuevo grupo", "MENSAJES BETTER AV", (form, dlg) => {
+      const name = h("input", { maxlength: "40", placeholder: "Ej. Trabajo de Historia", required: "" });
+      const picks = pickList(contacts);
+      const err = h("div", { class: "form-error", hidden: "" });
+      const create = h("button", { class: "primary", type: "button", text: "Crear grupo", onclick: async () => {
+        const n = name.value.trim();
+        err.hidden = true;
+        if (!n) { err.textContent = "Escribe un nombre para el grupo."; err.hidden = false; return; }
+        create.disabled = true;
+        try {
+          const id = await api("groupCreate", n, picks.filter(x => x.cb.checked).map(x => x.id));
+          dlg.close();
+          await refreshView({ kind: "group", id });
+        } catch (e) { err.textContent = e.message; err.hidden = false; create.disabled = false; }
+      } });
+      form.append(h("label", {}, "Nombre del grupo", name),
+        h("div", { class: "form-hint", text: "Elige a quién añadir (solo tus amigos). Podrás añadir más después. Máximo 25 personas." }),
+        h("div", { class: "nx-pick-list" }, picks.map(x => x.row)), err,
+        h("div", { class: "dialog-actions" }, h("button", { class: "secondary", type: "button", text: "Cancelar", onclick: () => dlg.close() }), create));
+      setTimeout(() => name.focus(), 50);
+    });
+  }
+
+  async function openGroupManager(g) {
+    let members;
+    try { members = await api("groupMembers", g.group_id); } catch (e) { notify(e.message); return; }
+    const owner = g.owner_id === me;
+    groupDialog(g.name, "GRUPO · " + members.length + (members.length === 1 ? " PERSONA" : " PERSONAS"), (form, dlg) => {
+      const act = async (fn, okMsg, keep = true) => {
+        try { await fn(); dlg.close(); await refreshView(keep ? { kind: "group", id: g.group_id } : null, okMsg); }
+        catch (e) { notify(e.message); }
+      };
+      if (owner) {
+        const nameIn = h("input", { value: g.name, maxlength: "40" });
+        form.append(h("label", {}, "Nombre del grupo", nameIn),
+          h("div", { class: "dialog-actions" }, h("button", { class: "secondary small", type: "button", text: "Guardar nombre", onclick: () => {
+            const n = nameIn.value.trim(); if (!n) return notify("Escribe un nombre.");
+            act(() => api("groupRename", g.group_id, n), "Nombre cambiado.");
+          } })));
+      }
+      form.append(h("h3", { class: "nx-group-sub", text: "Miembros" }));
+      form.append(h("div", { class: "nx-pick-list" }, members.map(m => h("div", { class: "nx-pick" },
+        cloudPic(m, "sm"), h("span", { text: (m.display_name || m.username) + (m.user_id === me ? " (tú)" : "") }), h("small", { class: "muted", text: `@${m.username}` }),
+        m.is_owner ? chip("Creador", "ok") : null,
+        owner && m.user_id !== me ? h("button", { class: "secondary small", type: "button", text: "Quitar", onclick: () => {
+          if (!confirm(`¿Quitar a @${m.username} del grupo?`)) return;
+          act(() => api("groupRemoveMember", g.group_id, m.user_id), "Persona quitada.");
+        } }) : null))));
+      if (owner) {
+        const inGroup = new Set(members.map(m => m.user_id));
+        const candidates = pickList(contacts.filter(f => !inGroup.has(f.other_id)));
+        form.append(h("h3", { class: "nx-group-sub", text: "Añadir amigos" }));
+        if (!candidates.length) form.append(h("div", { class: "form-hint", text: "Todos tus amigos ya están en el grupo." }));
+        else form.append(h("div", { class: "nx-pick-list" }, candidates.map(x => x.row)),
+          h("div", { class: "dialog-actions" }, h("button", { class: "primary small", type: "button", text: "Añadir seleccionados", onclick: () => {
+            const ids = candidates.filter(x => x.cb.checked).map(x => x.id);
+            if (!ids.length) return notify("Elige al menos un amigo.");
+            act(async () => { await api("groupAddMembers", g.group_id, ids); }, "Personas añadidas.");
+          } })));
+      }
+      const foot = h("div", { class: "dialog-actions" }, h("button", { class: "secondary", type: "button", text: "Salir del grupo", onclick: () => {
+        if (!confirm(`¿Salir de «${g.name}»? Dejarás de ver sus mensajes.`)) return;
+        act(() => api("groupRemoveMember", g.group_id, me), "Has salido del grupo.", false);
+      } }));
+      if (owner) foot.append(h("button", { class: "secondary danger", type: "button", text: "Borrar grupo", onclick: () => {
+        if (!confirm(`¿Borrar «${g.name}» para todos? Se perderán todos sus mensajes. No se puede deshacer.`)) return;
+        act(() => api("groupDelete", g.group_id), "Grupo borrado.", false);
+      } }));
+      form.append(foot);
+    });
+  }
+
+  async function loadGroup(group, btn, keepScroll = false) {
+    selectedGroup = group; selected = null;
+    markActive(btn);
+    const oldScroll = keepScroll ? thread.querySelector(".nx-dm-history")?.scrollTop : null;
+    const draft = thread.querySelector(".nx-dm-compose textarea")?.value || "";
+    const [msgs, members] = await Promise.all([api("groupMessages", group.group_id), api("groupMembers", group.group_id)]);
+    const names = new Map(members.map(m => [m.user_id, m.display_name || m.username]));
+    if (Number(group.unread) > 0 || msgs.length !== btn._count) api("groupRead", group.group_id).catch(() => {});
+    btn._count = msgs.length; group.unread = 0; btn.querySelector(".chip")?.remove();
+    const history = h("div", { class: "nx-dm-history" });
+    if (!msgs.length) history.append(h("div", { class: "muted pad", text: "Todavía no hay mensajes en este grupo. ¡Saluda!" }));
+    for (const m of msgs) {
+      const mine = m.sender_id === me;
+      history.append(h("article", { class: `nx-dm-bubble ${mine ? "mine" : ""}` },
+        mine ? null : h("b", { class: "nx-g-from", text: names.get(m.sender_id) || "Ex-miembro" }),
+        h("p", { text: m.body }), h("small", { text: new Date(m.created_at).toLocaleString("es-ES") })));
+    }
+    const input = h("textarea", { rows: "2", maxlength: "2000", placeholder: "Escribe al grupo… (Enter para enviar)" });
+    input.value = draft;
+    const send = h("button", { class: "primary", text: "Enviar", onclick: async () => {
+      const body = input.value.trim(); if (!body) return;
+      send.disabled = true;
+      try { await api("groupSend", group.group_id, body); input.value = ""; await loadGroup(group, btn); }
+      catch (e) { notify(e.message); }
+      finally { send.disabled = false; }
+    } });
+    input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send.click(); } });
+    clear(thread).append(
+      h("div", { class: "nx-dm-head nx-dm-head-row" },
+        h("div", { class: "nx-dm-who" }, h("div", { class: "pic md nx-group-ico", text: initials(group.name) }),
+          h("div", { class: "nx-dm-who-txt" }, h("b", { text: group.name }), h("span", { class: "muted", text: `${members.length} ${members.length === 1 ? "persona" : "personas"}` }))),
+        h("button", { class: "secondary small", text: "Opciones del grupo", onclick: () => openGroupManager(group) })),
+      history, h("div", { class: "nx-dm-compose" }, input, send));
+    history.scrollTop = oldScroll == null ? history.scrollHeight : oldScroll;
+  }
+
+  // ---- lista: grupos y amigos
   clear(list);
+  list.append(h("div", { class: "nx-dm-section" }, h("span", { text: "GRUPOS" }),
+    h("button", { class: "secondary small", type: "button", text: "＋ Nuevo grupo", disabled: contacts.length ? null : "", title: contacts.length ? "" : "Necesitas amigos para crear un grupo", onclick: () => openNewGroup() })));
+  if (groupsHint) list.append(h("div", { class: "muted nx-dm-empty", text: groupsHint }));
+  else if (!groups.length) list.append(h("div", { class: "muted nx-dm-empty", text: "Todavía no estás en ningún grupo." }));
+  for (const g of groups) {
+    const who = g.last_sender === me ? "Tú" : (g.last_sender_name || "Alguien");
+    const gbtn = h("button", { class: "nx-dm-contact" },
+      h("div", { class: "pic md nx-group-ico", text: initials(g.name) }),
+      h("span", { class: "item-main" }, h("b", { text: g.name }), h("span", { class: "muted", text: g.last_body ? `${who}: ${g.last_body}`.slice(0, 58) : `${g.member_count} ${Number(g.member_count) === 1 ? "persona" : "personas"}` })),
+      Number(g.unread) ? chip(String(g.unread), "new") : null);
+    gbtn.addEventListener("click", () => loadGroup(g, gbtn).catch(e => notify(e.message)));
+    groupButtons.set(g.group_id, gbtn); list.append(gbtn);
+  }
+  list.append(h("div", { class: "nx-dm-section" }, h("span", { text: "AMIGOS" })));
+  if (!contacts.length) list.append(h("div", { class: "muted nx-dm-empty", text: "Todavía no tienes amigos. Añade contactos desde «Cuenta y amigos»." }));
   for (const item of summaries) {
     const f = item.friend, last = item.msgs.at(-1);
     const btn = h("button", { class: "nx-dm-contact" },
       cloudPic(f, "md"),
-      h("span", { class: "item-main" }, h("b", { text: f.display_name || f.username }), h("span", { class: "muted", text: last ? `${last.sender_id === status.profile.id ? "Tú: " : ""}${last.body}`.slice(0, 58) : "Sin mensajes todavía" })),
+      h("span", { class: "item-main" }, h("b", { text: f.display_name || f.username }), h("span", { class: "muted", text: last ? `${last.sender_id === me ? "Tú: " : ""}${last.body}`.slice(0, 58) : "Sin mensajes todavía" })),
       item.unread ? chip(String(item.unread), "new") : null);
     btn.addEventListener("click", () => loadThread(f, btn).catch(e => notify(e.message)));
     contactButtons.set(f.other_id, btn); list.append(btn);
   }
-  const first = summaries[0];
-  if (first) await loadThread(first.friend, contactButtons.get(first.friend.other_id));
-  refreshTimer = setInterval(async () => {
+
+  // ---- qué conversación se abre al entrar: la que se acaba de tocar, o la más reciente
+  const pending = nxPendingSelect; nxPendingSelect = null;
+  const first = summaries[0], firstGroup = groups[0];
+  const dmTime = first ? (Date.parse(first.msgs.at(-1)?.created_at || "") || 0) : -1;
+  const gTime = firstGroup ? (Date.parse(firstGroup.last_at || "") || 0) : -1;
+  const startGroup = (pending && pending.kind === "group" && groups.find(g => g.group_id === pending.id)) || (firstGroup && gTime > dmTime ? firstGroup : null);
+  if (startGroup) await loadGroup(startGroup, groupButtons.get(startGroup.group_id));
+  else if (first) await loadThread(first.friend, contactButtons.get(first.friend.other_id));
+  nxRefreshTimer = refreshTimer = setInterval(async () => {
     if (!root.isConnected || !root.classList.contains("active")) { clearInterval(refreshTimer); return; }
     try {
+      if (selectedGroup) {
+        const gb = groupButtons.get(selectedGroup.group_id);
+        if (gb) await loadGroup(selectedGroup, gb, true);
+        return;
+      }
       const latest = await api("friendsList");
       const current = latest.find(f => f.other_id === selected?.other_id && f.status === "accepted");
       if (current) await loadThread(current, contactButtons.get(current.other_id), true);
@@ -909,10 +1073,10 @@ async function renderParticipants(root, c) {
   clear(holder);
   holder.append(h("div", { class: "section-heading" }, h("div", {}, h("h2", { text: "Participantes" }), h("p", { text: `${people.length} personas en este curso.` }))));
   if (st.configured && !offline && !canAct) {
-    holder.append(h("div", { class: "people-banner" }, h("span", { text: "Crea tu cuenta NotXunta (o inicia sesión) para añadir amigos de tu curso." }),
+    holder.append(h("div", { class: "people-banner" }, h("span", { text: "Crea tu cuenta Better AV (o inicia sesión) para añadir amigos de tu curso." }),
       h("button", { class: "primary small", text: "Abrir cuenta", onclick: openFriends })));
   } else if (offline && st.configured) {
-    holder.append(h("div", { class: "people-banner" }, h("span", { text: "No se pudo conectar con el servidor de NotXunta: los botones de amistad no están disponibles ahora." })));
+    holder.append(h("div", { class: "people-banner" }, h("span", { text: "No se pudo conectar con el servidor de Better AV: los botones de amistad no están disponibles ahora." })));
   }
 
   const q = h("input", { type: "search", placeholder: "Buscar participante…" });
@@ -924,13 +1088,13 @@ async function renderParticipants(root, c) {
   function personRow(p) {
     const info = lookup[p.id];
     const roles = [...new Set((p.roles || []).map(r => ROLE_NAMES[r]).filter(Boolean))];
-    const sub = [roles.join(", "), canAct && info ? `NotXunta: @${info.username}` : ""].filter(Boolean).join(" · ");
+    const sub = [roles.join(", "), canAct && info ? `Better AV: @${info.username}` : ""].filter(Boolean).join(" · ");
     const act = h("div", { class: "acts" });
     const paint = () => {
       clear(act);
       if (p.id === state.data.user.id) { act.append(chip("TÚ")); return; }
       if (!canAct) return;
-      if (!info) { act.append(h("span", { class: "muted", text: "Sin NotXunta Client" })); return; }
+      if (!info) { act.append(h("span", { class: "muted", text: "Sin Better AV Client" })); return; }
       if (info.user_id === st.profile.id) { act.append(chip("TÚ")); return; }
       const rel = friends.find(f => f.other_id === info.user_id);
       const reload = async () => { try { friends = await api("friendsList"); } catch { /* se queda como estaba */ } paint(); };
@@ -966,7 +1130,7 @@ async function renderParticipants(root, c) {
   draw();
 }
 
-// Pantalla de cuenta NotXunta: entrar / crear cuenta / perfil / amigos (sirve para el lanzador y para el aula).
+// Pantalla de cuenta Better AV: entrar / crear cuenta / perfil / amigos (sirve para el lanzador y para el aula).
 // Cada llamada limpia el contenedor y, si mientras esperaba al servidor se ha lanzado otra, la antigua no pinta nada
 // (antes, pulsar dos veces «Cuenta y amigos» o refrescar a la vez apilaba los apartados duplicados).
 const cloudRenders = new WeakMap();
@@ -976,14 +1140,14 @@ async function renderCloud(root) {
   const stale = () => cloudRenders.get(root) !== mine;
   const redo = () => { renderCloud(root).catch(e => { clear(root); root.append(empty("!", "No se pudo cargar", e.message)); }); };
   clear(root);
-  root.append(pageTitle("COMUNIDAD", "Cuenta NotXunta y amigos", "Una cuenta propia de NotXunta Client, independiente de tus aulas virtuales."));
+  root.append(pageTitle("COMUNIDAD", "Cuenta Better AV y amigos", "Una cuenta propia de Better AV Client, independiente de tus aulas virtuales."));
   let st;
   try { st = await api("cloudStatus"); }
   catch (e) { if (!stale()) root.append(empty("☁", "Sin conexión con el servidor", e.message)); return; }
   if (stale()) return;
   paintLauncherAvatar(st);
   if (!st.configured) {
-    root.append(empty("☁", "Servidor de cuentas sin configurar", "Esta versión de la app no tiene todavía el servidor de cuentas NotXunta. Sigue la guía del README (Supabase) y vuelve a compilar."));
+    root.append(empty("☁", "Servidor de cuentas sin configurar", "Esta versión de la app no tiene todavía el servidor de cuentas Better AV. Sigue la guía del README (Supabase) y vuelve a compilar."));
     return;
   }
   if (!st.signedIn) { root.append(authCard(redo)); return; }
@@ -995,11 +1159,11 @@ async function renderCloud(root) {
   if (stale()) return;
   root.append(card, custom);
   if (st.schemaOutdated || st.presenceOutdated) root.append(h("div", { class: "cloud-card" }, h("h2", { text: "Falta actualizar el servidor" }),
-    h("p", { text: `Tu cuenta funciona, pero ${st.schemaOutdated ? "la foto de perfil, la sincronización de ajustes, " : ""}el estado «en línea» y los Archivos NotXunta necesitan una actualización de la base de datos de Supabase: abre el SQL Editor, pega el contenido de supabase/migration-0.6.1.sql${st.schemaOutdated ? " (y antes el de migration-0.5.6.sql)" : ""} y pulsa Run. No hace falta reinstalar la app.` })));
+    h("p", { text: `Tu cuenta funciona, pero ${st.schemaOutdated ? "la foto de perfil, la sincronización de ajustes, " : ""}el estado «en línea» y los Archivos Better AV necesitan una actualización de la base de datos de Supabase: abre el SQL Editor, pega el contenido de supabase/migration-0.6.1.sql${st.schemaOutdated ? " (y antes el de migration-0.5.6.sql)" : ""} y pulsa Run. No hace falta reinstalar la app.` })));
   root.append(panel);
 }
 
-// Foto de perfil de la cuenta NotXunta (una imagen pequeña que sube la propia app).
+// Foto de perfil de la cuenta Better AV (una imagen pequeña que sube la propia app).
 const AVATAR_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 function cloudPic(p, cls = "") {
   const el = h("div", { class: `pic ${cls}`, text: initials(p.display_name || p.username) });
@@ -1027,7 +1191,7 @@ function readAvatar(file) { // recorta al centro y reduce a 128×128 (unos pocos
     fr.readAsDataURL(file);
   });
 }
-// Avatar de la barra superior del lanzador: tu foto de NotXunta si has iniciado sesión.
+// Avatar de la barra superior del lanzador: tu foto de Better AV si has iniciado sesión.
 function paintLauncherAvatar(st) {
   const el = $("#launcher-avatar");
   if (!el) return;
@@ -1037,7 +1201,7 @@ function paintLauncherAvatar(st) {
 }
 api("cloudStatus").then(paintLauncherAvatar).catch(() => {});
 
-// ---- Personalización de la cuenta NotXunta (0.7.2): descripción, estado, pronombres, color y banner
+// ---- Personalización de la cuenta Better AV (0.7.2): descripción, estado, pronombres, color y banner
 const BANNER_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 function readBanner(file) { // recorta al centro y reduce a 480×160 (la base de datos admite hasta ~100 KB)
@@ -1063,7 +1227,7 @@ function readBanner(file) { // recorta al centro y reduce a 480×160 (la base de
   });
 }
 
-// Tarjeta de perfil NotXunta: la que ven tus amigos (y la vista previa al editar la tuya).
+// Tarjeta de perfil Better AV: la que ven tus amigos (y la vista previa al editar la tuya).
 function profileCardEl(p) {
   const card = h("div", { class: "pcard" });
   if (typeof p.accent === "string" && HEX_RE.test(p.accent)) card.style.setProperty("--pc", p.accent);
@@ -1163,7 +1327,7 @@ function authCard(redo) {
       h("div", { class: "cloud-actions" }, btn));
     form.addEventListener("submit", async e => {
       e.preventDefault(); err.hidden = true;
-      if (!(await legalOk())) { err.textContent = "Para usar una cuenta NotXunta debes aceptar la política de privacidad y los términos."; err.hidden = false; return; }
+      if (!(await legalOk())) { err.textContent = "Para usar una cuenta Better AV debes aceptar la política de privacidad y los términos."; err.hidden = false; return; }
       btn.disabled = true;
       try {
         if (mode === "in") { await api("cloudSignIn", email.value, pw.value); redo(); return; }
@@ -1177,7 +1341,7 @@ function authCard(redo) {
       h("button", { type: "button", class: "secondary", text: "Cancelar", onclick: () => { api("cloudOAuthCancel").catch(() => {}); } }));
     for (const [prov, label] of [["google", "Google"], ["discord", "Discord"], ["github", "GitHub"]]) {
       oauth.append(h("button", { type: "button", class: "secondary", text: label, onclick: async () => {
-        if (!(await legalOk())) { err.textContent = "Para usar una cuenta NotXunta debes aceptar la política de privacidad y los términos."; err.hidden = false; return; }
+        if (!(await legalOk())) { err.textContent = "Para usar una cuenta Better AV debes aceptar la política de privacidad y los términos."; err.hidden = false; return; }
         $$("button", oauth).forEach(b => { b.disabled = true; }); wait.hidden = false; err.hidden = true;
         try { await api("cloudOAuth", prov); redo(); }
         catch (er) { err.textContent = er.message; err.hidden = false; $$("button", oauth).forEach(b => { b.disabled = false; }); wait.hidden = true; }
@@ -1191,8 +1355,8 @@ function authCard(redo) {
       form, h("div", { class: "oauth-sep", text: "o continúa con" }), oauth, wait);
   };
   draw();
-  return h("div", {}, h("div", { class: "cloud-card" }, h("h2", { text: "Tu cuenta NotXunta" }),
-    h("p", { text: "Sirve para añadir amigos de tus cursos. No es la de tu aula virtual: tus contraseñas del aula nunca se envían a NotXunta." })), card);
+  return h("div", {}, h("div", { class: "cloud-card" }, h("h2", { text: "Tu cuenta Better AV" }),
+    h("p", { text: "Sirve para añadir amigos de tus cursos. No es la de tu aula virtual: tus contraseñas del aula nunca se envían a Better AV." })), card);
 }
 
 function profileSetupCard(redo, st) {
@@ -1206,7 +1370,7 @@ function profileSetupCard(redo, st) {
     h("label", {}, "Nombre de usuario (único: letras minúsculas, números y _)", user),
     h("label", {}, "Nombre para mostrar", name),
     h("label", { class: "switch-row" }, h("span", {}, h("b", { text: "Que mis compañeros de aula me encuentren" }),
-      h("small", { text: "Si lo dejas marcado, en la pestaña «Participantes» de tus cursos podrán ver que usas NotXunta Client (con tu usuario y nombre para mostrar) y enviarte solicitudes de amistad. Puedes cambiarlo cuando quieras." })), cb),
+      h("small", { text: "Si lo dejas marcado, en la pestaña «Participantes» de tus cursos podrán ver que usas Better AV Client (con tu usuario y nombre para mostrar) y enviarte solicitudes de amistad. Puedes cambiarlo cuando quieras." })), cb),
     err, h("div", { class: "cloud-actions" }, btn));
   form.addEventListener("submit", async e => {
     e.preventDefault(); err.hidden = true; btn.disabled = true;
@@ -1269,11 +1433,11 @@ function accountCard(redo, st) {
     h("label", { class: "switch-row" }, h("span", {}, h("b", { text: "Que mis compañeros de aula me encuentren" }),
       h("small", { text: "Si lo desactivas, no apareces en «Participantes» y se borran tus vínculos con las aulas." })), cb),
     !st.presenceOutdated && h("label", { class: "switch-row" }, h("span", {}, h("b", { text: "Mostrar cuando estoy en línea" }),
-      h("small", { text: "Tus amigos (solo ellos) ven un punto verde mientras NotXunta Client está abierto en tu ordenador, o cuándo te conectaste por última vez. Si lo desactivas, nadie ve tu estado." })), onlineCb),
+      h("small", { text: "Tus amigos (solo ellos) ven un punto verde mientras Better AV Client está abierto en tu ordenador, o cuándo te conectaste por última vez. Si lo desactivas, nadie ve tu estado." })), onlineCb),
     h("div", { class: "cloud-actions" },
       h("button", { class: "secondary", text: "Cerrar sesión", onclick: async () => { try { await api("cloudSignOut"); redo(); } catch (e) { notify(e.message); } } }),
       h("button", { class: "secondary danger", text: "Eliminar mi cuenta", onclick: async () => {
-        if (!confirm("¿Eliminar tu cuenta NotXunta? Se borrarán tu perfil, tus vínculos con aulas y tus amistades. No se puede deshacer.")) return;
+        if (!confirm("¿Eliminar tu cuenta Better AV? Se borrarán tu perfil, tus vínculos con aulas y tus amistades. No se puede deshacer.")) return;
         try { await api("cloudDeleteAccount"); notify("Cuenta eliminada."); redo(); } catch (e) { notify(e.message); }
       } })));
 }
@@ -1383,13 +1547,13 @@ async function friendsPanel(redo) {
   return wrap;
 }
 
-// Ajustes traídos de la cuenta NotXunta desde otro ordenador (los aplica el proceso principal y avisa aquí).
+// Ajustes traídos de la cuenta Better AV desde otro ordenador (los aplica el proceso principal y avisa aquí).
 aula.onSyncApplied(p => {
   if (!p) return;
   if (p.look) { look = { ...DEFAULTS, ...p.look }; saveLookLocal(); applyLook(); refreshAppearance(); }
   if (p.accounts) renderAccounts().catch(() => {});
   if (p.prefs) for (const el of $$("#settings-view.active, #iv-settings.active")) renderSettings(el).catch(() => {});
-  notify("Ajustes importados de tu cuenta NotXunta.");
+  notify("Ajustes importados de tu cuenta Better AV.");
 });
 
 // Abrir apuntes: círculo de carga mientras se descarga/abre (si ya estaban en caché es casi instantáneo).
@@ -1570,7 +1734,7 @@ async function renderNotifications(root) {
 }
 
 // ------------------------------------------------------------------ perfil
-// Perfil de tu aula virtual original (descripción, datos y resumen) y el acceso a tu cuenta NotXunta.
+// Perfil de tu aula virtual original (descripción, datos y resumen) y el acceso a tu cuenta Better AV.
 // Los datos del perfil se leen del aula al sincronizar; si el aula oculta un campo, simplemente no sale.
 const fmtWhen = ts => ts ? new Date(ts * 1000).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" }) : "";
 function countryName(code) {
@@ -1623,7 +1787,7 @@ function renderProfile(root) {
   root.append(h("div", { class: "row-actions pad" },
     h("button", { class: "primary", text: "Actualizar perfil", onclick: () => $("#sync-btn").click() }),
     h("button", { class: "secondary", text: "Abrir el aula en el navegador", onclick: () => api("openExternal", site.url).catch(e => notify(e.message)) }),
-    h("button", { class: "secondary", text: "Mi cuenta NotXunta", onclick: () => setIView("friends") }),
+    h("button", { class: "secondary", text: "Mi cuenta Better AV", onclick: () => setIView("friends") }),
     h("button", { class: "secondary", text: "Cambiar de cuenta", onclick: () => $("#back-launcher").click() })));
 }
 
@@ -1682,7 +1846,7 @@ $("#icon-save").addEventListener("click", async () => {
 
 // ------------------------------------------------------------------ ajustes (IA, overlay, segundo plano)
 const OVERLAY_KEY_OPTIONS = [
-  ["focus", "Solo con NotXunta Client en primer plano (Shift+Tab)"],
+  ["focus", "Solo con Better AV Client en primer plano (Shift+Tab)"],
   ["global-safe", `Desde cualquier programa: ${MOD}+Mayús+Espacio (y Shift+Tab en la app)`],
   ["global-shift-tab", "Desde cualquier programa con Shift+Tab (bloquea Shift+Tab en el resto de programas)"]
 ];
@@ -1715,7 +1879,7 @@ async function renderSettings(root) {
     h("p", { text: "Una capa sobre cualquier ventana con Google, Gmail, tu IA y el aula virtual original. Se abre y se cierra con Shift+Tab." }),
     h("div", { class: "zoom-row" }, keySel,
       h("button", { class: "secondary small", text: "Abrir ahora", onclick: () => api("openOverlay").catch(e => notify(e.message)) })),
-    h("p", { class: "settings-note", text: "Si Shift+Tab es global, deja de funcionar como «tabulador inverso» en los demás programas mientras NotXunta Client esté abierto." })));
+    h("p", { class: "settings-note", text: "Si Shift+Tab es global, deja de funcionar como «tabulador inverso» en los demás programas mientras Better AV Client esté abierto." })));
 
   // Segundo plano y avisos
   const row = (title, desc, key, after) => {
@@ -1727,11 +1891,11 @@ async function renderSettings(root) {
   intSel.disabled = !cur.bgSync;
   intSel.addEventListener("change", () => patch({ syncMinutes: Number(intSel.value) }));
   root.append(h("div", { class: "settings-panel wide" }, h("h2", { text: "Segundo plano y avisos" }),
-    row("Iniciar NotXunta al encender el ordenador", "Abre NotXunta automáticamente al iniciar sesión en Windows, macOS o Linux.", "launchAtStartup"),
-    row("Seguir en segundo plano al cerrar la ventana", "NotXunta Client se queda en la bandeja del sistema (junto al reloj, o en la barra de menú en Mac). Para salir del todo, usa «Salir» en su menú.", "keepBackground"),
+    row("Iniciar Better AV al encender el ordenador", "Abre Better AV automáticamente al iniciar sesión en Windows, macOS o Linux.", "launchAtStartup"),
+    row("Seguir en segundo plano al cerrar la ventana", "Better AV Client se queda en la bandeja del sistema (junto al reloj, o en la barra de menú en Mac). Para salir del todo, usa «Salir» en su menú.", "keepBackground"),
     row("Buscar novedades en segundo plano", "Comprueba tus aulas sin tener la ventana abierta y te avisa si hay contenido nuevo.", "bgSync", true),
     h("div", { class: "switch-row" }, h("span", {}, h("b", { text: "Frecuencia de comprobación" }), h("small", { text: "Por defecto cada 5 minutos. Además, al volver a la ventana se comprueba todo al momento. Con menos comprobaciones se gasta menos batería y datos." })), intSel),
-    row("Avisar de mensajes nuevos", "Comprueba tus chats cada 30 segundos mientras NotXunta Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje (de tus aulas y de NotXunta).", "msgNotify"),
+    row("Avisar de mensajes nuevos", "Comprueba tus chats cada 30 segundos mientras Better AV Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje (de tus aulas y de Better AV).", "msgNotify"),
     row("Avisos emergentes estilo Steam", "Una notificación en la esquina de la pantalla. Si la desactivas se usan las notificaciones normales del sistema.", "toasts"),
     row("Sonido de notificación", "Suena un aviso en todas las notificaciones: emergentes, del sistema y los avisos dentro de la app.", "notifySound"),
     volumeRow(cur.notifyVolume, v => patch({ notifyVolume: v })),
@@ -1804,23 +1968,23 @@ aiDialog.addEventListener("close", () => { api("setSettings", { aiAsked: true })
 // ------------------------------------------------------------------ tutorial de la primera vez (por dispositivo)
 const tutDialog = $("#tutorial-dialog");
 const TUT_STEPS = [
-  { tab: "Bienvenida", icon: "👋", title: "Bienvenido a NotXunta Client",
+  { tab: "Bienvenida", icon: "👋", title: "Bienvenido a Better AV Client",
     lead: "Tu Aula Virtual, tus amigos y tus herramientas de estudio en una sola app. Este recorrido dura un minuto; puedes saltarlo cuando quieras y volver a verlo desde Ajustes.",
-    points: [["Cuentas y aulas", "conecta tu Aula Virtual y mira cursos, tareas y notas."], ["Overlay", "un navegador sobre cualquier ventana con Shift+Tab."], ["Amigos y archivos", "tu cuenta NotXunta con mensajes y nube."], ["Apariencia y avisos", "personaliza la app y entérate de todo."]] },
+    points: [["Cuentas y aulas", "conecta tu Aula Virtual y mira cursos, tareas y notas."], ["Overlay", "un navegador sobre cualquier ventana con Shift+Tab."], ["Amigos y archivos", "tu cuenta Better AV con mensajes y nube."], ["Apariencia y avisos", "personaliza la app y entérate de todo."]] },
   { tab: "Cuentas y aulas", icon: "cap", title: "Conecta tu Aula Virtual",
     lead: "En «Gestor de cuentas» pulsa «Añadir cuenta» y rellena el nombre, el enlace de tu aula, tu usuario y tu contraseña.",
     points: [["Contraseña segura", "se guarda cifrada con el almacén seguro de tu sistema y solo se envía a tu aula."], ["Tu aula", "al abrirla tienes Mis cursos, Calendario, Tareas, Calificaciones, Mensajes, Notificaciones y Perfil (con tu descripción y datos del aula original)."], ["Novedades", "lo que es nuevo desde tu última visita aparece marcado como NUEVO; «Sincronizar» vuelve a comprobarlo."], ["Iconos", "pulsa el icono de una cuenta para ponerle un emoji o una imagen."]] },
   { tab: "Overlay", icon: "❖", title: "El overlay: Shift+Tab",
     lead: "Una capa sobre cualquier ventana con Google, Gmail, tu aula original y tu IA favorita. Se abre y se cierra con Shift+Tab.",
     points: [["Pestañas", "«+» o Ctrl+T abre una nueva, Ctrl+W la cierra y Ctrl+Tab cambia de una a otra."], ["IA", "elige la tuya y ábrela con el botón de IA del overlay (se cambia en Ajustes)."], ["Desde cualquier programa", "en Ajustes → Overlay puedes hacer que la tecla funcione en todo el sistema."]] },
-  { tab: "Amigos y archivos", icon: "☁", title: "Cuenta NotXunta, amigos y archivos",
-    lead: "Crea una cuenta NotXunta (gratis) en «Cuenta y amigos» para ir más allá del aula.",
-    points: [["Amigos", "busca a otras personas por su nombre de usuario y envía solicitudes."], ["Mensajes NotXunta", "chatea con tus amigos; el contador te dice cuántos tienes sin leer."], ["Archivos NotXunta", "tu espacio en la nube para subir y abrir apuntes desde cualquier ordenador."], ["Sincronización", "tu aspecto y tus ajustes te siguen a cada ordenador donde inicies sesión."]] },
+  { tab: "Amigos y archivos", icon: "☁", title: "Cuenta Better AV, amigos y archivos",
+    lead: "Crea una cuenta Better AV (gratis) en «Cuenta y amigos» para ir más allá del aula.",
+    points: [["Amigos", "busca a otras personas por su nombre de usuario y envía solicitudes."], ["Mensajes Better AV", "chatea con tus amigos; el contador te dice cuántos tienes sin leer."], ["Archivos Better AV", "tu espacio en la nube para subir y abrir apuntes desde cualquier ordenador."], ["Sincronización", "tu aspecto y tus ajustes te siguen a cada ordenador donde inicies sesión."]] },
   { tab: "Apariencia", icon: "✦", title: "Hazla tuya",
     lead: "En «Apariencia» eliges cómo se ve la app.",
     points: [["Fondos", "nebulosa, atardecer, aurora, galaxia, tu propia imagen, un GIF o un vídeo con sonido."], ["Color de acento", "cambia el color de botones, scrollbars y detalles."], ["Tamaño de la interfaz", `${MOD} + y ${MOD} − para ampliar o reducir, ${MOD} 0 para volver al 100 %.`]] },
   { tab: "Avisos", icon: "🔔", title: "Avisos y segundo plano",
-    lead: "Al cerrar la ventana, NotXunta se queda en la bandeja del sistema y sigue pendiente de lo tuyo.",
+    lead: "Al cerrar la ventana, Better AV se queda en la bandeja del sistema y sigue pendiente de lo tuyo.",
     points: [["Notificaciones", "avisos emergentes con sonido cuando hay novedades en tus aulas o te escribe alguien."], ["Ajustes", "activa o quita el sonido, los avisos, el inicio con el ordenador y la frecuencia de comprobación."], ["Salir del todo", "clic derecho en el icono de la bandeja → «Salir»."], ["Listo", "puedes volver a ver este tutorial en Ajustes → «Ver el tutorial otra vez»."]] }
 ];
 let tutIdx = 0;
@@ -1873,7 +2037,7 @@ aula.onMessages(p => {
     notify(p.fresh.length > 1 ? `✉ ${p.fresh.length} mensajes nuevos` : `✉ ${f.name}: ${f.text}`.slice(0, 140));
   }
 });
-// Mensajes directos de NotXunta: actualiza el contador de la barra lateral y, con la app delante, avisa dentro de ella.
+// Mensajes directos de Better AV: actualiza el contador de la barra lateral y, con la app delante, avisa dentro de ella.
 aula.onNxMessages(p => {
   const n = Math.max(0, Number(p && p.unread) || 0);
   const b = $('[data-badge="nxmessages"]');
@@ -1881,7 +2045,7 @@ aula.onNxMessages(p => {
   const fresh = (p && p.fresh) || [];
   if (!fresh.length || nxViewOpen()) return;
   aula.playSound(false).catch(() => {});
-  notify(fresh.length > 1 ? `✉ ${fresh.reduce((t, g) => t + (g.count || 1), 0)} mensajes NotXunta nuevos` : `✉ ${fresh[0].name}: ${fresh[0].text}`.slice(0, 140));
+  notify(fresh.length > 1 ? `✉ ${fresh.reduce((t, g) => t + (g.count || 1), 0)} mensajes Better AV nuevos` : `✉ ${fresh[0].name}: ${fresh[0].text}`.slice(0, 140));
 });
 
 // Clic en un aviso de mensaje: abre esa aula en «Mensajes».
@@ -1899,7 +2063,7 @@ aula.onNavigate(async p => {
   } catch (e) { notify(e.message); }
 });
 
-// ------------------------------------------------------------------ popup legal: cuenta NotXunta + política de privacidad + términos
+// ------------------------------------------------------------------ popup legal: cuenta Better AV + política de privacidad + términos
 const legalDialog = $("#legal-dialog");
 // Muestra el popup y devuelve "up" (crear cuenta), "in" (ya tengo cuenta) o "later" (no aceptó). Siempre se resuelve: la única salida es el evento «close» del diálogo.
 // «mode»: "account" (aún sin sesión) o "accept" (ya hay sesión, solo falta aceptar).
@@ -1908,8 +2072,8 @@ function openLegal(mode = "account") {
     let choice = "later";
     const check = $("#legal-check"), up = $("#legal-signup"), inn = $("#legal-signin"), later = $("#legal-later"), err = $("#legal-error"), box = clear($("#legal-scroll"));
     const accept = mode === "accept";
-    $("#legal-eyebrow").textContent = accept ? "ANTES DE SEGUIR" : "CUENTA NOTXUNTA";
-    $("#legal-title").textContent = accept ? "Acepta la política y los términos" : "Crea tu cuenta NotXunta";
+    $("#legal-eyebrow").textContent = accept ? "ANTES DE SEGUIR" : "CUENTA BETTER AV";
+    $("#legal-title").textContent = accept ? "Acepta la política y los términos" : "Crea tu cuenta Better AV";
     check.checked = false; up.disabled = inn.disabled = true; err.hidden = true;
     up.textContent = accept ? "Aceptar y continuar" : "Crear cuenta";
     inn.hidden = accept;
@@ -1961,7 +2125,7 @@ async function maybeOfferAccount() {
 const KIND_LABEL = { new: "NUEVO", fix: "ARREGLO", improve: "MEJORA" };
 async function renderNews(root) {
   const { versions, current, seen } = await api("changelog");
-  clear(root).append(pageTitle("TABLÓN DE ACTUALIZACIONES", "Novedades", "Cada función y arreglo de cada versión de NotXunta Client."));
+  clear(root).append(pageTitle("TABLÓN DE ACTUALIZACIONES", "Novedades", "Cada función y arreglo de cada versión de Better AV Client."));
   versions.forEach((v, i) => {
     const isCur = v.version === current;
     root.append(h("div", { class: `news-card${i === 0 ? " latest" : ""}` },
@@ -1982,7 +2146,7 @@ api("changelog").then(c => setNewsBadge(c.seen !== c.current)).catch(() => {});
 
 // ------------------------------------------------------------------ arranque
 renderAccounts();
-// Popups de inicio, uno detrás de otro: tutorial (solo la primera vez en este dispositivo) → elección de IA → crear cuenta NotXunta (política y términos)
+// Popups de inicio, uno detrás de otro: tutorial (solo la primera vez en este dispositivo) → elección de IA → crear cuenta Better AV (política y términos)
 maybeTutorial().then(maybeAskAi).then(maybeOfferAccount).catch(() => {});
 
 
@@ -2036,10 +2200,10 @@ function uploadSummary(r, where) {
   if (r.errors && r.errors.length) setTimeout(() => notify(r.errors.slice(0, 2).join(" · ") + (r.errors.length > 2 ? ` (y ${r.errors.length - 2} más)` : "")), r.uploaded ? 3400 : 0);
 }
 
-// Pantalla «Archivos NotXunta» (la misma en el lanzador y dentro de cada aula; no depende de ningún aula).
+// Pantalla «Archivos Better AV» (la misma en el lanzador y dentro de cada aula; no depende de ningún aula).
 async function renderNxFiles(root) {
   clear(root);
-  root.append(pageTitle("TU CUENTA", "Archivos NotXunta", "Archivos privados guardados en tu cuenta NotXunta: los ves desde cualquier ordenador."));
+  root.append(pageTitle("TU CUENTA", "Archivos Better AV", "Archivos privados guardados en tu cuenta Better AV: los ves desde cualquier ordenador."));
   const body = h("div", {});
   root.append(body);
   await nxFilesPanel(body);
@@ -2049,10 +2213,10 @@ async function nxFilesPanel(root) {
   clear(root);
   let st;
   try { st = await api("cloudStatus"); } catch (e) { root.append(empty("☁", "Sin conexión con el servidor", e.message)); return; }
-  if (!st.configured) { root.append(empty("☁", "Servidor de cuentas sin configurar", "Esta versión de la app no tiene el servidor de cuentas NotXunta.")); return; }
+  if (!st.configured) { root.append(empty("☁", "Servidor de cuentas sin configurar", "Esta versión de la app no tiene el servidor de cuentas Better AV.")); return; }
   if (!st.signedIn || !st.profile) {
-    root.append(h("div", { class: "empty-panel" }, h("div", { class: "empty-icon", text: "☁" }), h("h2", { text: "Entra en tu cuenta NotXunta" }),
-      h("p", { text: "Los Archivos NotXunta se guardan en tu cuenta para que los tengas en cualquier ordenador." }),
+    root.append(h("div", { class: "empty-panel" }, h("div", { class: "empty-icon", text: "☁" }), h("h2", { text: "Entra en tu cuenta Better AV" }),
+      h("p", { text: "Los Archivos Better AV se guardan en tu cuenta para que los tengas en cualquier ordenador." }),
       h("button", { class: "primary", text: "Abrir cuenta", onclick: openFriends })));
     return;
   }
@@ -2062,12 +2226,12 @@ async function nxFilesPanel(root) {
   try { r = await api("nxList"); } catch (e) { clear(root); root.append(empty("!", "No se pudieron cargar tus archivos", e.message)); return; }
   clear(root);
   const reload = () => nxFilesPanel(root).catch(e => notify(e.message));
-  root.append(quotaBar(r.usage.used, r.usage.quota, "de tu cuenta NotXunta"));
+  root.append(quotaBar(r.usage.used, r.usage.quota, "de tu cuenta Better AV"));
   root.append(h("p", { class: "muted files-note", text: `Solo tú puedes verlos. ${r.usage.maxFile ? `Máximo ${fmtBytes(r.usage.maxFile)} por archivo. ` : ""}Se sincronizan con tu cuenta: aparecen en cualquier ordenador donde inicies sesión.` }));
   root.append(h("div", { class: "files-toolbar" }, h("span", {}), h("div", { class: "acts" },
     fileBtn("＋ Subir archivos", "primary", async () => {
       showLoading("Subiendo archivos…");
-      try { const res = await api("nxUpload"); uploadSummary(res, "Archivos NotXunta"); if (!res.canceled) await reload(); }
+      try { const res = await api("nxUpload"); uploadSummary(res, "Archivos Better AV"); if (!res.canceled) await reload(); }
       finally { hideLoading(); }
     }),
     h("button", { class: "secondary small", text: "⟳ Actualizar", onclick: reload }))));
@@ -2086,7 +2250,7 @@ async function nxFilesPanel(root) {
         finally { hideLoading(); }
       }),
       fileBtn("Eliminar", "secondary", async () => {
-        if (!confirm(`¿Eliminar «${f.name}» de tus Archivos NotXunta? No se puede deshacer.`)) throw new Error("Cancelado.");
+        if (!confirm(`¿Eliminar «${f.name}» de tus Archivos Better AV? No se puede deshacer.`)) throw new Error("Cancelado.");
         await api("nxDelete", f.id); notify("Archivo eliminado."); await reload();
       })));
   }

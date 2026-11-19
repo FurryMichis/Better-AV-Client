@@ -121,7 +121,7 @@ function ensureView(tab) {
   tab.view = view;
   const wc = view.webContents;
   // Google bloquea el inicio de sesión en navegadores "Electron": se usa un agente de Chrome normal.
-  wc.setUserAgent(wc.getUserAgent().replace(/\s?Electron\/\S+/i, "").replace(/\s?notxunta-client\/\S+/i, ""));
+  wc.setUserAgent(wc.getUserAgent().replace(/\s?Electron\/\S+/i, "").replace(/\s?(?:notxunta-client|better-av-client|betteravclient)\/\S+/i, ""));
   // Los enlaces que quieren abrir ventana nueva (target=_blank, window.open) se abren en una pestaña nueva.
   wc.setWindowOpenHandler(({ url }) => {
     if (isHttp(url)) {
@@ -168,7 +168,7 @@ function resolveTarget(t) {
 function createWindow() {
   win = new BrowserWindow({
     show: false, frame: false, transparent: true, backgroundColor: "#00000000", resizable: false, movable: false,
-    skipTaskbar: true, alwaysOnTop: true, hasShadow: false, fullscreenable: false, title: "NotXunta Overlay",
+    skipTaskbar: true, alwaysOnTop: true, hasShadow: false, fullscreenable: false, title: "Better AV Overlay",
     webPreferences: {
       preload: path.join(__dirname, "..", "overlay", "overlay-preload.js"),
       contextIsolation: true, nodeIntegration: false, sandbox: true
@@ -215,7 +215,7 @@ function applyHotkey(mode) {
   let ok = false;
   try { ok = globalShortcut.register(acc, toggle); } catch { ok = false; }
   if (ok) registered = acc;
-  return ok ? { ok: true } : { ok: false, error: process.platform === "linux" ? `No se pudo registrar el atajo ${acc}: otro programa lo usa o tu escritorio (Wayland) no permite atajos globales. Usa la opción «Solo con NotXunta Client en primer plano».` : `No se pudo registrar el atajo ${acc}; otro programa lo está usando.` };
+  return ok ? { ok: true } : { ok: false, error: process.platform === "linux" ? `No se pudo registrar el atajo ${acc}: otro programa lo usa o tu escritorio (Wayland) no permite atajos globales. Usa la opción «Solo con Better AV Client en primer plano».` : `No se pudo registrar el atajo ${acc}; otro programa lo está usando.` };
 }
 
 // ------------------------------------------------------------ IPC (solo desde la ventana del overlay)

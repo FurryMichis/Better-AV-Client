@@ -1,5 +1,5 @@
 -- =====================================================================
--- NotXunta Client 0.5.6 · foto de perfil + sincronización de ajustes
+-- Better AV Client 0.5.6 · foto de perfil + sincronización de ajustes
 -- Para una base de datos que YA tiene el schema anterior:
 -- Supabase → SQL Editor → New query → pega todo esto → Run.
 -- (Es seguro ejecutarlo más de una vez.)

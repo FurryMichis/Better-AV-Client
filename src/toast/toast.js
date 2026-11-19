@@ -9,7 +9,7 @@ window.toastApi.onShow(p => {
   $("title").textContent = p.title;
   $("body").textContent = p.body;
   $("hint").textContent = p.action === "overlay" ? "Pulsa para abrir el overlay"
-    : p.action === "update" ? "Pulsa para reiniciar e instalar" : p.action === "releases" ? "Pulsa para abrir la página de descarga" : p.action === "friends" ? "Pulsa para ver tus solicitudes" : p.action.startsWith("messages:") ? "Pulsa para abrir tus mensajes" : "Pulsa para abrir NotXunta Client";
+    : p.action === "update" ? "Pulsa para reiniciar e instalar" : p.action === "releases" ? "Pulsa para abrir la página de descarga" : p.action === "friends" ? "Pulsa para ver tus solicitudes" : p.action.startsWith("messages:") ? "Pulsa para abrir tus mensajes" : "Pulsa para abrir Better AV Client";
   const ico = $("ico");
   ico.textContent = ""; ico.style.backgroundImage = "";
   if (p.icon && /^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(p.icon)) ico.style.backgroundImage = `url("${p.icon}")`;

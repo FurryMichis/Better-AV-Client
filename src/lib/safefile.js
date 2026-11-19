@@ -1,5 +1,5 @@
 "use strict";
-// Utilidades para archivos descargados (apuntes del aula y «Archivos NotXunta»):
+// Utilidades para archivos descargados (apuntes del aula y «Archivos Better AV»):
 //  · carpeta de caché PRIVADA del usuario (nunca la carpeta temporal compartida del sistema),
 //  · nombres de archivo seguros,
 //  · lista de extensiones que NUNCA se abren automáticamente,

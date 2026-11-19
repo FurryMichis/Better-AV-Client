@@ -1,4 +1,4 @@
--- NotXunta Client 0.7.2 · Personalización de la cuenta NotXunta (descripción, estado, pronombres, banner y color)
+-- Better AV Client 0.7.2 · Personalización de la cuenta Better AV (descripción, estado, pronombres, banner y color)
 -- Ejecutar en Supabase → SQL Editor → Run. Se puede ejecutar más de una vez.
 -- Requiere haber ejecutado antes schema.sql (o las migraciones 0.5.6 y 0.6.1).
 

@@ -1,5 +1,5 @@
 -- =====================================================================
--- NotXunta Client 0.6.1 · estado «en línea» entre amigos + Archivos NotXunta
+-- Better AV Client 0.6.1 · estado «en línea» entre amigos + Archivos Better AV
 -- Pégalo entero en: Supabase → SQL Editor → New query → Run
 -- Se puede ejecutar varias veces sin problema. Requiere haber ejecutado antes schema.sql (y migration-0.5.6.sql).
 -- =====================================================================
@@ -39,7 +39,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- ---------------------------------------------------------------------
--- 2) Archivos NotXunta (almacenados en tu cuenta, visibles desde cualquier ordenador)
+-- 2) Archivos Better AV (almacenados en tu cuenta, visibles desde cualquier ordenador)
 --    Límites: cámbialos aquí si quieres (en bytes). La app los lee del servidor, no hace falta recompilar.
 -- ---------------------------------------------------------------------
 create or replace function public.nx_quota()    returns bigint language sql immutable as $$ select 104857600::bigint $$;  -- 100 MB por cuenta

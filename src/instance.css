@@ -198,7 +198,7 @@ select:focus{border-color:var(--accent)}
 .settings-note.warn,.video-warn{color:#f6d68a}
 .video-warn{background:#3a2d12;border:1px solid #5a4719;border-radius:9px;padding:10px 12px;margin:12px 0 0;font-size:12px;line-height:1.5}
 
-/* ---- cuenta NotXunta y amigos ---- */
+/* ---- cuenta Better AV y amigos ---- */
 .cloud-card{max-width:560px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:16px}
 .cloud-card h2{margin:0 0 6px;font-size:17px}
 .cloud-card>p{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.5}
@@ -231,7 +231,7 @@ select:focus{border-color:var(--accent)}
 .form-ok{margin:0 0 14px;padding:10px 12px;border-radius:7px;background:#173a2b;color:#9be8c0;font-size:11px;line-height:1.45}
 .cloud-card .switch-row{border-bottom:0;padding:14px 0 4px}
 
-/* foto de perfil de la cuenta NotXunta */
+/* foto de perfil de la cuenta Better AV */
 .cloud-who .pic.xl{width:68px;height:68px;font-size:22px}
 .pic.editable{cursor:pointer;position:relative;transition:filter .15s}
 .pic.editable:hover{filter:brightness(1.2);outline:2px solid var(--accent);outline-offset:2px}
@@ -353,7 +353,7 @@ body{display:flex;flex-direction:column;background:var(--bg)}
 .tut-foot button:disabled{opacity:.4;cursor:default}
 @media(max-width:620px){.tut-body{flex-direction:column;padding:20px}}
 
-/* Popup legal de inicio (cuenta NotXunta + política de privacidad + términos) */
+/* Popup legal de inicio (cuenta Better AV + política de privacidad + términos) */
 .legal{width:min(720px,calc(100% - 30px));max-height:calc(100vh - 40px);padding:0;overflow:hidden}
 .legal[open]{display:flex;flex-direction:column}
 .legal-head{padding:22px 26px 14px}
@@ -393,7 +393,7 @@ body{display:flex;flex-direction:column;background:var(--bg)}
 .stat{background:#211d2e;border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
 .stat b{font-size:24px;letter-spacing:-.5px;color:var(--accent)}
 
-/* ---- 0.7.2 · personalización de la cuenta NotXunta ---- */
+/* ---- 0.7.2 · personalización de la cuenta Better AV ---- */
 .pcard{--pc:var(--accent);background:var(--panel);border:1px solid var(--pc);border-radius:14px;overflow:hidden;max-width:420px}
 .pcard-banner{height:110px;background:linear-gradient(120deg,color-mix(in srgb,var(--pc) 65%,#1d1830),#1d1830) center/cover no-repeat}
 .pcard-body{padding:0 18px 18px}

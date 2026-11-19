@@ -121,7 +121,7 @@ function openAi(e) {
 }
 function openAula(e) {
   const n = data.accounts.length;
-  if (n === 0) { flash("Añade una cuenta en NotXunta Client para abrir su aula."); return; }
+  if (n === 0) { flash("Añade una cuenta en Better AV Client para abrir su aula."); return; }
   if (n === 1) { go({ kind: "aula", id: data.accounts[0].id }, wantsTab(e)); return; }
   showHomeScreen("aulas");
 }

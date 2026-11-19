@@ -5,7 +5,7 @@ const { app } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const RAW = "https://raw.githubusercontent.com/FurryMichis/notxunta-client/main/";
+const RAW = "https://raw.githubusercontent.com/FurryMichis/Better-AV-Client/main/";
 const DOCS = { privacy: "PRIVACY.md", terms: "TERMS.md" };
 const MAX = 200 * 1024; // un .md legal no pasa de unos KB; se descarta lo desproporcionado
 const cacheFile = () => path.join(app.getPath("userData"), "legal-cache.json");

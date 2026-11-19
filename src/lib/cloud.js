@@ -1,5 +1,5 @@
 "use strict";
-// Cuentas propias de NotXunta Client (independientes del aula virtual), sobre Supabase.
+// Cuentas propias de Better AV Client (independientes del aula virtual), sobre Supabase.
 // Todo se hace desde el proceso principal; la interfaz solo recibe resultados.
 // La sesión se guarda cifrada con el almacén seguro del sistema (DPAPI en Windows, Llavero en macOS, GNOME Keyring / KWallet en Linux).
 
@@ -70,6 +70,9 @@ function cloudError(status, data) {
     "23514": "El nombre de usuario solo puede tener letras minúsculas, números y _ (3 a 20 caracteres)."
   };
   if (map[code]) return new Error(map[code]);
+  if (/chat_groups|chat_group_members|group_messages|list_groups|create_group|group_members|add_group_members|remove_group_member|mark_group_read/i.test(msg)
+      && (/does not exist|could not find|schema cache/i.test(msg) || code === "42P01" || code === "42883" || code === "PGRST202" || code === "PGRST205"))
+    return new Error("Faltan los grupos de chat: ejecuta supabase/migration-0.8.0.sql en el SQL Editor de Supabase.");
   if ((code === "42P01" || code === "PGRST205" || /direct_messages/i.test(msg)) && /direct_messages/i.test(msg))
     return new Error("Falta activar la mensajería: ejecuta supabase/migration-0.6.6.sql en el SQL Editor.");
   if (code === "42703" || code === "PGRST204" || code === "42P01" || code === "PGRST205" || /does not exist|schema cache/i.test(msg))
@@ -83,7 +86,7 @@ async function request(method, urlPath, { body, headers, auth = true, retry = tr
   ensureLoaded();
   if (!configured()) throw new Error("El servidor de cuentas todavía no está configurado en esta versión de la app.");
   if (auth && session && Date.now() / 1000 > session.expires_at - 60) await refresh();
-  if (auth && !session) throw new Error("Inicia sesión en tu cuenta NotXunta.");
+  if (auth && !session) throw new Error("Inicia sesión en tu cuenta Better AV.");
   let res;
   try {
     res = await fetch(config.url.replace(/\/+$/, "") + urlPath, {
@@ -112,7 +115,7 @@ async function raw(method, urlPath, { body, headers, retry = true, timeout = 120
   ensureLoaded();
   if (!configured()) throw new Error("El servidor de cuentas todavía no está configurado en esta versión de la app.");
   if (session && Date.now() / 1000 > session.expires_at - 60) await refresh();
-  if (!session) throw new Error("Inicia sesión en tu cuenta NotXunta.");
+  if (!session) throw new Error("Inicia sesión en tu cuenta Better AV.");
   let res;
   try {
     res = await fetch(config.url.replace(/\/+$/, "") + urlPath, {
@@ -156,10 +159,10 @@ async function signIn(email, password) {
   setSession(await request("POST", "/auth/v1/token?grant_type=password", { auth: false, body: { email, password } }));
 }
 
-const CALLBACK_PAGE = ok => `<!doctype html><meta charset="utf-8"><title>NotXunta Client</title>
+const CALLBACK_PAGE = ok => `<!doctype html><meta charset="utf-8"><title>Better AV Client</title>
 <body style="font-family:Segoe UI,sans-serif;background:#15121d;color:#eee;display:grid;place-items:center;height:100vh;margin:0">
 <div style="text-align:center"><h2>${ok ? "¡Listo!" : "No se pudo iniciar sesión"}</h2>
-<p>${ok ? "Ya puedes cerrar esta pestaña y volver a NotXunta Client." : "Vuelve a NotXunta Client e inténtalo de nuevo."}</p></div>`;
+<p>${ok ? "Ya puedes cerrar esta pestaña y volver a Better AV Client." : "Vuelve a Better AV Client e inténtalo de nuevo."}</p></div>`;
 
 // Google / Discord / GitHub: se abre el navegador del sistema y se recibe el código en un puerto local (PKCE).
 const PROVIDER_NAMES = { google: "Google", discord: "Discord", github: "GitHub" };
@@ -223,7 +226,7 @@ async function signOut() {
 // ------------------------------------------------------------------ perfil
 const cleanName = s => String(s || "").replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 40);
 
-// Niveles del esquema: 0 = base · 1 = con foto/ajustes (0.5.6) · 2 = con estado «en línea» y Archivos NotXunta (0.6.1) · 3 = con descripción, estado, banner y color (0.7.2).
+// Niveles del esquema: 0 = base · 1 = con foto/ajustes (0.5.6) · 2 = con estado «en línea» y Archivos Better AV (0.6.1) · 3 = con descripción, estado, banner y color (0.7.2).
 // Si la base de datos aún no está al día, el perfil se carga con lo que haya en lugar de dejar toda la cuenta inutilizable.
 let schemaLevel = 3;
 async function loadProfile() {

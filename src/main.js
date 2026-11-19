@@ -22,9 +22,16 @@ const secure = require("./lib/secure");
 const safefile = require("./lib/safefile");
 const updateGuard = require("./lib/updateguard");
 const CHANGELOG = require("./lib/changelog");
-const RELEASES_URL = "https://github.com/FurryMichis/notxunta-client/releases/latest";
+const RELEASES_URL = "https://github.com/FurryMichis/Better-AV-Client/releases/latest";
 
-app.setAppUserModelId("com.notxunta.client");
+app.setAppUserModelId("com.notxunta.client");   // se mantiene el identificador interno: así Windows lo trata como la misma app y las actualizaciones siguen funcionando
+
+// Cambio de nombre (NotXunta Client → Better AV Client): si ya existe la carpeta de datos anterior se sigue usando,
+// para no perder cuentas del aula, ajustes ni la sesión de tu cuenta Better AV. Instalaciones nuevas usan la carpeta nueva.
+try {
+  const legacyData = path.join(app.getPath("appData"), "NotXunta Client");
+  if (fs.existsSync(legacyData)) app.setPath("userData", legacyData);
+} catch { /* se usa la carpeta por defecto */ }
 // Modo compatible del vídeo de fondo: sin decodificación por hardware (arregla vídeos que no se ven en algunos PCs/GPU).
 if (settings.get().videoCompat) app.commandLine.appendSwitch("disable-accelerated-video-decode");
 // Esquema propio para servir el vídeo de fondo desde la carpeta de datos (con soporte de "seek").
@@ -55,18 +62,22 @@ const publicAccount = a => ({ id: a.id, name: a.name, url: a.url, username: a.us
 function applyLaunchAtStartup(enabled) {
   enabled = !!enabled;
   try {
+    if (process.platform === "win32") { // quita la entrada con el nombre antiguo para que no queden dos
+      try { app.setLoginItemSettings({ openAtLogin: false, name: "NotXunta Client", path: process.execPath }); } catch { /* no existía */ }
+    }
     if (process.platform === "win32" || process.platform === "darwin") {
       app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: false, path: process.execPath, args: app.isPackaged ? [] : [app.getAppPath()] });
       return true;
     }
     if (process.platform === "linux") {
       const dir = path.join(app.getPath("home"), ".config", "autostart");
-      const file = path.join(dir, "notxunta-client.desktop");
+      const file = path.join(dir, "better-av-client.desktop");
+      fs.rmSync(path.join(dir, "notxunta-client.desktop"), { force: true }); // entrada con el nombre antiguo
       if (!enabled) { fs.rmSync(file, { force: true }); return true; }
       fs.mkdirSync(dir, { recursive: true });
       const quote = v => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
       const executable = process.env.APPIMAGE || process.execPath;
-      fs.writeFileSync(file, `[Desktop Entry]\nType=Application\nName=NotXunta Client\nComment=Cliente del Aula Virtual\nExec="${quote(executable)}"\nTerminal=false\nX-GNOME-Autostart-enabled=true\n`, { mode: 0o644 });
+      fs.writeFileSync(file, `[Desktop Entry]\nType=Application\nName=Better AV Client\nComment=Cliente del Aula Virtual\nExec="${quote(executable)}"\nTerminal=false\nX-GNOME-Autostart-enabled=true\n`, { mode: 0o644 });
       return true;
     }
   } catch (e) { console.warn("No se pudo configurar el inicio automático:", e.message); return false; }
@@ -103,7 +114,7 @@ const decryptPassword = acc => safeStorage.decryptString(Buffer.from(acc.pw, "ba
 const sessions = new Map(); // accountId -> MoodleClient (el token nunca llega a la interfaz)
 
 async function connect(acc) {
-  if (acc.needsPassword || !acc.pw) { // aula importada de la cuenta NotXunta: la contraseña no se sincroniza
+  if (acc.needsPassword || !acc.pw) { // aula importada de la cuenta Better AV: la contraseña no se sincroniza
     throw Object.assign(new Error("Falta la contraseña de esta aula en este ordenador."), { errorcode: "nopassword" });
   }
   const client = new MoodleClient(acc.url);
@@ -216,7 +227,7 @@ function scheduleMessages(firstDelayMs) {
   msgTimer = setTimeout(async () => { await pollMessages(); scheduleMessages(); }, firstDelayMs || 30000);
 }
 
-// ---------------------------------------------------------------- cuenta NotXunta (nube): vínculos y solicitudes de amistad
+// ---------------------------------------------------------------- cuenta Better AV (nube): vínculos y solicitudes de amistad
 // Clave estable de un aula (host + ruta), igual para todos los usuarios de la misma aula.
 function siteKey(url) {
   try { const u = new URL(url); return (u.host + u.pathname.replace(/\/+$/, "")).toLowerCase(); } catch { return String(url || "").toLowerCase(); }
@@ -278,9 +289,9 @@ function scheduleFriends() {
   friendsTimer = setInterval(pollFriends, 90 * 1000);
 }
 
-// Mensajes directos de NotXunta: se comprueban cada 30 s (también con la app en la bandeja) y avisan al llegar uno nuevo.
+// Mensajes directos de Better AV: se comprueban cada 30 s (también con la app en la bandeja) y avisan al llegar uno nuevo.
 // La primera comprobación solo fija la referencia: no avisa de lo que ya estaba sin leer.
-let nxSeen = null, nxTimer = null, nxBusy = false;
+let nxSeen = null, nxTimer = null, nxBusy = false, groupSeen = null;
 function sendNx(payload) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("nx:update", payload);
 }
@@ -293,7 +304,7 @@ async function pollNxMessages() {
   if (nxBusy) return;
   nxBusy = true;
   try {
-    if (!cloud.configured() || !cloud.isSignedIn()) { nxSeen = null; sendNx({ unread: 0, fresh: [] }); return; }
+    if (!cloud.configured() || !cloud.isSignedIn()) { nxSeen = null; groupSeen = null; sendNx({ unread: 0, fresh: [] }); return; }
     const me = cloud.userId();
     if (!me) return;
     const rows = (await cloud.rest("GET", `/rest/v1/direct_messages?recipient_id=eq.${me}&read_at=is.null&select=id,sender_id,body,created_at&order=created_at.asc&limit=100`)) || [];
@@ -310,11 +321,27 @@ async function pollNxMessages() {
       }
       groups = [...bySender.values()];
     }
+    // Grupos de chat: mensajes sin leer y mensajes nuevos de otras personas desde la última comprobación.
+    let groupUnread = 0;
+    try {
+      const gl = (await cloud.rpc("list_groups")) || [];
+      groupUnread = gl.reduce((n, g) => n + (Number(g.unread) || 0), 0);
+      const next = new Map(gl.map(g => [g.group_id, g.last_at ? Date.parse(g.last_at) || 0 : 0]));
+      if (groupSeen) {
+        for (const g of gl) {
+          const at = next.get(g.group_id);
+          if (Number(g.unread) > 0 && g.last_sender !== me && at > (groupSeen.get(g.group_id) || 0)) {
+            groups.push({ name: `${String(g.name).slice(0, 40)} · ${g.last_sender_name || "Alguien"}`, count: 1, text: String(g.last_body || "").slice(0, 120) });
+          }
+        }
+      }
+      groupSeen = next;
+    } catch { /* grupos aún no activados en el servidor, o sin conexión */ }
     const focused = mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() && mainWindow.isFocused();
     // Con la app delante el aviso lo muestra la propia interfaz; si no, sale una notificación del sistema.
-    sendNx({ unread: rows.length, fresh: focused ? groups : [] });
+    sendNx({ unread: rows.length + groupUnread, fresh: focused ? groups : [] });
     if (!focused && groups.length && settings.get().msgNotify) {
-      if (groups.length > 3) announce(`${fresh.length} mensajes NotXunta nuevos`, groups.map(g => g.name).slice(0, 4).join(", "), "", "nxmessages");
+      if (groups.length > 3) announce(`${groups.length} mensajes Better AV nuevos`, groups.map(g => g.name).slice(0, 4).join(", "), "", "nxmessages");
       else for (const g of groups) announce(`Mensaje de ${g.name}`, `${g.count > 1 ? `${g.count} mensajes nuevos · ` : ""}${g.text}`, "", "nxmessages");
     }
   } catch { /* sin conexión: se reintenta */ } finally { nxBusy = false; }
@@ -325,7 +352,7 @@ function scheduleNxMessages() {
   nxTimer = setInterval(pollNxMessages, 20 * 1000);
 }
 
-// ---------------------------------------------------------------- ajustes sincronizados con la cuenta NotXunta
+// ---------------------------------------------------------------- ajustes sincronizados con la cuenta Better AV
 function dropAccountFiles(id) {
   sessions.delete(id); msgStates.delete(id); userIds.delete(id);
   try { fs.unlinkSync(cacheFile(id)); } catch { /* sin caché */ }
@@ -419,7 +446,7 @@ function announce(title, body, icon, action = "app") {
   sound.play(); // el mismo sonido para todos los avisos (si está activado en Ajustes)
   if (settings.get().toasts) toasts.show({ title, body, icon: icon || "🎓", action });
   else if (Notification.isSupported()) {
-    const n = new Notification({ title, body, silent: true }); // el sonido lo pone NotXunta (sound.play)
+    const n = new Notification({ title, body, silent: true }); // el sonido lo pone Better AV (sound.play)
     n.on("click", () => handleToastAction(action));
     n.show();
   }
@@ -494,9 +521,9 @@ function createTray() {
   const size = process.platform === "linux" ? 24 : 16; // Windows/macOS 16 px; en Linux los paneles suelen pedir algo más grande
   const icon = nativeImage.createFromPath(path.join(__dirname, "..", "build", "icon.png")).resize({ width: size, height: size });
   tray = new Tray(icon);
-  tray.setToolTip("NotXunta Client");
+  tray.setToolTip("Better AV Client");
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: "Abrir NotXunta Client", click: showMain },
+    { label: "Abrir Better AV Client", click: showMain },
     { label: "Abrir overlay (Shift+Tab)", click: () => overlay.toggle() },
     { label: "Buscar novedades ahora", click: () => backgroundSync() },
     { label: "Buscar actualizaciones", click: () => updater.check({ manual: true }) },
@@ -573,7 +600,7 @@ handle("accounts:add", async (_e, { name, url, username, password }) => {
   await client.login(username, password); // valida las credenciales antes de guardar
   const list = loadAccounts();
   const dup = list.find(a => siteKey(a.url) === siteKey(base) && String(a.username).toLowerCase() === username.toLowerCase());
-  if (dup) { // la misma aula ya está (p. ej. importada de tu cuenta NotXunta sin contraseña): se completa en lugar de duplicarla
+  if (dup) { // la misma aula ya está (p. ej. importada de tu cuenta Better AV sin contraseña): se completa en lugar de duplicarla
     if (!dup.needsPassword) throw new Error("Esa cuenta ya está añadida.");
     dup.pw = encryptPassword(password); delete dup.needsPassword;
     saveAccounts(list); sessions.set(dup.id, client); bgBlocked.delete(dup.id);
@@ -586,7 +613,7 @@ handle("accounts:add", async (_e, { name, url, username, password }) => {
   return publicAccount(acc);
 });
 
-// Aula importada de la cuenta NotXunta: solo falta la contraseña de este ordenador.
+// Aula importada de la cuenta Better AV: solo falta la contraseña de este ordenador.
 handle("accounts:setPassword", async (_e, id, password) => {
   password = String(password || "");
   if (!password) throw new Error("Escribe la contraseña.");
@@ -641,8 +668,8 @@ handle("sync:look", (_e, look, changed) => { sync.reportLook(look, !!changed); r
 handle("sync:now", async () => { await sync.run(); return sync.getInfo(); });
 handle("sync:info", () => sync.getInfo());
 handle("cloud:status", () => cloud.status());
-// Puerta legal: sin aceptar la política de privacidad y los términos no se puede crear la cuenta NotXunta ni entrar en ella.
-const requireLegal = () => { if (!settings.get().legalAccepted) throw new Error("Debes aceptar la política de privacidad y los términos para usar una cuenta NotXunta."); };
+// Puerta legal: sin aceptar la política de privacidad y los términos no se puede crear la cuenta Better AV ni entrar en ella.
+const requireLegal = () => { if (!settings.get().legalAccepted) throw new Error("Debes aceptar la política de privacidad y los términos para usar una cuenta Better AV."); };
 handle("legal:get", () => legal.get());
 handle("legal:accept", () => { settings.set({ legalAccepted: new Date().toISOString(), accountPrompted: true }); return true; });
 handle("legal:dismiss", () => { settings.set({ accountPrompted: true }); return true; });
@@ -660,7 +687,7 @@ handle("cloud:updateProfile", async (_e, patch) => {
 });
 handle("cloud:deleteAccount", async () => { try { await nxfiles.purgeAll(); } catch { /* si falla, el servidor conserva los archivos huérfanos */ } await cloud.deleteAccount(); sync.forget(); knownIncoming = null; sendFriendBadge(0); return true; });
 
-// ¿Quién de los participantes de este curso usa NotXunta Client?
+// ¿Quién de los participantes de este curso usa Better AV Client?
 handle("cloud:lookup", async (_e, accountId, ids) => {
   const acc = loadAccounts().find(a => a.id === accountId);
   if (!acc) throw new Error("Cuenta no encontrada.");
@@ -702,7 +729,7 @@ handle("friends:remove", async (_e, id) => { await cloud.removeFriendship(id); s
 handle("chat:list", async (_e, userId) => {
   if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
   const me = cloud.userId();
-  if (!me) throw new Error("Inicia sesión en NotXunta.");
+  if (!me) throw new Error("Inicia sesión en Better AV.");
   const rows = await cloud.rest("GET", `/rest/v1/direct_messages?or=(and(sender_id.eq.${me},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${me}))&select=id,sender_id,recipient_id,body,created_at,read_at&order=created_at.asc&limit=200`);
   return rows || [];
 });
@@ -710,17 +737,53 @@ handle("chat:send", async (_e, userId, body) => {
   if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
   body = String(body || "").trim();
   if (!body || body.length > 2000) throw new Error("El mensaje debe tener entre 1 y 2000 caracteres.");
-  const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en NotXunta.");
+  const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en Better AV.");
   const rows = await cloud.rest("POST", "/rest/v1/direct_messages", { body: { sender_id: me, recipient_id: userId, body }, headers: { Prefer: "return=representation" } });
   return rows && rows[0];
 });
 handle("chat:read", async (_e, userId) => {
   if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
-  const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en NotXunta.");
+  const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en Better AV.");
   await cloud.rest("PATCH", `/rest/v1/direct_messages?sender_id=eq.${userId}&recipient_id=eq.${me}&read_at=is.null`, { body: { read_at: new Date().toISOString() }, headers: { Prefer: "return=minimal" } });
   setTimeout(pollNxMessages, 300);
   return true;
 });
+
+// ---- Grupos de chat de Better AV (supabase/migration-0.8.0.sql)
+const gid = v => { if (!cloud.UUID.test(String(v))) throw new Error("Grupo no válido."); return String(v); };
+const uuidList = list => [...new Set((Array.isArray(list) ? list : []).map(String).filter(x => cloud.UUID.test(x)))].slice(0, 24);
+handle("groups:list", async () => (await cloud.rpc("list_groups")) || []);
+handle("groups:create", async (_e, name, members) => {
+  name = String(name || "").trim();
+  if (!name || name.length > 40) throw new Error("El nombre del grupo debe tener entre 1 y 40 caracteres.");
+  const id = await cloud.rpc("create_group", { p_name: name, p_members: uuidList(members) });
+  setTimeout(pollNxMessages, 300);
+  return id;
+});
+handle("groups:members", async (_e, id) => (await cloud.rpc("group_members", { p_group: gid(id) })) || []);
+handle("groups:messages", async (_e, id) => {
+  const rows = await cloud.rest("GET", `/rest/v1/group_messages?group_id=eq.${gid(id)}&select=id,sender_id,body,created_at&order=created_at.desc&limit=200`);
+  return (rows || []).reverse();
+});
+handle("groups:send", async (_e, id, body) => {
+  body = String(body || "").trim();
+  if (!body || body.length > 2000) throw new Error("El mensaje debe tener entre 1 y 2000 caracteres.");
+  const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en Better AV.");
+  const rows = await cloud.rest("POST", "/rest/v1/group_messages", { body: { group_id: gid(id), sender_id: me, body }, headers: { Prefer: "return=representation" } });
+  return rows && rows[0];
+});
+handle("groups:read", async (_e, id) => { await cloud.rpc("mark_group_read", { p_group: gid(id) }); setTimeout(pollNxMessages, 300); return true; });
+handle("groups:rename", async (_e, id, name) => {
+  name = String(name || "").trim();
+  if (!name || name.length > 40) throw new Error("El nombre del grupo debe tener entre 1 y 40 caracteres.");
+  await cloud.rpc("rename_group", { p_group: gid(id), p_name: name }); return true;
+});
+handle("groups:addMembers", async (_e, id, users) => Number(await cloud.rpc("add_group_members", { p_group: gid(id), p_users: uuidList(users) })) || 0);
+handle("groups:removeMember", async (_e, id, userId) => {
+  if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
+  await cloud.rpc("remove_group_member", { p_group: gid(id), p_user: String(userId) }); setTimeout(pollNxMessages, 300); return true;
+});
+handle("groups:delete", async (_e, id) => { await cloud.rpc("delete_group", { p_group: gid(id) }); setTimeout(pollNxMessages, 300); return true; });
 
 handle("update:status", () => updater.getStatus());
 handle("update:check", () => updater.check({ manual: true }));
@@ -857,10 +920,10 @@ handle("instance:prefetch", (_e, id, files) => {
   return true;
 });
 
-// ---- «Archivos NotXunta» (archivos privados guardados en tu cuenta)
+// ---- «Archivos Better AV» (archivos privados guardados en tu cuenta)
 handle("nx:list", () => nxfiles.overview());
 handle("nx:upload", async () => {
-  const r = await dialog.showOpenDialog(mainWindow, { title: "Elige archivos para subir a tus Archivos NotXunta", properties: ["openFile", "multiSelections"] });
+  const r = await dialog.showOpenDialog(mainWindow, { title: "Elige archivos para subir a tus Archivos Better AV", properties: ["openFile", "multiSelections"] });
   if (r.canceled || !r.filePaths.length) return { uploaded: 0, errors: [], canceled: true };
   return nxfiles.uploadMany(r.filePaths);
 });
@@ -975,7 +1038,7 @@ function createWindow() {
     minHeight: 640,
     backgroundColor: "#100e18",
     show: false, // se muestra cuando está pintada (y entonces se cierra la pantalla de inicio)
-    title: "NotXunta Client",
+    title: "Better AV Client",
     icon: path.join(__dirname, "..", "build", "icon.png"),
     autoHideMenuBar: true,
     frame: false, // barra de ventana propia dentro de la app (ver .titlebar en index.html)
@@ -1001,7 +1064,7 @@ function createWindow() {
     mainWindow.hide();
     if (!hintedTray) {
       hintedTray = true;
-      announce("NotXunta Client", "Sigue en segundo plano. Pulsa Shift+Tab para abrir el overlay.", "", "overlay");
+      announce("Better AV Client", "Sigue en segundo plano. Pulsa Shift+Tab para abrir el overlay.", "", "overlay");
     }
   });
   const sendWinState = () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("win:state", mainWindow.isMaximized() || mainWindow.isFullScreen()); };
@@ -1099,11 +1162,11 @@ if (!app.requestSingleInstanceLock()) {
     scheduleNxMessages();
     schedulePresence();
     try { powerMonitor.on("resume", () => setTimeout(quickCheck, 6000)); } catch { /* sin gestor de energía */ }
-    sync.schedule(8000);       // trae los ajustes de tu cuenta NotXunta (si has iniciado sesión)
+    sync.schedule(8000);       // trae los ajustes de tu cuenta Better AV (si has iniciado sesión)
     if (bootNote) setTimeout(() => announce(bootNote.title, bootNote.body, "", "releases"), 3500);
     setTimeout(() => {
       const keep = settings.get().keepBackground;
-      announce("NotXunta Client", `${keep ? "Se mantiene en segundo plano. " : ""}Pulsa Shift+Tab para abrir el overlay.`, "", "overlay");
+      announce("Better AV Client", `${keep ? "Se mantiene en segundo plano. " : ""}Pulsa Shift+Tab para abrir el overlay.`, "", "overlay");
     }, 1800);
     app.on("activate", showMain);
   });

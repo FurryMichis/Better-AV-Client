@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 // API mínima: solo canales concretos. La interfaz nunca ve contraseñas ni tokens.
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
-contextBridge.exposeInMainWorld("notxuntaClient", {
+contextBridge.exposeInMainWorld("betteravClient", {
   version: "0.7.2",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
@@ -61,7 +61,18 @@ contextBridge.exposeInMainWorld("notxuntaClient", {
   chatList: userId => call("chat:list", userId),
   chatSend: (userId, body) => call("chat:send", userId, body),
   chatRead: userId => call("chat:read", userId),
-  // Sincronización de ajustes con la cuenta NotXunta
+  // Grupos de chat de Better AV
+  groupsList: () => call("groups:list"),
+  groupCreate: (name, members) => call("groups:create", name, members),
+  groupMembers: id => call("groups:members", id),
+  groupMessages: id => call("groups:messages", id),
+  groupSend: (id, body) => call("groups:send", id, body),
+  groupRead: id => call("groups:read", id),
+  groupRename: (id, name) => call("groups:rename", id, name),
+  groupAddMembers: (id, users) => call("groups:addMembers", id, users),
+  groupRemoveMember: (id, userId) => call("groups:removeMember", id, userId),
+  groupDelete: id => call("groups:delete", id),
+  // Sincronización de ajustes con la cuenta Better AV
   syncLook: (look, changed) => call("sync:look", look, !!changed),
   syncNow: () => call("sync:now"),
   syncInfo: () => call("sync:info"),
@@ -75,7 +86,7 @@ contextBridge.exposeInMainWorld("notxuntaClient", {
     ipcRenderer.on("cloud:badge", fn);
     return () => ipcRenderer.removeListener("cloud:badge", fn);
   },
-  // Archivos NotXunta (en tu cuenta)
+  // Archivos Better AV (en tu cuenta)
   nxList: () => call("nx:list"),
   nxUpload: () => call("nx:upload"),
   nxOpen: (id, name) => call("nx:open", id, name),
@@ -107,7 +118,7 @@ contextBridge.exposeInMainWorld("notxuntaClient", {
     ipcRenderer.on("msg:update", fn);
     return () => ipcRenderer.removeListener("msg:update", fn);
   },
-  // Mensajes directos de NotXunta: { unread, fresh: [{ name, text, count }] }
+  // Mensajes directos de Better AV: { unread, fresh: [{ name, text, count }] }
   onNxMessages: cb => {
     const fn = (_e, p) => cb(p);
     ipcRenderer.on("nx:update", fn);
