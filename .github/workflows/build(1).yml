@@ -1,4 +1,4 @@
-name: Compilar NotXunta Client
+name: Compilar Better AV Client
 
 # Se ejecuta al crear una Release / subir una etiqueta de versión (p. ej. v0.6.5): compila Windows y Linux
 # y SUBE los instaladores a la Release de esa etiqueta (la crea si no existe).
