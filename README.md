@@ -1,4 +1,4 @@
-# Better AV Client 0.8.0
+# Better AV Client 0.8.1
 
 Cliente de escritorio para el Aula Virtual (Moodle). **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
@@ -12,8 +12,10 @@ Necesitas Node.js LTS e internet. Cada sistema se compila **desde ese mismo sist
 
 Para probar sin compilar: `npm start`.
 
+El instalador de Windows (`BetterAVClient-Setup.exe`) instala en una carpeta llamada **Better AV Client** (se puede cambiar durante la instalación).
+
 ## Uso
-1. "Añadir cuenta": nombre, enlace de tu aula (p. ej. `https://centros.edu.xunta.gal/tu-centro/aulavirtual`), usuario y contraseña.
+1. "Añadir cuenta": nombre, enlace de tu aula (p. ej. `https://aulavirtual.tu-centro.es`), usuario y contraseña.
    La contraseña se valida contra el aula y se guarda cifrada con el almacén seguro de Windows (DPAPI).
 2. "Abrir instancia": al abrir se sincroniza y se marcan como NUEVO los documentos, enlaces y tareas
    que no estaban la última vez (y aparece una notificación de Windows). El botón "Sincronizar" repite la comprobación.
@@ -45,7 +47,16 @@ Para probar sin compilar: `npm start`.
 - El vídeo de fondo se copia a la carpeta de datos de la app (máximo 1 GB); usa MP4 H.264 o WebM. Si en algún PC no se ve (H.265/HEVC, GPU o controladores problemáticos),
   activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
-- Las tareas se abren en el navegador para entregarlas (no se suben archivos desde la app).
+- Las tareas, los cuestionarios y los foros se gestionan desde la app (desde la 0.8.1); lo que el aula no permita por la API se abre en el navegador.
+
+## Novedades de la 0.8.1
+
+- **Tareas**: enunciado y archivos, entregar texto y/o archivos (subida con `/webservice/upload.php`), guardar borrador, enviar para calificar, editar y borrar la entrega, ver nota, comentario y archivos del profesor y comentarios de la entrega (`mod_assign_*`, `core_comment_*`).
+- **Cuestionarios**: intentos y notas, revisión, empezar o continuar un intento con cronómetro (corregido con la hora del aula), contraseña y resumen (`mod_quiz_*`). El HTML de las preguntas se sanea antes de mostrarlo; las preguntas de arrastrar y soltar o con adjuntos se hacen en el navegador.
+- **Foros**: debates, respuestas, nuevo debate y suscripción por debate (`mod_forum_*`). La suscripción al foro entero no la ofrece la API: se hace en el navegador.
+- **Desplazamiento con la rueda del ratón**: ya se puede subir y bajar por los menús aunque el puntero esté sobre las tareas, tarjetas o listas. Causa: `.item-list` combinaba `overflow:hidden` con `overscroll-behavior:contain` y bloqueaba la rueda (`src/instance.css`). Además, `src/scrollfix.js` pasa la rueda al diálogo abierto o a la zona principal cuando el elemento bajo el puntero no puede desplazarse.
+- **Carpeta de instalación «Better AV Client»**: el instalador de Windows se instala siempre en `Better AV Client` (por defecto `%LOCALAPPDATA%\Programs\Better AV Client`), también al actualizar desde la versión con el nombre antiguo (`build/installer.nsh`, cargado con `nsis.include`). Si tenías instalada una versión anterior en la carpeta `NotXunta Client`, puedes borrar esa carpeta a mano; tus datos no se tocan.
+- No hay cambios en Supabase en esta versión.
 
 ## Novedades de la 0.8.0
 
@@ -104,7 +115,7 @@ Para probar sin compilar: `npm start`.
 ## Novedades de la 0.6.1 — amigos en línea y archivos
 - **Estado «en línea» entre amigos**: en «Amigos» aparece un punto verde junto a quien tiene la app abierta (o «Visto hace 5 min»). Solo lo ven los amigos aceptados. Se desactiva en «Cuenta y amigos» → «Mostrar cuando estoy en línea». La app avisa cada 45 s; si se cierra o se apaga el PC, el punto desaparece en unos 2 minutos.
 - ~~**Archivos privados del aula**~~ _(quitado en la 0.6.2)_ (sección «Archivos» dentro del aula): lista (con carpetas), abrir, subir y eliminar los archivos de *Área personal → Archivos privados* de Moodle, con la barra de espacio usado y el límite del aula (`userquota`) y el máximo por archivo. Antes de subir se comprueba que cabe.
-  - Depende de lo que permita cada aula: si tiene desactivado el acceso a archivos privados desde aplicaciones externas, la app lo explica. Borrar necesita una función de Moodle que no todas las aulas ofrecen; si no se puede, la app lo avisa y hay que borrar desde la web. **No se ha podido probar contra el Aula Virtual real de la Xunta**: pruébalo con un archivo de prueba.
+  - Depende de lo que permita cada aula: si tiene desactivado el acceso a archivos privados desde aplicaciones externas, la app lo explica. Borrar necesita una función de Moodle que no todas las aulas ofrecen; si no se puede, la app lo avisa y hay que borrar desde la web. **No se ha podido probar contra un Aula Virtual real**: pruébalo con un archivo de prueba.
 - **Archivos Better AV** (también en el menú del lanzador): archivos privados guardados en tu cuenta (Supabase Storage). Se ven desde cualquier ordenador; subir, abrir, «Guardar como…» y eliminar. Límites por defecto: 100 MB por cuenta y 25 MB por archivo (se cambian en `supabase/migration-0.6.1.sql`: `nx_quota()` y `nx_max_file()`; y el límite por archivo del bucket, una línea más abajo).
 - **Actualiza el servidor antes de publicar**: ejecuta `supabase/migration-0.6.1.sql` en Supabase → SQL Editor (crea el estado en línea, el bucket privado `nx-files` y sus reglas). Sin esto la app sigue funcionando, pero esas dos funciones avisarán de que falta.
 - Ojo con el plan gratuito de Supabase: 1 GB de Storage en total para todos los usuarios.
