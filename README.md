@@ -1,6 +1,6 @@
 # Better AV Client 0.8.0
 
-Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia. **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
+Cliente de escritorio para el Aula Virtual (Moodle). **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
 ## Generar los instaladores
 Necesitas Node.js LTS e internet. Cada sistema se compila **desde ese mismo sistema** (un .dmg no se puede generar en Windows), o con GitHub Actions (más abajo).
