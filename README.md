@@ -1,4 +1,4 @@
-# Better AV Client 0.8.1
+# Better AV Client 0.8.2
 
 Cliente de escritorio para el Aula Virtual (Moodle). **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
@@ -48,6 +48,14 @@ El instalador de Windows (`BetterAVClient-Setup.exe`) instala en una carpeta lla
   activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
 - Las tareas, los cuestionarios y los foros se gestionan desde la app (desde la 0.8.1); lo que el aula no permita por la API se abre en el navegador.
+
+## Novedades de la 0.8.2
+
+- **Mensajes del aula**: buscar usuarios y empezar chats nuevos (`core_message_message_search_users`), contactos, solicitudes y bloqueos (`core_message_*_contact*`, `block_user`), borrar mensajes y conversaciones «para mí», y chats de grupo del propio Moodle (lectura, envío, miembros y silenciar). Los chats silenciados no avisan ni cuentan en el contador. Los grupos de Better AV (0.8.0) son independientes.
+- **Calendario**: además de las entregas, muestra tus eventos propios, los del centro y los de tus cursos. Crear (`core_calendar_create_calendar_events`), editar y borrar eventos propios; editar usa el formulario del aula (`core_calendar_submit_create_update_form`) y la hora se envía con la zona horaria de tu equipo.
+- **Notificaciones**: marcar como leídas (una o todas) y preferencias por tipo de aviso y canal, o desactivarlas todas (`core_user_update_user_preferences`). Los canales que el aula bloquea no se pueden cambiar.
+- No hay cambios en Supabase en esta versión.
+
 
 ## Novedades de la 0.8.1
 
