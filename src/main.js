@@ -17,6 +17,7 @@ const updater = require("./lib/updater");
 const cloud = require("./lib/cloud");
 const sync = require("./lib/sync");
 const nxfiles = require("./lib/nxfiles");
+const act = require("./lib/activities");
 const splash = require("./lib/splash");
 const secure = require("./lib/secure");
 const safefile = require("./lib/safefile");
@@ -1015,6 +1016,74 @@ handle("api:notifications", (_e, id, userId) => withClient(id, async c => {
     time: n.timecreated, read: !!n.read, url: n.contexturl || ""
   }));
 }));
+
+// ---- tareas (entregas), cuestionarios y foros
+const actHandle = (channel, fn) => handle(channel, async (e, ...a) => {
+  try { return await fn(e, ...a); } catch (err) { throw new Error(act.friendly(err)); }
+});
+const MAX_UPLOAD = 200 * 1024 * 1024;
+const picked = new Map(); // ficha → ruta: solo se pueden subir archivos que la persona eligió en el selector del sistema
+
+actHandle("act:assignInfo", (_e, id, courseId, cmid) => withClient(id, async c => act.assignInfo(c, courseId, cmid, await userIdOf(id, c))));
+
+handle("act:pickFiles", async () => {
+  const r = await dialog.showOpenDialog(mainWindow, { title: "Elige los archivos de tu entrega", properties: ["openFile", "multiSelections"] });
+  if (r.canceled) return [];
+  const out = [];
+  for (const file of r.filePaths.slice(0, 20)) {
+    const st = await fs.promises.stat(file);
+    if (!st.isFile()) continue;
+    if (st.size > MAX_UPLOAD) throw new Error(`«${path.basename(file)}» pesa demasiado (máximo 200 MB).`);
+    const token = crypto.randomUUID();
+    picked.set(token, file);
+    out.push({ token, name: path.basename(file), size: st.size });
+  }
+  if (picked.size > 200) for (const k of [...picked.keys()].slice(0, picked.size - 200)) picked.delete(k);
+  return out;
+});
+
+// payload: { text: string|null (null = no cambia), keep: [fileurl] | null (null = archivos sin cambios), picks: [ficha] }
+actHandle("act:assignSave", (_e, id, assignId, payload) => withClient(id, async c => {
+  payload = payload || {};
+  const raw = await act.assignRaw(c, assignId, await userIdOf(id, c));
+  let textHtml = null, files = null;
+  if (typeof payload.text === "string") textHtml = payload.text.trim() ? act.textToHtml(payload.text.slice(0, 50000)) : "";
+  if (Array.isArray(payload.keep) || (Array.isArray(payload.picks) && payload.picks.length)) {
+    files = []; const names = new Set();
+    const unique = n => { let k = n, i = 2; while (names.has(k.toLowerCase())) { const d = n.lastIndexOf("."); k = d > 0 ? `${n.slice(0, d)} (${i})${n.slice(d)}` : `${n} (${i})`; i++; } names.add(k.toLowerCase()); return k; };
+    for (const f of raw.files.filter(f => (payload.keep || []).includes(f.fileurl))) {   // solo archivos que de verdad están en tu entrega
+      const res = await fetch(c.withToken(f.fileurl), { signal: AbortSignal.timeout(180000) });
+      if (!res.ok) throw new Error(`No se pudo leer «${f.filename}» de tu entrega.`);
+      files.push({ name: unique(f.filename), buf: Buffer.from(await res.arrayBuffer()) });
+    }
+    for (const t of (payload.picks || []).slice(0, 20)) {
+      const file = picked.get(String(t));
+      if (!file) throw new Error("Vuelve a elegir los archivos.");
+      files.push({ name: unique(path.basename(file)), buf: await fs.promises.readFile(file) });
+    }
+  }
+  await act.assignSave(c, assignId, { textHtml, files });
+  return true;
+}));
+actHandle("act:assignSubmit", (_e, id, assignId, accept) => withClient(id, c => act.assignSubmit(c, assignId, !!accept)));
+actHandle("act:assignRemove", (_e, id, assignId) => withClient(id, async c => act.assignRemove(c, assignId, await userIdOf(id, c))));
+actHandle("act:assignComments", (_e, id, cmid, subId) => withClient(id, async c => act.assignComments(c, cmid, subId, await userIdOf(id, c))));
+actHandle("act:assignComment", (_e, id, cmid, subId, text) => withClient(id, c => act.assignComment(c, cmid, subId, text)));
+
+actHandle("act:quizInfo", (_e, id, courseId, cmid) => withClient(id, async c => act.quizInfo(c, courseId, cmid, await userIdOf(id, c))));
+actHandle("act:quizStart", (_e, id, quizId, password) => withClient(id, c => act.quizStart(c, quizId, password)));
+actHandle("act:quizPage", (_e, id, attemptId, page, password) => withClient(id, c => act.quizPage(c, attemptId, page, password)));
+actHandle("act:quizSave", (_e, id, attemptId, data, password) => withClient(id, c => act.quizSave(c, attemptId, data, password)));
+actHandle("act:quizProcess", (_e, id, attemptId, data, opts) => withClient(id, c => act.quizProcess(c, attemptId, data, { finish: !!(opts && opts.finish), timeup: !!(opts && opts.timeup), password: opts && opts.password })));
+actHandle("act:quizSummary", (_e, id, attemptId, password) => withClient(id, c => act.quizSummary(c, attemptId, password)));
+actHandle("act:quizReview", (_e, id, attemptId) => withClient(id, c => act.quizReview(c, attemptId)));
+
+actHandle("act:forumInfo", (_e, id, courseId, cmid) => withClient(id, c => act.forumInfo(c, courseId, cmid)));
+actHandle("act:forumDiscussions", (_e, id, forumId, page) => withClient(id, c => act.forumDiscussions(c, forumId, page)));
+actHandle("act:forumPosts", (_e, id, discussionId) => withClient(id, c => act.forumPosts(c, discussionId)));
+actHandle("act:forumReply", (_e, id, postId, subject, text, subscribe) => withClient(id, c => act.forumReply(c, postId, subject, text, !!subscribe)));
+actHandle("act:forumNew", (_e, id, forumId, subject, text, subscribe) => withClient(id, c => act.forumNew(c, forumId, subject, text, !!subscribe)));
+actHandle("act:forumSubscribe", (_e, id, forumId, discussionId, state) => withClient(id, c => act.forumSubscribe(c, forumId, discussionId, !!state)));
 
 // ---------------------------------------------------------------- endurecimiento general
 // Ninguna ventana puede incrustar <webview>, y la sesión por defecto (ventanas propias con archivos locales) no concede

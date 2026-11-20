@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("betteravClient", {
-  version: "0.7.2",
+  version: "0.8.1",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
   addAccount: acc => call("accounts:add", acc),
@@ -104,6 +104,27 @@ contextBridge.exposeInMainWorld("betteravClient", {
     ipcRenderer.on("update:status", fn);
     return () => ipcRenderer.removeListener("update:status", fn);
   },
+  // Tareas, cuestionarios y foros del aula
+  assignInfo: (id, courseId, cmid) => call("act:assignInfo", id, courseId, cmid),
+  pickFiles: () => call("act:pickFiles"),
+  assignSave: (id, assignId, payload) => call("act:assignSave", id, assignId, payload),
+  assignSubmit: (id, assignId, accept) => call("act:assignSubmit", id, assignId, accept),
+  assignRemove: (id, assignId) => call("act:assignRemove", id, assignId),
+  assignComments: (id, cmid, subId) => call("act:assignComments", id, cmid, subId),
+  assignComment: (id, cmid, subId, text) => call("act:assignComment", id, cmid, subId, text),
+  quizInfo: (id, courseId, cmid) => call("act:quizInfo", id, courseId, cmid),
+  quizStart: (id, quizId, password) => call("act:quizStart", id, quizId, password),
+  quizPage: (id, attemptId, page, password) => call("act:quizPage", id, attemptId, page, password),
+  quizSave: (id, attemptId, data, password) => call("act:quizSave", id, attemptId, data, password),
+  quizProcess: (id, attemptId, data, opts) => call("act:quizProcess", id, attemptId, data, opts),
+  quizSummary: (id, attemptId, password) => call("act:quizSummary", id, attemptId, password),
+  quizReview: (id, attemptId) => call("act:quizReview", id, attemptId),
+  forumInfo: (id, courseId, cmid) => call("act:forumInfo", id, courseId, cmid),
+  forumDiscussions: (id, forumId, page) => call("act:forumDiscussions", id, forumId, page),
+  forumPosts: (id, discussionId) => call("act:forumPosts", id, discussionId),
+  forumReply: (id, postId, subject, text, subscribe) => call("act:forumReply", id, postId, subject, text, subscribe),
+  forumNew: (id, forumId, subject, text, subscribe) => call("act:forumNew", id, forumId, subject, text, subscribe),
+  forumSubscribe: (id, forumId, discussionId, state) => call("act:forumSubscribe", id, forumId, discussionId, state),
   openExternal: url => call("instance:openExternal", url),
   calendar: id => call("api:calendar", id),
   grades: (id, courseId, userId) => call("api:grades", id, courseId, userId),

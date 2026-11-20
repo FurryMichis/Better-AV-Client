@@ -316,7 +316,10 @@ body{display:flex;flex-direction:column;background:var(--bg)}
 .topbar{flex:none}
 .offline-banner{flex:none}
 .scroller{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;position:relative}
-.bubbles,.nx-dm-history,.conv-list,.thread,.nx-dm-list,.item-list{overscroll-behavior:contain}
+/* 0.8.1: solo los chats contienen el scroll; las listas (tareas, cursos…) lo dejan pasar al contenedor principal.
+   Antes .item-list tenía overflow:hidden + overscroll-behavior:contain y se «tragaba» la rueda del ratón. */
+.bubbles,.nx-dm-history{overscroll-behavior:contain}
+.item-list,.group,.conv-list,.thread,.nx-dm-list{overscroll-behavior:auto}
 
 /* barras de desplazamiento de la app (vertical y horizontal) */
 ::-webkit-scrollbar{width:12px;height:12px;background:transparent}

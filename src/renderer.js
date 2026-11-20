@@ -742,7 +742,7 @@ function renderCourse(root) {
       const count = k => s.modules.filter(m => m.kind === k).length;
       grid.append(h("button", { class: "topic-btn", onclick: () => { state.sectionId = s.id; setIView("courses"); } },
         h("div", { class: "topic-name", text: s.name }),
-        h("div", { class: "topic-meta", text: `${count("doc")} docs · ${count("link")} enlaces · ${count("task")} tareas` }),
+        h("div", { class: "topic-meta", text: `${count("doc")} docs · ${count("link")} enlaces · ${count("task")} tareas` + (count("quiz") ? ` · ${count("quiz")} cuestionario${count("quiz") === 1 ? "" : "s"}` : "") + (count("forum") ? ` · ${count("forum")} foro${count("forum") === 1 ? "" : "s"}` : "") }),
         n > 0 && chip(`${n} nuevo${n === 1 ? "" : "s"}`, "new")));
     }
     root.append(grid);
@@ -757,12 +757,14 @@ function renderCourse(root) {
     ["doc", "Documentos", "▤"],
     ["link", "Enlaces", "↗"],
     ["task", "Actividades a entregar", "✎"],
+    ["quiz", "Cuestionarios", "☑"],
+    ["forum", "Foros", "❝"],
     ["other", "Otros recursos", "◇"]
   ];
   const wrap = h("div", { class: "topic-groups" });
   for (const [kind, title, icon] of groups) {
     const mods = section.modules.filter(m => m.kind === kind);
-    if (!mods.length && kind === "other") continue;
+    if (!mods.length && (kind === "other" || kind === "quiz" || kind === "forum")) continue;
     const list = h("div", { class: "item-list" });
     if (!mods.length) list.append(h("div", { class: "muted pad", text: "Nada en este apartado." }));
     for (const m of mods) list.append(...moduleRows(m, icon));
@@ -1586,10 +1588,16 @@ function moduleRows(m, icon) {
   if (m.kind === "task") {
     const overdue = m.due && m.due * 1000 < Date.now();
     const st = m.status === "submitted" ? chip("Entregada", "ok") : overdue ? chip("Vencida", "bad") : chip(m.status === "draft" ? "Borrador" : "Pendiente", "warn");
-    return [h("button", { class: "item", onclick: () => openModuleUrl(m) },
+    return [h("button", { class: "item", onclick: () => openActivity(m, courseById(state.courseId)) },
       h("span", { class: "item-icon", text: icon }),
       h("span", { class: "item-main" }, h("b", { text: m.name }), h("span", { class: "muted", text: m.due ? `Entrega: ${fmtDate(m.due)}` : "Sin fecha límite" })),
       fresh, st)];
+  }
+  if (m.kind === "quiz" || m.kind === "forum") {
+    return [h("button", { class: "item", onclick: () => openActivity(m, courseById(state.courseId)) },
+      h("span", { class: "item-icon", text: icon }),
+      h("span", { class: "item-main" }, h("b", { text: m.name }), h("span", { class: "muted", text: m.kind === "quiz" ? "Cuestionario" : "Foro" })),
+      fresh)];
   }
   return [h("button", { class: "item", onclick: () => openModuleUrl(m), title: "Se abre en el navegador" },
     h("span", { class: "item-icon", text: icon }),
@@ -1624,7 +1632,7 @@ async function renderCalendar(root) {
 // ------------------------------------------------------------------ tareas
 function renderTasks(root) {
   const tasks = state.data.courses.flatMap(c => c.sections.flatMap(s => s.modules)
-    .filter(m => m.kind === "task").map(m => ({ ...m, course: c.fullname })));
+    .filter(m => m.kind === "task").map(m => ({ ...m, course: c.fullname, courseId: c.id })));
   root.append(pageTitle("ACTIVIDADES A ENTREGAR", "Tareas", "Todas las tareas de tus asignaturas."));
   if (!tasks.length) { root.append(empty("✎", "Sin tareas", "No hay tareas en tus cursos.")); return; }
   const pending = tasks.filter(t => t.status !== "submitted").sort((a, b) => (a.due || 9e12) - (b.due || 9e12));
@@ -1635,7 +1643,7 @@ function renderTasks(root) {
     const box = h("div", { class: "item-list" });
     for (const t of list) {
       const overdue = t.due && t.due * 1000 < Date.now() && t.status !== "submitted";
-      box.append(h("button", { class: "item", onclick: () => openModuleUrl(t) },
+      box.append(h("button", { class: "item", onclick: () => openActivity(t, courseById(t.courseId)) },
         h("span", { class: "item-icon", text: "✎" }),
         h("span", { class: "item-main" }, h("b", { text: t.name }), h("span", { class: "muted", text: `${t.course} · ${t.due ? fmtDate(t.due) : "Sin fecha límite"}` })),
         t.status === "submitted" ? chip("Entregada", "ok") : overdue ? chip("Vencida", "bad") : chip("Pendiente", "warn")));

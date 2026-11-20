@@ -3,6 +3,18 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.8.1", headline: "Entrega tareas, haz cuestionarios y usa los foros desde la app",
+    summary: "Ya no hace falta abrir el navegador para lo más habitual del aula: entregar tareas, ver la corrección, hacer cuestionarios y participar en los foros.",
+    items: [
+      { kind: "new", title: "Entregar tareas", text: "Pulsa una tarea para ver el enunciado y sus archivos, escribir tu texto, subir archivos, guardar el borrador, enviarlo para calificar, editarlo o borrarlo (siempre que el aula lo permita). Verás tu estado, la nota, el comentario del profesor, sus archivos de corrección y los comentarios de la entrega, y puedes escribir los tuyos." },
+      { kind: "new", title: "Cuestionarios", text: "En cada tema aparecen sus cuestionarios: mira tus intentos y notas, revisa los intentos terminados y haz uno nuevo o continúa el que dejaste a medias, con cronómetro, contraseña si la pide y resumen antes de enviar. Las preguntas de arrastrar y soltar y otras especiales se avisan y se hacen en el navegador." },
+      { kind: "new", title: "Foros", text: "Lee los debates y sus respuestas, descarga los adjuntos, responde, crea debates nuevos y suscríbete a un debate para recibir avisos de sus respuestas." },
+      { kind: "fix", title: "Desplazamiento con la rueda", text: "Ahora puedes subir y bajar por los menús aunque el puntero esté sobre las tareas, las tarjetas o las listas; antes la rueda se quedaba bloqueada ahí." },
+      { kind: "fix", title: "Carpeta de instalación", text: "El instalador de Windows usa la carpeta «Better AV Client» (también al actualizar desde la versión con el nombre antiguo)." },
+      { kind: "improve", title: "Qué depende del aula", text: "Todo usa las funciones de la app oficial de Moodle. Si tu aula tiene alguna desactivada o un profesor limita algo (por ejemplo, ver las respuestas de un intento), la app lo dirá y podrás abrirlo en el navegador con un botón." }
+    ]
+  },
+  {
     version: "0.8.0", headline: "Better AV Client y grupos de chat",
     summary: "NotXunta Client pasa a llamarse Better AV Client, y los mensajes de tu cuenta Better AV ahora admiten grupos con tus amigos.",
     items: [

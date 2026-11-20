@@ -65,6 +65,7 @@ class MoodleClient {
   constructor(baseUrl, { allowHttp = false, fetchImpl } = {}) {
     this.base = normalizeUrl(baseUrl, allowHttp);
     this.token = null;
+    this.skew = 0;
     this._fetch = fetchImpl || ((...a) => fetch(...a));
   }
 
@@ -95,6 +96,8 @@ class MoodleClient {
       throw e;
     });
     if (!res.ok) throw new Error(`El aula respondió con el error HTTP ${res.status}.`);
+    const sd = Date.parse(res.headers && res.headers.get && res.headers.get("date"));
+    if (Number.isFinite(sd)) this.skew = sd - Date.now();   // diferencia de reloj con el aula (para el cronómetro de los cuestionarios)
     const text = await res.text();
     try { return JSON.parse(text); }
     catch { throw new Error("Respuesta inesperada del aula. Comprueba que el enlace es el de Moodle."); }
@@ -235,6 +238,8 @@ function classify(modname) {
   if (DOC_MODS.has(modname)) return "doc";
   if (modname === "url") return "link";
   if (TASK_MODS.has(modname)) return "task";
+  if (modname === "quiz") return "quiz";
+  if (modname === "forum") return "forum";
   return "other";
 }
 
@@ -318,4 +323,4 @@ async function syncAll(client, onProgress = () => {}) {
   };
 }
 
-module.exports = { MoodleClient, normalizeUrl, flatten, syncAll, pmap };
+module.exports = { MoodleClient, normalizeUrl, flatten, syncAll, pmap, htmlToText };
