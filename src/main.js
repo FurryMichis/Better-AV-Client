@@ -18,6 +18,7 @@ const cloud = require("./lib/cloud");
 const sync = require("./lib/sync");
 const nxfiles = require("./lib/nxfiles");
 const act = require("./lib/activities");
+const soc = require("./lib/social");
 const splash = require("./lib/splash");
 const secure = require("./lib/secure");
 const safefile = require("./lib/safefile");
@@ -163,14 +164,19 @@ function mapConversations(r, userId, st) {
     const lastMsg = cv.messages && cv.messages[0];
     const time = (lastMsg && lastMsg.timecreated) || 0;
     const seen = st.seen[cv.id] || 0;
+    const type = Number(cv.type) || 1;   // 1 = individual · 2 = grupo del aula · 3 = notas personales
+    const other = type === 1 ? who[0] : null;
     return {
-      id: cv.id,
-      name: cv.name || who.map(m => m.fullname).filter(Boolean).join(", ") || "Chat",
+      id: cv.id, type,
+      name: type === 3 ? "Notas personales" : cv.name || who.map(m => m.fullname).filter(Boolean).join(", ") || "Chat",
       unread: time && time <= seen ? 0 : (cv.unreadcount || 0),
       last: plain(lastMsg && lastMsg.text),
       time,
       from: (lastMsg && lastMsg.useridfrom) || 0,
-      pic: cv.imageurl || (who[0] && (who[0].profileimageurl || who[0].profileimageurlsmall)) || ""
+      pic: cv.imageurl || (who[0] && (who[0].profileimageurl || who[0].profileimageurlsmall)) || "",
+      muted: !!cv.ismuted, members: Number(cv.membercount) || members.length,
+      otherId: other ? Number(other.id) || 0 : 0,
+      contact: !!(other && other.iscontact), blocked: !!(other && other.isblocked), canMessage: !other || other.canmessage !== false
     };
   });
 }
@@ -189,8 +195,8 @@ async function pollMessages() {
           return mapConversations(await c.conversations(uid, 30), uid, msgState(acc.id));
         });
         const uid = userIds.get(acc.id), st = msgState(acc.id);
-        const total = list.reduce((n, cv) => n + cv.unread, 0);
-        const fresh = list.filter(cv => cv.unread > 0 && cv.from !== uid && cv.time > (st.notified[cv.id] || 0));
+        const total = list.reduce((n, cv) => n + (cv.muted ? 0 : cv.unread), 0);
+        const fresh = list.filter(cv => cv.unread > 0 && !cv.muted && cv.from !== uid && cv.time > (st.notified[cv.id] || 0));
         for (const cv of fresh) st.notified[cv.id] = cv.time;
         const firstRun = !st.baselined; // la primera comprobación solo fija la referencia
         st.baselined = true;
@@ -426,7 +432,7 @@ async function doSync(id, sender, { background = false } = {}) {
   try { // contador de mensajes sin leer (opcional: si el aula no lo permite, se deja en 0)
     const uid = data.user.id; userIds.set(id, uid);
     const list = mapConversations(await withClient(id, c => c.conversations(uid, 30)), uid, msgState(id));
-    data.unreadMessages = list.reduce((n, cv) => n + cv.unread, 0);
+    data.unreadMessages = list.reduce((n, cv) => n + (cv.muted ? 0 : cv.unread), 0);
   } catch { data.unreadMessages = 0; }
   linkAccountToCloud(id, data.user);
 
@@ -966,13 +972,7 @@ handle("instance:openExternal", async (_e, url) => {
 // ---- funciones del aula
 const plain = html => String(html || "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 
-handle("api:calendar", (_e, id) => withClient(id, async c => {
-  const r = await c.calendar();
-  return (r.events || []).map(ev => ({
-    id: ev.id, name: ev.name, time: ev.timesort, url: ev.url || "",
-    course: (ev.course && ev.course.fullname) || "", type: ev.modulename || ""
-  }));
-}));
+handle("api:calendar", (_e, id, courseIds) => withClient(id, async c => soc.calendarEvents(c, await userIdOf(id, c), courseIds)));
 
 handle("api:grades", (_e, id, courseId, userId) => withClient(id, async c => {
   const r = await c.grades(courseId, userId);
@@ -1084,6 +1084,32 @@ actHandle("act:forumPosts", (_e, id, discussionId) => withClient(id, c => act.fo
 actHandle("act:forumReply", (_e, id, postId, subject, text, subscribe) => withClient(id, c => act.forumReply(c, postId, subject, text, !!subscribe)));
 actHandle("act:forumNew", (_e, id, forumId, subject, text, subscribe) => withClient(id, c => act.forumNew(c, forumId, subject, text, !!subscribe)));
 actHandle("act:forumSubscribe", (_e, id, forumId, discussionId, state) => withClient(id, c => act.forumSubscribe(c, forumId, discussionId, !!state)));
+
+// ---- mensajes, contactos, calendario y avisos del aula (0.8.2)
+const socHandle = (channel, fn) => actHandle(channel, (_e, id, ...a) => withClient(id, async c => fn(c, await userIdOf(id, c), ...a)));
+socHandle("soc:search", (c, me, term) => soc.searchUsers(c, me, term));
+socHandle("soc:convWith", (c, me, other) => soc.conversationWith(c, me, other));
+socHandle("soc:memberInfo", (c, me, other) => soc.memberInfo(c, me, other));
+socHandle("soc:thread", (c, me, convId) => soc.thread(c, me, convId));
+socHandle("soc:members", (c, me, convId) => soc.convMembers(c, me, convId));
+socHandle("soc:delMsg", (c, me, msgId) => soc.deleteMessage(c, me, msgId));
+socHandle("soc:delConv", (c, me, convId) => soc.deleteConversation(c, me, convId));
+socHandle("soc:mute", (c, me, convId, muted) => soc.setMuted(c, me, convId, !!muted));
+socHandle("soc:contacts", (c, me) => soc.contacts(c, me));
+socHandle("soc:requests", (c, me) => soc.contactRequests(c, me));
+socHandle("soc:blocked", (c, me) => soc.blockedUsers(c, me));
+socHandle("soc:contactAdd", (c, me, other) => soc.requestContact(c, me, other));
+socHandle("soc:contactConfirm", (c, me, other) => soc.confirmContact(c, me, other));
+socHandle("soc:contactDecline", (c, me, other) => soc.declineContact(c, me, other));
+socHandle("soc:contactRemove", (c, me, other) => soc.removeContact(c, me, other));
+socHandle("soc:block", (c, me, other) => soc.blockUser(c, me, other));
+socHandle("soc:unblock", (c, me, other) => soc.unblockUser(c, me, other));
+socHandle("soc:eventSave", (c, me, ev) => soc.eventSave(c, me, ev));
+socHandle("soc:eventDelete", (c, _me, evId) => soc.eventDelete(c, evId));
+socHandle("soc:notifRead", (c, _me, nid) => soc.notifRead(c, nid));
+socHandle("soc:notifReadAll", (c, me) => soc.notifReadAll(c, me));
+socHandle("soc:notifPrefs", (c, me) => soc.notifPrefs(c, me));
+socHandle("soc:notifPrefsSave", (c, me, payload) => soc.notifPrefsSave(c, me, payload || {}));
 
 // ---------------------------------------------------------------- endurecimiento general
 // Ninguna ventana puede incrustar <webview>, y la sesión por defecto (ventanas propias con archivos locales) no concede

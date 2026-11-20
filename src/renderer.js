@@ -625,11 +625,11 @@ $("#sync-btn").addEventListener("click", async () => {
 
 const IVIEWS = {
   courses: ["MIS CURSOS", renderCourses],
-  calendar: ["CALENDARIO", renderCalendar],
+  calendar: ["CALENDARIO", root => renderCalendar(root)],
   tasks: ["TAREAS", renderTasks],
   grades: ["CALIFICACIONES", renderGrades],
-  messages: ["MENSAJES", renderMessages],
-  notifications: ["NOTIFICACIONES", renderNotifications],
+  messages: ["MENSAJES", root => renderMessages(root)],
+  notifications: ["NOTIFICACIONES", root => renderNotifications(root)],
   files: ["ARCHIVOS", renderNxFiles],
   friends: ["AMIGOS", renderCloud],
   profile: ["PERFIL", renderProfile],
@@ -1605,30 +1605,6 @@ function moduleRows(m, icon) {
     fresh)];
 }
 
-// ------------------------------------------------------------------ calendario
-async function renderCalendar(root) {
-  root.append(pageTitle("PRÓXIMOS EVENTOS", "Calendario", "Entregas y eventos de los próximos 90 días."));
-  root.append(h("div", { class: "muted pad", text: "Cargando…" }));
-  let events;
-  try { events = (await api("calendar", state.accountId)).sort((a, b) => a.time - b.time); }
-  catch { // función desactivada en el aula, sin conexión, etc.
-    clear(root).append(pageTitle("PRÓXIMOS EVENTOS", "Calendario"), empty("◷", "Calendario no disponible."));
-    return;
-  }
-  clear(root).append(pageTitle("PRÓXIMOS EVENTOS", "Calendario", "Entregas y eventos de los próximos 90 días."));
-  if (!events.length) { root.append(empty("◷", "Sin eventos", "No hay eventos próximos en tu calendario.")); return; }
-  let day = "";
-  let list;
-  for (const ev of events) {
-    const d = fmtDay(ev.time);
-    if (d !== day) { day = d; root.append(h("h3", { class: "day-head", text: d })); list = h("div", { class: "item-list" }); root.append(list); }
-    list.append(h("button", { class: "item", onclick: () => ev.url && api("openExternal", ev.url).catch(e => notify(e.message)) },
-      h("span", { class: "item-icon", text: "◷" }),
-      h("span", { class: "item-main" }, h("b", { text: ev.name }), h("span", { class: "muted", text: ev.course })),
-      h("span", { class: "muted", text: new Date(ev.time * 1000).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) })));
-  }
-}
-
 // ------------------------------------------------------------------ tareas
 function renderTasks(root) {
   const tasks = state.data.courses.flatMap(c => c.sections.flatMap(s => s.modules)
@@ -1675,70 +1651,6 @@ function renderGrades(root) {
     });
     root.append(det);
   }
-}
-
-// ------------------------------------------------------------------ mensajes
-async function renderMessages(root) {
-  state.convId = null;
-  root.append(pageTitle("COMUNICACIÓN", "Mensajes", "Tus chats del aula."));
-  const convs = await api("conversations", state.accountId, state.data.user.id);
-  setUnread(convs.reduce((n, cv) => n + cv.unread, 0)); // el contador sale siempre de la lista real
-  const list = h("div", { class: "conv-list" });
-  const thread = h("div", { class: "thread" }, h("div", { class: "muted pad", text: "Selecciona un chat." }));
-  root.append(h("div", { class: "messages-layout" }, list, thread));
-  if (!convs.length) { clear(list).append(h("div", { class: "muted pad", text: "No tienes chats." })); return; }
-
-  async function openThread(cv, btn) {
-    state.convId = cv.id;
-    $$(".conv", list).forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    clear(thread).append(h("div", { class: "muted pad", text: "Cargando…" }));
-    const msgs = await api("thread", state.accountId, state.data.user.id, cv.id);
-    if (cv.unread > 0) { // el chat ya está abierto: se marca como leído y desaparece el número
-      const n = cv.unread; cv.unread = 0;
-      if (btn._chip) { btn._chip.remove(); btn._chip = null; }
-      setUnread(state.unreadMsgs - n);
-      api("markRead", state.accountId, state.data.user.id, cv.id, Math.max(cv.time || 0, ...msgs.map(m => m.time))).catch(() => {});
-    }
-    const box = h("div", { class: "bubbles" });
-    for (const m of msgs) box.append(h("div", { class: `bubble ${m.from === state.data.user.id ? "mine" : ""}` },
-      h("div", { text: m.text }), h("small", { text: fmtDate(m.time) })));
-    const input = h("textarea", { rows: "2", placeholder: "Escribe un mensaje…" });
-    const send = h("button", { class: "primary", text: "Enviar", onclick: async () => {
-      const text = input.value.trim();
-      if (!text) return;
-      send.disabled = true;
-      try { await api("send", state.accountId, { convId: cv.id, text }); input.value = ""; await openThread(cv, btn); }
-      catch (e) { notify(e.message); }
-      finally { send.disabled = false; }
-    } });
-    clear(thread).append(h("div", { class: "thread-head", text: cv.name }), box, h("div", { class: "composer" }, input, send));
-    box.scrollTop = box.scrollHeight;
-  }
-  for (const cv of convs) {
-    const unreadChip = cv.unread > 0 ? chip(String(cv.unread), "new") : null;
-    const btn = h("button", { class: "conv" }, avatar(cv.pic, cv.name, "sm"),
-      h("span", { class: "item-main" }, h("b", { text: cv.name }), h("span", { class: "muted", text: cv.last.slice(0, 60) })),
-      unreadChip);
-    btn._chip = unreadChip;
-    btn.addEventListener("click", () => openThread(cv, btn).catch(e => notify(e.message)));
-    list.append(btn);
-  }
-}
-
-// ------------------------------------------------------------------ notificaciones
-async function renderNotifications(root) {
-  root.append(pageTitle("AVISOS", "Notificaciones", "Lo último que ha pasado en tu aula."));
-  const items = await api("notifications", state.accountId, state.data.user.id);
-  if (!items.length) { root.append(empty("⚑", "Sin notificaciones", "No tienes avisos recientes.")); return; }
-  const box = h("div", { class: "item-list" });
-  for (const n of items) {
-    box.append(h("button", { class: "item", onclick: () => n.url && api("openExternal", n.url).catch(e => notify(e.message)) },
-      h("span", { class: "item-icon", text: "⚑" }),
-      h("span", { class: "item-main" }, h("b", { text: n.subject }), h("span", { class: "muted", text: n.text.slice(0, 140) })),
-      !n.read && chip("NUEVA", "new"), h("span", { class: "muted", text: fmtDate(n.time) })));
-  }
-  root.append(box);
 }
 
 // ------------------------------------------------------------------ perfil

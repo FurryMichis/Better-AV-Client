@@ -1,6 +1,6 @@
 {
   "name": "better-av-client",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia · Windows y Linux",
   "main": "src/main.js",
   "scripts": {
@@ -54,8 +54,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "shortcutName": "Better AV Client",
-      "artifactName": "BetterAVClient-Setup.${ext}",
-      "include": "build/installer.nsh"
+      "artifactName": "BetterAVClient-Setup.${ext}"
     },
     "portable": {
       "artifactName": "BetterAVClient-Portable.${ext}"

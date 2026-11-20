@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("betteravClient", {
-  version: "0.8.1",
+  version: "0.8.2",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
   addAccount: acc => call("accounts:add", acc),
@@ -104,6 +104,30 @@ contextBridge.exposeInMainWorld("betteravClient", {
     ipcRenderer.on("update:status", fn);
     return () => ipcRenderer.removeListener("update:status", fn);
   },
+  // Mensajes, contactos, calendario y avisos del aula
+  msgSearch: (id, term) => call("soc:search", id, term),
+  msgConvWith: (id, other) => call("soc:convWith", id, other),
+  msgMemberInfo: (id, other) => call("soc:memberInfo", id, other),
+  msgThread: (id, convId) => call("soc:thread", id, convId),
+  msgMembers: (id, convId) => call("soc:members", id, convId),
+  msgDelete: (id, msgId) => call("soc:delMsg", id, msgId),
+  msgDeleteConv: (id, convId) => call("soc:delConv", id, convId),
+  msgMute: (id, convId, muted) => call("soc:mute", id, convId, muted),
+  contactsList: id => call("soc:contacts", id),
+  contactRequests: id => call("soc:requests", id),
+  blockedList: id => call("soc:blocked", id),
+  contactAdd: (id, other) => call("soc:contactAdd", id, other),
+  contactConfirm: (id, other) => call("soc:contactConfirm", id, other),
+  contactDecline: (id, other) => call("soc:contactDecline", id, other),
+  contactRemove: (id, other) => call("soc:contactRemove", id, other),
+  userBlock: (id, other) => call("soc:block", id, other),
+  userUnblock: (id, other) => call("soc:unblock", id, other),
+  eventSave: (id, ev) => call("soc:eventSave", id, ev),
+  eventDelete: (id, evId) => call("soc:eventDelete", id, evId),
+  notifRead: (id, nid) => call("soc:notifRead", id, nid),
+  notifReadAll: id => call("soc:notifReadAll", id),
+  notifPrefs: id => call("soc:notifPrefs", id),
+  notifPrefsSave: (id, payload) => call("soc:notifPrefsSave", id, payload),
   // Tareas, cuestionarios y foros del aula
   assignInfo: (id, courseId, cmid) => call("act:assignInfo", id, courseId, cmid),
   pickFiles: () => call("act:pickFiles"),
@@ -126,7 +150,7 @@ contextBridge.exposeInMainWorld("betteravClient", {
   forumNew: (id, forumId, subject, text, subscribe) => call("act:forumNew", id, forumId, subject, text, subscribe),
   forumSubscribe: (id, forumId, discussionId, state) => call("act:forumSubscribe", id, forumId, discussionId, state),
   openExternal: url => call("instance:openExternal", url),
-  calendar: id => call("api:calendar", id),
+  calendar: (id, courseIds) => call("api:calendar", id, courseIds),
   grades: (id, courseId, userId) => call("api:grades", id, courseId, userId),
   conversations: (id, userId) => call("api:conversations", id, userId),
   thread: (id, userId, convId) => call("api:thread", id, userId, convId),

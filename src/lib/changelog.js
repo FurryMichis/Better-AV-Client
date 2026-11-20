@@ -3,14 +3,25 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.8.2", headline: "Mensajes completos, calendario propio y avisos a tu gusto",
+    summary: "Los mensajes del aula pasan a ser un chat de verdad (nuevos chats, contactos, bloqueos y grupos del aula), puedes crear tus propios eventos y controlar tus notificaciones.",
+    items: [
+      { kind: "new", title: "Nuevo mensaje y búsqueda", text: "Pulsa «＋ Nuevo mensaje», busca a un compañero por su nombre y escríbele aunque todavía no hayáis hablado. Si no te deja escribirle, la app te dice por qué (por ejemplo, solo acepta mensajes de sus contactos)." },
+      { kind: "new", title: "Contactos y bloqueos", text: "En «Contactos» ves tus contactos, aceptas o rechazas solicitudes y gestionas a quien has bloqueado. Desde un chat puedes añadir o quitar contacto y bloquear o desbloquear." },
+      { kind: "new", title: "Borrar mensajes y conversaciones", text: "Pasa el ratón por un mensaje para borrarlo, o borra la conversación entera. Solo desaparece para ti." },
+      { kind: "new", title: "Grupos del aula", text: "Los chats de grupo de tu aula (los de los grupos de clase) aparecen en la lista con la etiqueta GRUPO: lees y escribes, ves quién escribe cada mensaje y la lista de miembros, y puedes silenciarlos. Los chats silenciados no te avisan ni suman en el contador. Los grupos de Better AV siguen aparte." },
+      { kind: "new", title: "Eventos propios en el calendario", text: "Crea, edita y borra tus eventos con fecha, hora, duración y descripción. Ahora el calendario también muestra los eventos que creas tú, los del centro y los de tus cursos." },
+      { kind: "new", title: "Notificaciones", text: "Marca avisos como leídos (uno a uno al abrirlos o todos de golpe) y ajusta por dónde quieres recibir cada tipo de aviso —en el aula, por correo o en la app móvil oficial— o desactívalos todos." },
+      { kind: "improve", title: "Qué depende del aula", text: "Todo usa las funciones de la app oficial de Moodle. Si tu aula tiene alguna desactivada (por ejemplo, la búsqueda de personas o los eventos propios), la app lo dirá y podrás hacerlo en el navegador." }
+    ]
+  },
+  {
     version: "0.8.1", headline: "Entrega tareas, haz cuestionarios y usa los foros desde la app",
     summary: "Ya no hace falta abrir el navegador para lo más habitual del aula: entregar tareas, ver la corrección, hacer cuestionarios y participar en los foros.",
     items: [
       { kind: "new", title: "Entregar tareas", text: "Pulsa una tarea para ver el enunciado y sus archivos, escribir tu texto, subir archivos, guardar el borrador, enviarlo para calificar, editarlo o borrarlo (siempre que el aula lo permita). Verás tu estado, la nota, el comentario del profesor, sus archivos de corrección y los comentarios de la entrega, y puedes escribir los tuyos." },
       { kind: "new", title: "Cuestionarios", text: "En cada tema aparecen sus cuestionarios: mira tus intentos y notas, revisa los intentos terminados y haz uno nuevo o continúa el que dejaste a medias, con cronómetro, contraseña si la pide y resumen antes de enviar. Las preguntas de arrastrar y soltar y otras especiales se avisan y se hacen en el navegador." },
       { kind: "new", title: "Foros", text: "Lee los debates y sus respuestas, descarga los adjuntos, responde, crea debates nuevos y suscríbete a un debate para recibir avisos de sus respuestas." },
-      { kind: "fix", title: "Desplazamiento con la rueda", text: "Ahora puedes subir y bajar por los menús aunque el puntero esté sobre las tareas, las tarjetas o las listas; antes la rueda se quedaba bloqueada ahí." },
-      { kind: "fix", title: "Carpeta de instalación", text: "El instalador de Windows usa la carpeta «Better AV Client» (también al actualizar desde la versión con el nombre antiguo)." },
       { kind: "improve", title: "Qué depende del aula", text: "Todo usa las funciones de la app oficial de Moodle. Si tu aula tiene alguna desactivada o un profesor limita algo (por ejemplo, ver las respuestas de un intento), la app lo dirá y podrás abrirlo en el navegador con un botón." }
     ]
   },
