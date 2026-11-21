@@ -25,6 +25,10 @@ function h(tag, props, ...kids) {
 }
 const clear = el => { el.textContent = ""; return el; };
 
+// 0.8.5 · Filtro de palabras (se activa/desactiva en Ajustes). Solo tapa al mostrar; lo escrito no se modifica.
+const WF = { on: true };
+const wf = t => (WF.on && typeof filterText === "function" ? filterText(t) : t);
+
 async function api(fn, ...args) {
   const r = await aula[fn](...args);
   if (!r.ok) throw new Error(r.error);
@@ -116,6 +120,34 @@ function showAccountError(msg) {
 }
 function openAccountDialog() { accountForm.reset(); showAccountError(""); accountDialog.showModal(); }
 function closeAccountDialog() { accountForm.reset(); accountDialog.close(); }
+
+// 0.8.5 · Buscador de aulas: encuentra el aula por el nombre del centro y rellena el enlace (sin abrir el navegador).
+(function avSearchSetup() {
+  const input = $("#av-search"), btn = $("#av-search-btn"), box = $("#av-results");
+  if (!input || !btn || !box) return;
+  const run = async () => {
+    const q = input.value.trim();
+    if (q.length < 3) { notify("Escribe al menos 3 letras del nombre de tu centro."); return; }
+    btn.disabled = true; btn.textContent = "Buscando…";
+    clear(box).append(h("div", { class: "muted pad", text: "Buscando aulas y comprobando que se pueden conectar…" })); box.hidden = false;
+    try {
+      const r = await api("avSearch", q);
+      clear(box);
+      if (!r.results.length) box.append(h("div", { class: "muted pad", text: r.webFailed ? "No se encontró nada y no se pudo usar el buscador (¿sin conexión?). Pega el enlace de tu aula a mano." : "No se encontró ningún aula con ese nombre. Prueba con otro nombre (añade tu comunidad o provincia) o pega el enlace a mano." }));
+      for (const t of r.hints || []) box.append(h("div", { class: "muted pad", text: `${t.platform}: ${t.text}` }));
+      for (const a of r.results) box.append(h("button", { class: "av-result", type: "button", onclick: () => {
+        $("#instance-url").value = a.url;
+        if (!$("#instance-name").value.trim()) $("#instance-name").value = (a.name || q).slice(0, 60);
+        box.hidden = true; $("#instance-user").focus();
+      } },
+        h("span", { class: "item-main" }, h("b", { text: a.name || a.url }), h("span", { class: "muted", text: a.platform ? `${a.platform} · ${a.url}` : a.url })),
+        a.compatible ? chip("Compatible", "ok") : chip("Sin acceso para apps", "warn")));
+    } catch (e) { clear(box).append(h("div", { class: "form-error", text: e.message })); }
+    finally { btn.disabled = false; btn.textContent = "Buscar"; }
+  };
+  btn.addEventListener("click", run);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); run(); } });
+})();
 
 $("#cancel-account").addEventListener("click", closeAccountDialog);
 $("#account-dialog .close").addEventListener("click", closeAccountDialog);
@@ -596,11 +628,14 @@ function enterInstance(data) {
   av.style.backgroundImage = "";
   loadImage(av, data.user.pic, (e, img) => { e.style.backgroundImage = `url("${img}")`; e.style.backgroundSize = "cover"; e.textContent = ""; });
   const banner = $("#offline-banner");
-  banner.hidden = !data.offline;
+  const warns = !data.offline && Array.isArray(data.warnings) ? data.warnings : [];
+  banner.hidden = !data.offline && !warns.length;
   if (data.offline) banner.textContent = `Sin conexión con el aula: se muestran los últimos datos guardados. (${data.error})`;
+  else if (warns.length) banner.textContent = `Esta aula no ha dejado leer todo: ${warns[0]}${warns.length > 1 ? ` (y ${warns.length - 1} más)` : ""}`;   // 0.8.5: cada Moodle es distinto
   $("#sync-status").textContent = `Sincronizado ${new Date(data.syncedAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
   setIView("courses");
   if (data.newCount > 0) notify(`${data.newCount} ${data.newCount === 1 ? "novedad" : "novedades"} desde la última vez.`);
+  setTimeout(() => { if (typeof maybeTour === "function") maybeTour("instance"); }, 900);   // visita guiada de la primera vez dentro de un aula
 }
 
 $("#back-launcher").addEventListener("click", async () => {
@@ -841,10 +876,10 @@ function chatPane({ me, people, isGroup, placeholder, head, send, typing, markRe
   el.append(head, history, typingEl, h("div", { class: "nx-dm-compose" }, input, sendBtn));
 
   const person = id => people.get(id) || { display_name: "Ex-miembro", username: "?" };
-  const nameOf = id => { const p = person(id); return p.display_name || p.username || "Alguien"; };
+  const nameOf = id => { const p = person(id); return wf(p.display_name || p.username || "Alguien"); };
   const pic = id => {
     const p = person(id);
-    const box = h("div", { class: "pic sm", title: nameOf(id), text: initials(p.display_name || p.username) });
+    const box = h("div", { class: "pic sm", title: nameOf(id), text: initials(wf(p.display_name || p.username)) });
     if (typeof p.avatar === "string" && AVATAR_RE.test(p.avatar)) {
       let v = avVars.get(id);
       if (!v) { v = `--av-${avVars.size}`; avVars.set(id, v); el.style.setProperty(v, `url("${p.avatar}")`); }
@@ -859,7 +894,7 @@ function chatPane({ me, people, isGroup, placeholder, head, send, typing, markRe
     const mine = m.sender_id === me;
     const bubble = h("article", { class: `nx-dm-bubble ${mine ? "mine" : ""}` },
       isGroup && !mine ? h("b", { class: "nx-g-from", text: nameOf(m.sender_id) }) : null,
-      h("p", { text: m.body }), h("small", { text: m.pending ? "Enviando…" : chatClock(m.created_at) }));
+      h("p", { text: wf(m.body) }), h("small", { text: m.pending ? "Enviando…" : chatClock(m.created_at) }));
     return h("div", { class: `nx-dm-row ${mine ? "mine" : ""} ${m.pending ? "pending" : ""}`, "data-id": m.id }, pic(m.sender_id), bubble);
   }
 
@@ -1054,14 +1089,14 @@ async function renderBetterAVMessages(root) {
     markActive(btn); closePane();
     const people = new Map([[me, status.profile], [friend.other_id, friend]]);
     const head = h("div", { class: "nx-dm-head" }, h("div", { class: "nx-dm-who" }, cloudPic(friend, "md"),
-      h("div", { class: "nx-dm-who-txt" }, h("b", { text: friend.display_name || friend.username }), h("span", { class: "muted", text: `@${friend.username}` }))));
+      h("div", { class: "nx-dm-who-txt" }, h("b", { text: wf(friend.display_name || friend.username) }), h("span", { class: "muted", text: `@${friend.username}` }))));
     const pane = nxPane = chatPane({
       me, people, isGroup: false, head, placeholder: "Escribe un mensaje… (Enter para enviar)",
       send: body => api("chatSend", friend.other_id, body),
       typing: () => api("chatTyping", friend.other_id),
       fetch: () => api("chatSync", friend.other_id),
       markRead: async () => { await api("chatRead", friend.other_id); btn.querySelector(".chip")?.remove(); },
-      onChange: last => { if (last) preview(btn, `${last.sender_id === me ? "Tú: " : ""}${last.body}`); }
+      onChange: last => { if (last) preview(btn, wf(`${last.sender_id === me ? "Tú: " : ""}${last.body}`)); }
     });
     clear(thread).append(pane.el);
     pane.focus();
@@ -1182,7 +1217,7 @@ async function renderBetterAVMessages(root) {
     const setCount = n => { sub.textContent = `${n} ${n === 1 ? "persona" : "personas"}`; };
     const head = h("div", { class: "nx-dm-head nx-dm-head-row" },
       h("div", { class: "nx-dm-who" }, h("div", { class: "pic md nx-group-ico", text: initials(group.name) }),
-        h("div", { class: "nx-dm-who-txt" }, h("b", { text: group.name }), sub)),
+        h("div", { class: "nx-dm-who-txt" }, h("b", { text: wf(group.name) }), sub)),
       h("button", { class: "secondary small", text: "Opciones del grupo", onclick: () => openGroupManager(group) }));
     let lastMembersLoad = 0;
     const applyMembers = list => {
@@ -1202,7 +1237,7 @@ async function renderBetterAVMessages(root) {
         return r;
       },
       markRead: async () => { await api("groupRead", group.group_id); group.unread = 0; btn.querySelector(".chip")?.remove(); },
-      onChange: last => { if (last) preview(btn, `${last.sender_id === me ? "Tú" : (people.get(last.sender_id)?.display_name || "Alguien")}: ${last.body}`); }
+      onChange: last => { if (last) preview(btn, wf(`${last.sender_id === me ? "Tú" : (people.get(last.sender_id)?.display_name || "Alguien")}: ${last.body}`)); }
     });
     clear(thread).append(pane.el);
     pane.focus();
@@ -1224,7 +1259,7 @@ async function renderBetterAVMessages(root) {
     const who = g.last_sender === me ? "Tú" : (g.last_sender_name || "Alguien");
     const gbtn = h("button", { class: "nx-dm-contact" },
       h("div", { class: "pic md nx-group-ico", text: initials(g.name) }),
-      h("span", { class: "item-main" }, h("b", { text: g.name }), h("span", { class: "muted", text: g.last_body ? `${who}: ${g.last_body}`.slice(0, 58) : `${g.member_count} ${Number(g.member_count) === 1 ? "persona" : "personas"}` })),
+      h("span", { class: "item-main" }, h("b", { text: wf(g.name) }), h("span", { class: "muted", text: g.last_body ? wf(`${who}: ${g.last_body}`.slice(0, 58)) : `${g.member_count} ${Number(g.member_count) === 1 ? "persona" : "personas"}` })),
       Number(g.unread) ? chip(String(g.unread), "new") : null);
     gbtn.addEventListener("click", () => loadGroup(g, gbtn).catch(e => notify(e.message)));
     groupButtons.set(g.group_id, gbtn); list.append(gbtn);
@@ -1235,7 +1270,7 @@ async function renderBetterAVMessages(root) {
     const f = item.friend, last = item.msgs.at(-1);
     const btn = h("button", { class: "nx-dm-contact" },
       cloudPic(f, "md"),
-      h("span", { class: "item-main" }, h("b", { text: f.display_name || f.username }), h("span", { class: "muted", text: last ? `${last.sender_id === me ? "Tú: " : ""}${last.body}`.slice(0, 58) : "Sin mensajes todavía" })),
+      h("span", { class: "item-main" }, h("b", { text: wf(f.display_name || f.username) }), h("span", { class: "muted", text: last ? wf(`${last.sender_id === me ? "Tú: " : ""}${last.body}`.slice(0, 58)) : "Sin mensajes todavía" })),
       item.unread ? chip(String(item.unread), "new") : null);
     btn.addEventListener("click", () => loadThread(f, btn).catch(e => notify(e.message)));
     contactButtons.set(f.other_id, btn); list.append(btn);
@@ -1441,13 +1476,13 @@ function profileCardEl(p) {
   if (typeof p.accent === "string" && HEX_RE.test(p.accent)) card.style.setProperty("--pc", p.accent);
   const banner = h("div", { class: "pcard-banner" });
   if (typeof p.banner === "string" && BANNER_RE.test(p.banner)) banner.style.backgroundImage = `url("${p.banner}")`;
-  const name = p.display_name || p.username;
+  const name = wf(p.display_name || p.username);
   card.append(banner, h("div", { class: "pcard-body" },
     cloudPic(p, "lg"),
     h("div", { class: "pcard-name" }, h("b", { text: name }), p.pronouns && h("span", { class: "chip", text: p.pronouns })),
     h("div", { class: "muted", text: `@${p.username}` }),
-    p.status_text && h("div", { class: "pcard-status", text: p.status_text }),
-    p.bio ? h("p", { class: "pcard-bio", text: p.bio }) : h("p", { class: "muted", text: "Sin descripción todavía." })));
+    p.status_text && h("div", { class: "pcard-status", text: wf(p.status_text) }),
+    p.bio ? h("p", { class: "pcard-bio", text: wf(p.bio) }) : h("p", { class: "muted", text: "Sin descripción todavía." })));
   return card;
 }
 function openProfileCard(userId) {
@@ -1697,11 +1732,11 @@ async function friendsPanel(redo) {
   const person = (r, ...acts) => {
     const open = () => openProfileCard(r.other_id || r.id);
     const pic = cloudPic(r, "sm"); pic.classList.add("clickable"); pic.title = "Ver perfil"; pic.addEventListener("click", open);
-    const name = h("b", { class: "clickable", title: "Ver perfil", text: r.display_name || r.username, onclick: open });
+    const name = h("b", { class: "clickable", title: "Ver perfil", text: wf(r.display_name || r.username), onclick: open });
     return h("div", { class: "friend-row" }, pic,
       h("span", { class: "item-main" }, name,
         h("span", { class: "muted" }, `@${r.username}`, r.status === "accepted" && presenceBit(r)),
-        r.status_text && h("span", { class: "muted friend-status", text: r.status_text })), h("div", { class: "acts" }, ...acts));
+        r.status_text && h("span", { class: "muted friend-status", text: wf(r.status_text) })), h("div", { class: "acts" }, ...acts));
   };
   const act = (text, cls, fn) => h("button", { class: `${cls} small`, text, onclick: async e => {
     e.currentTarget.disabled = true;
@@ -1999,7 +2034,7 @@ async function renderSettings(root) {
   const { settings: st, ai } = await api("getSettings");
   let cur = st;
   const patch = async p => {
-    try { const r = await api("setSettings", p); cur = r.settings; if (r.warn) notify(r.warn); return true; }
+    try { const r = await api("setSettings", p); cur = r.settings; WF.on = cur.wordFilter !== false; if (r.warn) notify(r.warn); return true; }
     catch (e) { notify(e.message); return false; }
   };
   const again = () => renderSettings(root);
@@ -2037,13 +2072,15 @@ async function renderSettings(root) {
     row("Seguir en segundo plano al cerrar la ventana", "Better AV Client se queda en la bandeja del sistema (junto al reloj, o en la barra de menú en Mac). Para salir del todo, usa «Salir» en su menú.", "keepBackground"),
     row("Buscar novedades en segundo plano", "Comprueba tus aulas sin tener la ventana abierta y te avisa si hay contenido nuevo.", "bgSync", true),
     h("div", { class: "switch-row" }, h("span", {}, h("b", { text: "Frecuencia de comprobación" }), h("small", { text: "Por defecto cada 5 minutos. Además, al volver a la ventana se comprueba todo al momento. Con menos comprobaciones se gasta menos batería y datos." })), intSel),
+    row("Filtro de palabras", "Tapa con asteriscos insultos y tacos fuertes (en español, gallego e inglés) en los mensajes, nombres y perfiles de Better AV. Es un filtro suave: no toca palabras normales. Solo cambia lo que ves tú.", "wordFilter", true),
     row("Avisar de mensajes nuevos", "Comprueba tus chats cada 30 segundos mientras Better AV Client esté abierto (también en la bandeja) y te avisa cuando llega un mensaje (de tus aulas y de Better AV).", "msgNotify"),
     row("Avisos emergentes estilo Steam", "Una notificación en la esquina de la pantalla. Si la desactivas se usan las notificaciones normales del sistema.", "toasts"),
     row("Sonido de notificación", "Suena un aviso en todas las notificaciones: emergentes, del sistema y los avisos dentro de la app.", "notifySound"),
     volumeRow(cur.notifyVolume, v => patch({ notifyVolume: v })),
     h("div", { class: "zoom-row" },
       h("button", { class: "secondary small", text: "▶ Probar sonido", onclick: () => api("playSound", true).catch(e => notify(e.message)) }),
-      h("button", { class: "secondary small", text: "Ver el tutorial otra vez", onclick: () => { openTutorial(); } }))));
+      h("button", { class: "secondary small", text: "Ver el tutorial otra vez", onclick: () => { openTutorial(); } }),
+      h("button", { class: "secondary small", text: "Ver la visita guiada", onclick: () => { if (typeof startContextTour === "function") startContextTour(); } }))));
   root.append(videoSettingsPanel(row));
   root.append(updatesPanel(row));
 }
@@ -2115,19 +2152,19 @@ const TUT_STEPS = [
     points: [["Cuentas y aulas", "conecta tu Aula Virtual y mira cursos, tareas y notas."], ["Overlay", "un navegador sobre cualquier ventana con Shift+Tab."], ["Amigos y archivos", "tu cuenta Better AV con mensajes y nube."], ["Apariencia y avisos", "personaliza la app y entérate de todo."]] },
   { tab: "Cuentas y aulas", icon: "cap", title: "Conecta tu Aula Virtual",
     lead: "En «Gestor de cuentas» pulsa «Añadir cuenta» y rellena el nombre, el enlace de tu aula, tu usuario y tu contraseña.",
-    points: [["Contraseña segura", "se guarda cifrada con el almacén seguro de tu sistema y solo se envía a tu aula."], ["Tu aula", "al abrirla tienes Mis cursos, Calendario, Tareas, Calificaciones, Mensajes, Notificaciones y Perfil (con tu descripción y datos del aula original)."], ["Novedades", "lo que es nuevo desde tu última visita aparece marcado como NUEVO; «Sincronizar» vuelve a comprobarlo."], ["Iconos", "pulsa el icono de una cuenta para ponerle un emoji o una imagen."]] },
+    points: [["Contraseña segura", "se guarda cifrada con el almacén seguro de tu sistema y solo se envía a tu aula."], ["Tu aula", "al abrirla tienes Mis cursos, Calendario, Tareas, Calificaciones, Mensajes, Notificaciones y Perfil (con tu descripción y datos del aula original)."], ["Novedades", "lo que es nuevo desde tu última visita aparece marcado como NUEVO; «Sincronizar» vuelve a comprobarlo."], ["Buscador de aulas", "en «Añadir cuenta» escribe el nombre de tu centro y la app encuentra el aula, sin abrir el navegador."], ["Iconos", "pulsa el icono de una cuenta para ponerle un emoji o una imagen."]] },
   { tab: "Overlay", icon: "❖", title: "El overlay: Shift+Tab",
     lead: "Una capa sobre cualquier ventana con Google, Gmail, tu aula original y tu IA favorita. Se abre y se cierra con Shift+Tab.",
     points: [["Pestañas", "«+» o Ctrl+T abre una nueva, Ctrl+W la cierra y Ctrl+Tab cambia de una a otra."], ["IA", "elige la tuya y ábrela con el botón de IA del overlay (se cambia en Ajustes)."], ["Desde cualquier programa", "en Ajustes → Overlay puedes hacer que la tecla funcione en todo el sistema."]] },
   { tab: "Amigos y archivos", icon: "☁", title: "Cuenta Better AV, amigos y archivos",
     lead: "Crea una cuenta Better AV (gratis) en «Cuenta y amigos» para ir más allá del aula.",
-    points: [["Amigos", "busca a otras personas por su nombre de usuario y envía solicitudes."], ["Mensajes Better AV", "chatea con tus amigos; el contador te dice cuántos tienes sin leer."], ["Archivos Better AV", "tu espacio en la nube para subir y abrir apuntes desde cualquier ordenador."], ["Sincronización", "tu aspecto y tus ajustes te siguen a cada ordenador donde inicies sesión."]] },
+    points: [["Amigos", "busca a otras personas por su nombre de usuario y envía solicitudes."], ["Mensajes Better AV", "chatea con tus amigos; el contador te dice cuántos tienes sin leer."], ["Archivos Better AV", "tu espacio en la nube para subir y abrir apuntes desde cualquier ordenador."], ["Sincronización", "tu aspecto y tus ajustes te siguen a cada ordenador donde inicies sesión."], ["Filtro de palabras", "tapa insultos y tacos fuertes en los mensajes y perfiles (se puede quitar en Ajustes)."]] },
   { tab: "Apariencia", icon: "✦", title: "Hazla tuya",
     lead: "En «Apariencia» eliges cómo se ve la app.",
     points: [["Fondos", "nebulosa, atardecer, aurora, galaxia, tu propia imagen, un GIF o un vídeo con sonido."], ["Color de acento", "cambia el color de botones, scrollbars y detalles."], ["Tamaño de la interfaz", `${MOD} + y ${MOD} − para ampliar o reducir, ${MOD} 0 para volver al 100 %.`]] },
   { tab: "Avisos", icon: "🔔", title: "Avisos y segundo plano",
     lead: "Al cerrar la ventana, Better AV se queda en la bandeja del sistema y sigue pendiente de lo tuyo.",
-    points: [["Notificaciones", "avisos emergentes con sonido cuando hay novedades en tus aulas o te escribe alguien."], ["Ajustes", "activa o quita el sonido, los avisos, el inicio con el ordenador y la frecuencia de comprobación."], ["Salir del todo", "clic derecho en el icono de la bandeja → «Salir»."], ["Listo", "puedes volver a ver este tutorial en Ajustes → «Ver el tutorial otra vez»."]] }
+    points: [["Notificaciones", "avisos emergentes con sonido cuando hay novedades en tus aulas o te escribe alguien."], ["Ajustes", "activa o quita el sonido, los avisos, el inicio con el ordenador y la frecuencia de comprobación."], ["Salir del todo", "clic derecho en el icono de la bandeja → «Salir»."], ["Listo", "puedes volver a ver este tutorial y la visita guiada en Ajustes."]] }
 ];
 let tutIdx = 0;
 function renderTutorial() {
@@ -2144,22 +2181,25 @@ function renderTutorial() {
   const dots = clear($("#tut-dots"));
   TUT_STEPS.forEach((_s, i) => dots.append(h("i", { class: i === tutIdx ? "on" : "" })));
   $("#tut-prev").disabled = tutIdx === 0;
-  $("#tut-next").textContent = tutIdx === last ? "¡Empezar!" : "Siguiente →";
+  $("#tut-next").textContent = tutIdx === last ? "Empezar la visita guiada" : "Siguiente →";
 }
 function openTutorial() {
-  tutIdx = 0; renderTutorial();
+  tutIdx = 0; tutSkipped = false; renderTutorial();
   if (!tutDialog.open) tutDialog.showModal();
   return new Promise(res => tutDialog.addEventListener("close", res, { once: true }));
 }
 $("#tut-prev").addEventListener("click", () => { if (tutIdx > 0) { tutIdx--; renderTutorial(); } });
 $("#tut-next").addEventListener("click", () => { if (tutIdx < TUT_STEPS.length - 1) { tutIdx++; renderTutorial(); } else tutDialog.close(); });
-$("#tut-skip").addEventListener("click", () => tutDialog.close());
+let tutSkipped = false;
+$("#tut-skip").addEventListener("click", () => { tutSkipped = true; tutDialog.close(); });
 tutDialog.addEventListener("close", () => { api("setSettings", { tutorialDone: true }).catch(() => {}); }); // terminar o saltar = no vuelve a salir solo
 async function maybeTutorial() {
   try {
     const { settings: st } = await api("getSettings");
     if (st.tutorialDone) return;
     await openTutorial();
+    if (tutSkipped) await api("setSettings", { tourDone: true }).catch(() => {});   // quien salta el tutorial no ve la visita
+    else await maybeTour("launcher");
   } catch { /* se mostrará la próxima vez */ }
 }
 
@@ -2287,6 +2327,7 @@ function setNewsBadge(on) { $$('[data-badge="news"]').forEach(b => { b.hidden = 
 api("changelog").then(c => setNewsBadge(c.seen !== c.current)).catch(() => {});
 
 // ------------------------------------------------------------------ arranque
+api("getSettings").then(({ settings: st }) => { WF.on = st.wordFilter !== false; }).catch(() => {});
 renderAccounts();
 // Popups de inicio, uno detrás de otro: tutorial (solo la primera vez en este dispositivo) → elección de IA → crear cuenta Better AV (política y términos)
 maybeTutorial().then(maybeAskAi).then(maybeOfferAccount).catch(() => {});

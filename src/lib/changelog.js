@@ -3,6 +3,18 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.8.5", headline: "Buscador de aulas, visita guiada y filtro de palabras",
+    summary: "Encuentra tu aula virtual escribiendo el nombre de tu centro, aprende la app con globos que señalan cada apartado y chatea con un filtro de palabras suave.",
+    items: [
+      { kind: "new", title: "Buscador de aulas virtuales", text: "En «Añadir cuenta» escribe el nombre de tu centro y pulsa «Buscar»: la app encuentra el aula, comprueba que se puede conectar (verás «Compatible») y rellena el enlace. Ya no hace falta abrir el navegador. Si no la encuentra, puedes pegar el enlace a mano." },
+      { kind: "new", title: "Aulas de otras comunidades", text: "El buscador ya no se queda en Galicia: si escribes tu comunidad, provincia o plataforma (por ejemplo «Valencia», «Sevilla», «Àgora» o «Madrid») busca también en Aules, Moodle Centros de Andalucía, Àgora, AulaRagón y más. Cada aula se comprueba antes de ofrecértela, y si no hay una dirección que adivinar te dice cómo pegar la tuya. Puedes añadir cualquier Moodle del mundo con su enlace." },
+      { kind: "improve", title: "Asignaturas en cualquier Moodle", text: "Si un aula no permite la lista de asignaturas habitual, la app usa la de «Mis cursos»; si algún curso no deja leer su contenido, te lo dice en un aviso en vez de mostrarlo vacío sin más. Los errores de acceso (contraseña caducada, aula en mantenimiento, cuenta suspendida) ahora se explican." },
+      { kind: "new", title: "Visita guiada", text: "Tras el tutorial, unos globos señalan cada apartado y te explican qué hace: crear una instancia, tus cuentas, amigos, mensajes, ajustes, el overlay… Hay otra visita al entrar por primera vez en un aula (cursos, calendario, tareas…). Puedes repetirla en Ajustes → «Ver la visita guiada»." },
+      { kind: "new", title: "Filtro de palabras", text: "Tapa con asteriscos insultos y tacos fuertes en español, gallego e inglés en mensajes, nombres y perfiles de Better AV. Es suave: no toca palabras normales y solo cambia lo que ves tú. Se desactiva en Ajustes." },
+      { kind: "improve", title: "Tutorial actualizado", text: "Los textos del tutorial incluyen las novedades (buscador, filtro) y terminan con la visita guiada." }
+    ]
+  },
+  {
     version: "0.8.4", headline: "Actualizaciones sin instalador",
     summary: "Las actualizaciones se descargan solas y se aplican en silencio: la app se cierra y se vuelve a abrir, sin asistente de instalación ni ventanas.",
     items: [

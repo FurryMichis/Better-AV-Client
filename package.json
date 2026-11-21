@@ -1,7 +1,7 @@
 {
   "name": "better-av-client",
-  "version": "0.8.4",
-  "description": "Cliente de escritorio para el Aula Virtual (Moodle) de la Xunta de Galicia · Windows y Linux",
+  "version": "0.8.5",
+  "description": "Cliente de escritorio para aulas virtuales Moodle (Xunta de Galicia y otras comunidades) · Windows y Linux",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",

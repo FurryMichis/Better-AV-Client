@@ -36,7 +36,7 @@
       <button class="nav" data-view="settings"><span>⚙</span> Ajustes</button>
       <div class="sidebar-bottom">
         <button class="nav" id="open-overlay"><span>❖</span> Abrir overlay <small class="kbd">Shift+Tab</small></button>
-        <div class="version">BETTER AV CLIENT <span>v0.8.2</span></div>
+        <div class="version">BETTER AV CLIENT <span>v0.8.5</span></div>
       </div>
     </aside>
 
@@ -136,8 +136,12 @@
   <dialog id="account-dialog">
     <form method="dialog" id="account-form">
       <div class="dialog-head"><div><div class="eyebrow">NUEVA CONEXIÓN</div><h2>Añadir cuenta</h2></div><button class="close" type="button" aria-label="Cerrar">×</button></div>
+      <div class="av-search">
+        <label>Busca tu aula virtual<span class="av-search-row"><input id="av-search" type="search" placeholder="Tu centro y comunidad (ej. IES Rosalía de Castro · Galicia, Aules Valencia, Madrid…)" maxlength="120" autocomplete="off"><button class="secondary" id="av-search-btn" type="button">Buscar</button></span></label>
+        <div class="av-results" id="av-results" hidden></div>
+      </div>
       <label>Nombre de la instancia<input id="instance-name" placeholder="Ej. Aula del instituto" required></label>
-      <label>Enlace del Aula Virtual<input id="instance-url" type="url" placeholder="https://centros.edu.xunta.gal/tu-centro/aulavirtual" required></label>
+      <label>Enlace del Aula Virtual<input id="instance-url" type="url" placeholder="https://tu-aula.ejemplo.es (Galicia: https://centros.edu.xunta.gal/tu-centro/aulavirtual)" required></label>
       <label>Nombre de usuario<input id="instance-user" autocomplete="username" placeholder="Tu usuario del aula" required></label>
       <label>Contraseña<input id="instance-password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required></label>
       <div class="form-hint">Se comprobará la conexión y la contraseña se guardará cifrada con el almacén seguro de tu sistema. Solo se envía al aula indicada.</div>
@@ -222,8 +226,10 @@
   </dialog>
 
   <div class="toast" id="toast"></div>
+  <script src="wordfilter.js"></script>
   <script src="markdown.js"></script>
   <script src="renderer.js"></script>
+  <script src="tour.js"></script>
   <script src="activities.js"></script>
   <script src="modules.js"></script>
   <script src="social.js"></script>

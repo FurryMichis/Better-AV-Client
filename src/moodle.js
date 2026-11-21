@@ -57,6 +57,12 @@ function friendlyLoginError(code, message) {
     case "servicenotavailable":
     case "enablewsdescription":
       return "Esta aula no permite el acceso desde aplicaciones externas (servicio móvil desactivado).";
+    case "sitemaintenance": return "El aula está en mantenimiento. Prueba más tarde.";
+    case "passwordisexpired":
+    case "forcepasswordchangenotice":
+      return "El aula te pide cambiar la contraseña. Hazlo desde la web del aula y vuelve a intentarlo.";
+    case "usersuspended": return "Esta cuenta está suspendida en el aula.";
+    case "loginhttpsrequired": return "El aula exige conexión segura (https). Usa el enlace con https://.";
     default: return message || "No se pudo iniciar sesión.";
   }
 }
@@ -146,7 +152,24 @@ class MoodleClient {
       firstaccess: Number(u.firstaccess) || 0, lastaccess: Number(u.lastaccess) || 0
     };
   }
-  courses(userid) { return this.call("core_enrol_get_users_courses", { userid }); }
+  // Asignaturas del usuario. Otras aulas (0.8.5): algunas no ofrecen core_enrol_get_users_courses al servicio móvil, así que
+  // se prueba la lista «Mis cursos» de Moodle 3.6+ (core_course_get_enrolled_courses_by_timeline_classification) con la misma forma de datos.
+  async courses(userid) {
+    let first;
+    try {
+      const r = await this.call("core_enrol_get_users_courses", { userid });
+      if (Array.isArray(r)) return r;
+      first = new Error("Respuesta inesperada del aula al pedir las asignaturas.");
+    } catch (e) { first = e; }
+    try {
+      const r = await this.call("core_course_get_enrolled_courses_by_timeline_classification", { classification: "all", limit: 0 });
+      return (r && Array.isArray(r.courses) ? r.courses : []).map(c => ({
+        id: c.id, fullname: c.fullname, shortname: c.shortname,
+        overviewfiles: typeof c.courseimage === "string" && /^https:\/\//i.test(c.courseimage) ? [{ fileurl: c.courseimage }] : [],
+        progress: c.hasprogress && typeof c.progress === "number" ? c.progress : null
+      }));
+    } catch { throw first; }   // si tampoco así, se cuenta el error original
+  }
   courseContents(courseid) { return this.call("core_course_get_contents", { courseid }); }
   assignments(courseids) { return this.call("mod_assign_get_assignments", { courseids }); }
 
@@ -279,9 +302,13 @@ async function syncAll(client, onProgress = () => {}) {
   }
 
   let done = 0;
+  const warnings = [];   // 0.8.5: avisos de lo que este aula no ha dejado leer (cada Moodle es distinto)
   const outCourses = await pmap(courses, 4, async c => {
     const [contents, teachers] = await Promise.all([
-      client.courseContents(c.id).catch(() => []),
+      client.courseContents(c.id).then(r => Array.isArray(r) ? r : [], e => {
+        warnings.push(`No se pudo leer el contenido de «${String(c.shortname || c.fullname || c.id).slice(0, 60)}»: ${String((e && e.message) || "error").slice(0, 120)}`);
+        return [];
+      }),
       client.teachers(c.id)
     ]);
     const sections = [];
@@ -342,6 +369,7 @@ async function syncAll(client, onProgress = () => {}) {
     site: { name: info.sitename, url: client.base, release: String(info.release || "").slice(0, 40), moodleVersion: String(info.version || "").slice(0, 20) },
     user: { id: info.userid, fullname: info.fullname, username: info.username, pic: info.userpictureurl || "", profile },
     courses: outCourses,
+    warnings: warnings.slice(0, 10),
     syncedAt: Date.now()
   };
 }

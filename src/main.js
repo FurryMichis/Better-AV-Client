@@ -23,6 +23,9 @@ const splash = require("./lib/splash");
 const secure = require("./lib/secure");
 const safefile = require("./lib/safefile");
 const updateGuard = require("./lib/updateguard");
+const { filterText } = require("./wordfilter");
+const avsearch = require("./lib/avsearch");
+const wf = t => (settings.get().wordFilter ? filterText(t) : t);
 const CHANGELOG = require("./lib/changelog");
 const RELEASES_URL = "https://github.com/FurryMichis/Better-AV-Client/releases/latest";
 
@@ -323,7 +326,7 @@ async function pollNxMessages() {
       const bySender = new Map();
       for (const r of fresh) {
         const g = bySender.get(r.sender_id) || { name: names.get(r.sender_id) || "Un amigo", count: 0, text: "" };
-        g.count++; g.text = String(r.body || "").slice(0, 120);
+        g.count++; g.text = wf(String(r.body || "").slice(0, 120));
         bySender.set(r.sender_id, g);
       }
       groups = [...bySender.values()];
@@ -338,7 +341,7 @@ async function pollNxMessages() {
         for (const g of gl) {
           const at = next.get(g.group_id);
           if (Number(g.unread) > 0 && g.last_sender !== me && at > (groupSeen.get(g.group_id) || 0)) {
-            groups.push({ name: `${String(g.name).slice(0, 40)} · ${g.last_sender_name || "Alguien"}`, count: 1, text: String(g.last_body || "").slice(0, 120) });
+            groups.push({ name: `${String(g.name).slice(0, 40)} · ${g.last_sender_name || "Alguien"}`, count: 1, text: wf(String(g.last_body || "").slice(0, 120)) });
           }
         }
       }
@@ -988,6 +991,12 @@ async function purgeOldDocs() { // al arrancar: se borran los apuntes en caché 
   } catch { /* sin caché */ }
 }
 
+let avSearching = false;
+handle("av:search", async (_e, query) => {   // 0.8.5 · buscador de aulas virtuales
+  if (avSearching) throw new Error("Ya hay una búsqueda en curso.");
+  avSearching = true;
+  try { return await avsearch.search(String(query || "")); } finally { avSearching = false; }
+});
 handle("instance:openExternal", async (_e, url) => {
   if (typeof url !== "string" || url.length > 2048) throw new Error("Enlace no permitido.");
   let u;

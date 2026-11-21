@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("betteravClient", {
-  version: "0.8.4",
+  version: "0.8.5",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
   addAccount: acc => call("accounts:add", acc),
@@ -163,6 +163,7 @@ contextBridge.exposeInMainWorld("betteravClient", {
   modMeetingJoin: (id, modname, courseId, cmid, instance) => call("mod:meetingJoin", id, modname, courseId, cmid, instance),
   modComplete: (id, cmid, done) => call("mod:complete", id, cmid, done),
   modCompletion: (id, courseId) => call("mod:completion", id, courseId),
+  avSearch: query => call("av:search", query),
   openExternal: url => call("instance:openExternal", url),
   calendar: (id, courseIds) => call("api:calendar", id, courseIds),
   grades: (id, courseId, userId) => call("api:grades", id, courseId, userId),

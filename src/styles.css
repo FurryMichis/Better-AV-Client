@@ -192,3 +192,20 @@ dialog.act-dialog.wide{width:min(900px,calc(100% - 24px))}
 .mod-entry{background:#161220;border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}.mod-entry h4{margin:0;font-size:14px}
 .mod-entry .act-text{background:transparent;border:0;padding:0}.mod-entry-meta{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:11px}
 .mod-field{display:flex;flex-direction:column;gap:2px;font-size:13px}.mod-field b{font-size:11px;color:#a99dbb;text-transform:uppercase;letter-spacing:.8px}
+
+/* 0.8.5 · Buscador de aulas */
+.av-search{display:flex;flex-direction:column;gap:8px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.av-search-row{display:flex;gap:8px}.av-search-row input{flex:1;margin:0}
+.av-results{display:flex;flex-direction:column;gap:6px;max-height:210px;overflow-y:auto}
+.av-result{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;border:1px solid var(--line);background:#161220;color:var(--text);border-radius:10px;padding:9px 12px;cursor:pointer}
+.av-result:hover{border-color:var(--accent)}.av-result .item-main{min-width:0;display:flex;flex-direction:column;gap:2px}
+.av-result .item-main .muted{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+
+/* 0.8.5 · Visita guiada */
+.tour-shade{position:fixed;inset:0;z-index:9998;background:transparent}
+.tour-spot{position:fixed;z-index:9999;border-radius:10px;pointer-events:none;box-shadow:0 0 0 9999px rgba(8,6,14,.74),0 0 0 2px var(--accent),0 0 18px 2px var(--accent);transition:left .2s,top .2s,width .2s,height .2s}
+.tour-spot[hidden]{display:none}
+.tour-pop{position:fixed;z-index:10000;width:min(340px,calc(100vw - 20px));background:#1d1829;border:1px solid var(--accent);border-radius:14px;padding:16px 18px;box-shadow:0 14px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:8px}
+.tour-pop h3{margin:0;font-size:16px}.tour-pop p{margin:0;font-size:13px;line-height:1.5;color:#ddd5ee}
+.tour-actions{display:flex;align-items:center;gap:8px;margin-top:6px}.tour-spacer{flex:1}
+@media(prefers-reduced-motion:reduce){.tour-spot{transition:none}}
