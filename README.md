@@ -1,4 +1,4 @@
-# Better AV Client 0.8.2
+# Better AV Client 0.8.3
 
 Cliente de escritorio para el Aula Virtual (Moodle). **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
@@ -48,6 +48,14 @@ El instalador de Windows (`BetterAVClient-Setup.exe`) instala en una carpeta lla
   activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
 - Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
 - Las tareas, los cuestionarios y los foros se gestionan desde la app (desde la 0.8.1); lo que el aula no permita por la API se abre en el navegador.
+
+## Novedades de la 0.8.3
+
+- **Completado y progreso**: casilla por actividad (manual: `core_completion_update_activity_completion_status_manually`; automática: solo estado, se refresca con `core_completion_get_activities_completion_status`) y barra de progreso por curso y tema.
+- **Páginas, libros y URL** con vista propia (`mod_page_*`, `mod_book_*`, `mod_url_*`); el HTML pasa por el mismo saneador que los cuestionarios.
+- **Glosarios, wikis (lectura) y bases de datos (lectura)** dentro de la app. **Talleres, lecciones, SCORM, H5P, encuestas y feedback**: información, plazos, intentos y notas, y botón al navegador. **BigBlueButton y Zoom**: estado de la sala y botón para entrar (se abre en el navegador). Lo que el aula no exponga por la API móvil se abre en el navegador.
+- **Mensajes Better AV**: foto junto a cada mensaje, «Enviado/Visto» (en grupos «Visto por…»), «escribiendo…», refresco cada ~2 s sin repintar y foco automático en el cuadro de texto.
+- **Supabase**: ejecuta `supabase/migration-0.8.3.sql` una vez (tabla `typing_status`, funciones `set_typing`, `who_is_typing`, `group_reads`). Sin ella, todo funciona salvo «escribiendo» y «visto» en grupos.
 
 ## Novedades de la 0.8.2
 
