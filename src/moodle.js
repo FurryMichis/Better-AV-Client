@@ -231,16 +231,36 @@ function htmlToText(html) {
     .replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-const DOC_MODS = new Set(["resource", "folder", "page", "book", "imscp"]);
+const DOC_MODS = new Set(["resource", "folder", "imscp"]);
 const TASK_MODS = new Set(["assign"]);
+// Módulos con vista propia en la app (0.8.3): modname de Moodle → tipo de la interfaz.
+const KIND_BY_MOD = {
+  page: "page", book: "book", url: "link", glossary: "glossary", wiki: "wiki", data: "data", workshop: "workshop", lesson: "lesson",
+  scorm: "scorm", h5pactivity: "h5p", survey: "survey", feedback: "feedback", bigbluebuttonbn: "meeting", zoom: "meeting"
+};
 
 function classify(modname) {
   if (DOC_MODS.has(modname)) return "doc";
-  if (modname === "url") return "link";
   if (TASK_MODS.has(modname)) return "task";
   if (modname === "quiz") return "quiz";
   if (modname === "forum") return "forum";
-  return "other";
+  return KIND_BY_MOD[modname] || "other";
+}
+
+// Completado de una actividad (lo da core_course_get_contents). mode: 0 sin seguimiento · 1 manual · 2 automático.
+function completionOf(m) {
+  const d = m && m.completiondata;
+  const mode = Number(m && m.completion) || 0;
+  if (mode !== 1 && mode !== 2) return { mode: 0, done: false, fail: false, details: [] };
+  const state = Number(d && d.state) || 0;
+  const clip = (v, n) => String(v == null ? "" : v).slice(0, n);
+  return {
+    mode, done: state === 1 || state === 2, fail: state === 3,
+    details: (Array.isArray(d && d.details) ? d.details : []).map(x => ({
+      text: clip(htmlToText(x && x.rulevalue && x.rulevalue.description) || (x && x.rulename) || "", 120),
+      done: Number(x && x.rulevalue && x.rulevalue.status) === 1
+    })).filter(x => x.text).slice(0, 6)
+  };
 }
 
 async function syncAll(client, onProgress = () => {}) {
@@ -274,13 +294,16 @@ async function syncAll(client, onProgress = () => {}) {
           .map(f => ({ filename: f.filename, fileurl: f.fileurl, filesize: f.filesize || 0, timemodified: f.timemodified || 0 }));
         const maxT = Math.max(0, ...(m.contents || []).map(f => f.timemodified || 0));
         const kind = classify(m.modname);
+        const comp = completionOf(m);
         const a = assignByCm[m.id];
         modules.push({
           id: m.id,
           key: `${m.id}@${maxT}`,
           name: m.name,
           modname: m.modname,
+          instance: Number(m.instance) || 0,
           kind,
+          comp: comp.mode, done: comp.done, fail: comp.fail, compDetails: comp.details,
           url: m.url || "",
           files,
           linkUrl: kind === "link" ? ((m.contents && m.contents[0] && m.contents[0].fileurl) || m.url || "") : "",
@@ -323,4 +346,4 @@ async function syncAll(client, onProgress = () => {}) {
   };
 }
 
-module.exports = { MoodleClient, normalizeUrl, flatten, syncAll, pmap, htmlToText };
+module.exports = { MoodleClient, normalizeUrl, flatten, syncAll, pmap, htmlToText, completionOf, classify, KIND_BY_MOD };

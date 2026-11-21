@@ -663,6 +663,14 @@ function markSeen(keys) {
 }
 
 // ------------------------------------------------------------------ cursos
+function topicMeta(s) {
+  const n = ks => s.modules.filter(m => ks.includes(m.kind)).length;
+  const parts = [[n(["doc"]), "docs", "docs"], [n(["page", "book"]), "página/libro", "páginas/libros"], [n(["link"]), "enlace", "enlaces"], [n(["task"]), "tarea", "tareas"],
+    [n(["quiz"]), "cuestionario", "cuestionarios"], [n(["forum"]), "foro", "foros"],
+    [n(["glossary", "wiki", "data", "workshop", "lesson", "scorm", "h5p", "survey", "feedback", "meeting", "other"]), "otra actividad", "otras actividades"]];
+  return parts.filter(([k]) => k).map(([k, one, many]) => `${k} ${k === 1 ? one : many}`).join(" · ") || "Sin contenido";
+}
+
 function renderCourses(root) {
   if (state.courseId) return renderCourse(root);
   root.append(pageTitle("TUS ASIGNATURAS", "Mis cursos", `${state.data.courses.length} asignaturas en ${state.account.name}`));
@@ -677,6 +685,7 @@ function renderCourses(root) {
       h("div", { class: "course-card-body" },
         h("h3", { text: c.fullname }),
         h("div", { class: "muted", text: (c.teachers[0] && c.teachers[0].fullname) || c.shortname }),
+        (() => { const p = typeof courseProgress === "function" ? courseProgress(c) : null; return p && p.pct != null ? h("div", { class: "course-card-progress" }, progressBar(p.pct), h("small", { class: "muted", text: `${p.pct} % completado` })) : null; })(),
         n > 0 && chip(`${n} nuevo${n === 1 ? "" : "s"}`, "new"))));
   }
   root.append(grid);
@@ -734,6 +743,7 @@ function renderCourse(root) {
   const sections = c.sections.filter(s => s.modules.length);
   const section = sections.find(s => s.id === state.sectionId);
   if (!section) {
+    const prog = progressCard(c); if (prog) root.append(prog);
     root.append(h("div", { class: "section-heading" }, h("div", {}, h("h2", { text: "Temas" }), h("p", { text: "Elige un tema para ver sus documentos, enlaces y actividades." }))));
     if (!sections.length) { root.append(empty("▤", "Sin contenido", "Este curso todavía no tiene contenido visible.")); return; }
     const grid = h("div", { class: "topic-grid" });
@@ -742,7 +752,8 @@ function renderCourse(root) {
       const count = k => s.modules.filter(m => m.kind === k).length;
       grid.append(h("button", { class: "topic-btn", onclick: () => { state.sectionId = s.id; setIView("courses"); } },
         h("div", { class: "topic-name", text: s.name }),
-        h("div", { class: "topic-meta", text: `${count("doc")} docs · ${count("link")} enlaces · ${count("task")} tareas` + (count("quiz") ? ` · ${count("quiz")} cuestionario${count("quiz") === 1 ? "" : "s"}` : "") + (count("forum") ? ` · ${count("forum")} foro${count("forum") === 1 ? "" : "s"}` : "") }),
+        h("div", { class: "topic-meta", text: topicMeta(s) }),
+        sectionProgressChip(s),
         n > 0 && chip(`${n} nuevo${n === 1 ? "" : "s"}`, "new")));
     }
     root.append(grid);
@@ -755,16 +766,23 @@ function renderCourse(root) {
     h("h2", { text: section.name })));
   const groups = [
     ["doc", "Documentos", "▤"],
+    ["page,book", "Páginas y libros", "❏"],
     ["link", "Enlaces", "↗"],
     ["task", "Actividades a entregar", "✎"],
     ["quiz", "Cuestionarios", "☑"],
     ["forum", "Foros", "❝"],
+    ["glossary,wiki,data", "Glosarios, wikis y bases de datos", "✦"],
+    ["lesson,scorm,h5p,workshop", "Lecciones, paquetes interactivos y talleres", "▶"],
+    ["survey,feedback", "Encuestas y feedback", "☰"],
+    ["meeting", "Videoconferencias", "◉"],
     ["other", "Otros recursos", "◇"]
   ];
+  const ALWAYS = new Set(["doc", "link", "task"]);
   const wrap = h("div", { class: "topic-groups" });
-  for (const [kind, title, icon] of groups) {
-    const mods = section.modules.filter(m => m.kind === kind);
-    if (!mods.length && (kind === "other" || kind === "quiz" || kind === "forum")) continue;
+  for (const [kinds, title, icon] of groups) {
+    const ks = kinds.split(",");
+    const mods = section.modules.filter(m => ks.includes(m.kind));
+    if (!mods.length && !ALWAYS.has(kinds)) continue;
     const list = h("div", { class: "item-list" });
     if (!mods.length) list.append(h("div", { class: "muted pad", text: "Nada en este apartado." }));
     for (const m of mods) list.append(...moduleRows(m, icon));
@@ -796,10 +814,204 @@ function openFriends() {
   else $('.nav[data-view="cloud"]').click();
 }
 
+// ------------------------------------------------------------------ panel de conversación (0.8.3)
+// Lo usan los chats privados y los grupos de Better AV. Se pinta una sola vez y después se actualiza mensaje a mensaje
+// (sin repintar todo), así que no pierdes el texto que estás escribiendo ni el foco, y el refresco puede ser rápido.
+// Cada mensaje lleva la foto de quien lo escribió; el último tuyo dice «Enviado» o «Visto»; y se avisa de quién está escribiendo.
+const chatClock = iso => {
+  const d = new Date(iso); if (isNaN(d)) return "";
+  const t = d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  return d.toDateString() === new Date().toDateString() ? t : `${d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })} · ${t}`;
+};
+const joinNames = names => names.length <= 1 ? (names[0] || "") : `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
+
+function chatPane({ me, people, isGroup, placeholder, head, send, typing, markRead, fetch, onChange }) {
+  const msgs = new Map();            // id → mensaje
+  const reads = new Map();           // grupos: id de persona → hasta cuándo ha leído (ms)
+  const avVars = new Map();          // id de persona → variable CSS con su foto (la foto se guarda una sola vez, no por mensaje)
+  const rendered = new Set();
+  let loaded = false, sending = 0, busy = false, dead = false, typingOk = true, lastTypingSent = 0, markingRead = false, lastTime = 0, tmpN = 0;
+
+  const el = h("div", { class: "nx-dm-pane" });
+  const history = h("div", { class: "nx-dm-history" }, h("div", { class: "muted pad", text: "Cargando mensajes…" }));
+  const typingEl = h("div", { class: "nx-dm-typing", hidden: "", "aria-live": "polite" });
+  const input = h("textarea", { rows: "2", maxlength: "2000", placeholder });
+  const sendBtn = h("button", { class: "primary", text: "Enviar", type: "button" });
+  const statusEl = h("small", { class: "nx-dm-status" });
+  el.append(head, history, typingEl, h("div", { class: "nx-dm-compose" }, input, sendBtn));
+
+  const person = id => people.get(id) || { display_name: "Ex-miembro", username: "?" };
+  const nameOf = id => { const p = person(id); return p.display_name || p.username || "Alguien"; };
+  const pic = id => {
+    const p = person(id);
+    const box = h("div", { class: "pic sm", title: nameOf(id), text: initials(p.display_name || p.username) });
+    if (typeof p.avatar === "string" && AVATAR_RE.test(p.avatar)) {
+      let v = avVars.get(id);
+      if (!v) { v = `--av-${avVars.size}`; avVars.set(id, v); el.style.setProperty(v, `url("${p.avatar}")`); }
+      box.style.backgroundImage = `var(${v})`; box.textContent = ""; box.classList.add("has-img");
+    }
+    return box;
+  };
+  const when = m => Date.parse(m.created_at) || 0;
+  const nearBottom = () => history.scrollHeight - history.scrollTop - history.clientHeight < 90;
+
+  function rowFor(m) {
+    const mine = m.sender_id === me;
+    const bubble = h("article", { class: `nx-dm-bubble ${mine ? "mine" : ""}` },
+      isGroup && !mine ? h("b", { class: "nx-g-from", text: nameOf(m.sender_id) }) : null,
+      h("p", { text: m.body }), h("small", { text: m.pending ? "Enviando…" : chatClock(m.created_at) }));
+    return h("div", { class: `nx-dm-row ${mine ? "mine" : ""} ${m.pending ? "pending" : ""}`, "data-id": m.id }, pic(m.sender_id), bubble);
+  }
+
+  // «Enviado» / «Visto» bajo tu último mensaje
+  function paintStatus() {
+    statusEl.remove();
+    const mineRows = [...history.querySelectorAll(".nx-dm-row.mine:not(.pending)")];
+    const last = mineRows.at(-1); if (!last) return;
+    const m = msgs.get(last.dataset.id); if (!m) return;
+    let text, seen = false;
+    if (!isGroup) { seen = !!m.read_at; text = seen ? `✓✓ Visto · ${chatClock(m.read_at)}` : "✓ Enviado"; }
+    else if (reads.size) {
+      const t = when(m);
+      const who = [...reads].filter(([id, at]) => id !== me && at >= t && people.has(id)).map(([id]) => nameOf(id));
+      seen = who.length > 0;
+      text = seen ? (who.length <= 3 ? `✓✓ Visto por ${joinNames(who)}` : `✓✓ Visto por ${who.length} personas`) : "✓ Enviado";
+    } else text = "✓ Enviado";
+    statusEl.textContent = text; statusEl.classList.toggle("seen", seen);
+    last.querySelector(".nx-dm-bubble").append(statusEl);
+  }
+
+  function paintAll() {
+    const stick = nearBottom(), top = history.scrollTop;
+    clear(history); rendered.clear();
+    const list = [...msgs.values()].sort((a, b) => when(a) - when(b));
+    if (!list.length) history.append(h("div", { class: "muted pad", text: isGroup ? "Todavía no hay mensajes en este grupo. ¡Saluda!" : "Todavía no hay mensajes. ¡Saluda!" }));
+    for (const m of list) { history.append(rowFor(m)); rendered.add(m.id); }
+    lastTime = list.length ? when(list.at(-1)) : 0;
+    paintStatus();
+    history.scrollTop = stick ? history.scrollHeight : top;
+  }
+
+  function paintTyping(list) {
+    const names = (list || []).filter(t => t.id !== me).map(t => t.name);
+    typingEl.hidden = !names.length;
+    if (!names.length) { typingEl.textContent = ""; return; }
+    const who = names.length > 2 ? "Varias personas" : joinNames(names);
+    clear(typingEl).append(h("span", { class: "nx-dots", "aria-hidden": "true" }, h("i"), h("i"), h("i")),
+      h("span", { text: ` ${who} ${names.length === 1 ? "está" : "están"} escribiendo…` }));
+    if (nearBottom()) history.scrollTop = history.scrollHeight;
+  }
+
+  function needsRead() {
+    if (isGroup) return false;
+    for (const m of msgs.values()) if (m.sender_id !== me && !m.read_at && !m.pending) return true;
+    return false;
+  }
+  async function maybeMarkRead(force) {
+    if (dead || markingRead || !document.hasFocus() || document.hidden || !el.isConnected) return;
+    if (!force && !needsRead()) return;
+    markingRead = true;
+    try {
+      await markRead();
+      for (const m of msgs.values()) if (m.sender_id !== me && !m.read_at) m.read_at = new Date().toISOString();
+    } catch { /* se reintenta en la próxima actualización */ }
+    finally { markingRead = false; }
+  }
+
+  // Une mensajes nuevos o cambiados (p. ej. «visto») con lo que ya se ve.
+  function merge(list) {
+    let added = [], changed = false;
+    for (const m of list || []) {
+      const old = msgs.get(m.id);
+      if (!old) { msgs.set(m.id, m); added.push(m); }
+      else if (old.read_at !== m.read_at) { old.read_at = m.read_at; changed = true; }
+    }
+    return { added, changed };
+  }
+
+  function update({ msgs: list, typing: tl, reads: rd, typingOk: tok } = {}) {
+    if (dead || sending) return;                         // mientras se envía no se mezcla nada: evita ver el mensaje repetido
+    if (tok === false) typingOk = false;
+    if (Array.isArray(rd)) for (const r of rd) { const t = Date.parse(r.last_read_at); if (t) reads.set(String(r.user_id), t); }
+    const wasLoaded = loaded; loaded = true;
+    const { added, changed } = merge(list);
+    const stick = nearBottom() || added.some(m => m.sender_id === me);
+    if (!wasLoaded || added.some(m => when(m) < lastTime)) paintAll();
+    else if (added.length) {
+      for (const m of added.sort((a, b) => when(a) - when(b))) { history.append(rowFor(m)); rendered.add(m.id); lastTime = Math.max(lastTime, when(m)); }
+      history.querySelector(":scope > .muted.pad")?.remove();
+      paintStatus();
+      if (stick) history.scrollTop = history.scrollHeight;
+    } else if (changed || Array.isArray(rd)) paintStatus();
+    if (tl !== undefined) paintTyping(tl);
+    if (added.length || changed || !wasLoaded) {
+      const last = [...msgs.values()].sort((a, b) => when(a) - when(b)).at(-1);
+      if (onChange) onChange(last || null);
+    }
+    maybeMarkRead(!isGroup ? false : added.some(m => m.sender_id !== me) || !wasLoaded);
+  }
+
+  async function refresh() {
+    if (dead || busy || sending) return;
+    busy = true;
+    try { update(await fetch()); } finally { busy = false; }
+  }
+
+  async function doSend() {
+    const body = input.value.trim(); if (!body || dead) return;
+    input.value = "";
+    const tmp = { id: `tmp-${++tmpN}`, sender_id: me, body, created_at: new Date().toISOString(), read_at: null, pending: true };
+    history.querySelector(":scope > .muted.pad")?.remove();
+    const row = rowFor(tmp); history.append(row); statusEl.remove(); history.scrollTop = history.scrollHeight;
+    sending++;
+    try {
+      const saved = await send(body);
+      row.remove();
+      sending--;
+      if (saved && saved.id) update({ msgs: [saved] }); else await refresh();
+    } catch (e) {
+      sending = Math.max(0, sending - 1);
+      row.remove(); paintStatus();
+      if (!input.value) input.value = body;
+      notify(e.message);
+    }
+    input.focus();
+    refresh().catch(() => {});
+  }
+  sendBtn.addEventListener("click", doSend);
+  input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); doSend(); } });
+  input.addEventListener("input", () => {
+    if (!typingOk || !input.value.trim() || Date.now() - lastTypingSent < 3000) return;
+    lastTypingSent = Date.now();
+    Promise.resolve(typing()).then(ok => { if (ok === false) typingOk = false; }).catch(() => {});
+  });
+
+  // Escribir sin pulsar antes el cuadro: si no hay otro campo con el foco, la tecla va al cuadro de mensaje.
+  const onKey = e => {
+    if (dead || !el.isConnected || el.offsetParent === null) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+    const t = e.target, tag = t && t.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON" || (t && t.isContentEditable)) return;
+    if (document.querySelector("dialog[open]")) return;
+    input.focus();
+  };
+  const onFocus = () => { maybeMarkRead(false); };
+  document.addEventListener("keydown", onKey);
+  window.addEventListener("focus", onFocus);
+
+  return {
+    el, input, update, refresh,
+    focus: () => { if (!document.querySelector("dialog[open]")) input.focus(); },
+    setPeople: () => { avVars.forEach((_v, k) => { /* las fotos nuevas se registran al pintar */ }); avVars.clear(); if (loaded) paintAll(); },
+    destroy: () => { dead = true; document.removeEventListener("keydown", onKey); window.removeEventListener("focus", onFocus); }
+  };
+}
+
 // Mensajería propia de Better AV: separada de los mensajes de cada aula Moodle.
-let nxPendingSelect = null, nxRefreshTimer = null; // al volver a pintar la vista, qué conversación dejar abierta ({ kind: "group", id })
+let nxPendingSelect = null, nxRefreshTimer = null, nxPane = null; // al volver a pintar la vista, qué conversación dejar abierta ({ kind: "group", id })
 async function renderBetterAVMessages(root) {
-  clearInterval(nxRefreshTimer); // al repintar, se para el refresco de la vista anterior
+  clearTimeout(nxRefreshTimer); // al repintar, se para el refresco de la vista anterior
+  if (nxPane) { nxPane.destroy(); nxPane = null; }
   clear(root);
   root.append(pageTitle("COMUNIDAD BETTER AV", "Mensajes Better AV", "Chats privados y grupos entre usuarios de Better AV Client. Los mensajes de Moodle siguen en cada aula."));
   let status;
@@ -821,7 +1033,6 @@ async function renderBetterAVMessages(root) {
   const thread = h("div", { class: "nx-dm-thread" }, h("div", { class: "muted pad", text: "Selecciona un contacto para abrir la conversación." }));
   layout.append(list, thread); root.append(layout);
   let selected = null, selectedGroup = null;
-  let refreshTimer = null;
   const me = status.profile.id;
   const contacts = (await api("friendsList")).filter(f => f.status === "accepted");
   let groups = [], groupsHint = "";
@@ -835,33 +1046,29 @@ async function renderBetterAVMessages(root) {
 
   const contactButtons = new Map(), groupButtons = new Map();
   const markActive = btn => { contactButtons.forEach(b => b.classList.toggle("active", b === btn)); groupButtons.forEach(b => b.classList.toggle("active", b === btn)); };
-  async function loadThread(friend, btn, keepScroll = false) {
+  const closePane = () => { if (nxPane) { nxPane.destroy(); nxPane = null; } };
+  const preview = (btn, text) => { const t = btn && btn.querySelector(".item-main .muted"); if (t) t.textContent = String(text).slice(0, 58); };
+
+  async function loadThread(friend, btn) {
     selected = friend; selectedGroup = null;
-    markActive(btn);
-    const oldScroll = keepScroll ? thread.querySelector(".nx-dm-history")?.scrollTop : null;
+    markActive(btn); closePane();
+    const people = new Map([[me, status.profile], [friend.other_id, friend]]);
+    const head = h("div", { class: "nx-dm-head" }, h("div", { class: "nx-dm-who" }, cloudPic(friend, "md"),
+      h("div", { class: "nx-dm-who-txt" }, h("b", { text: friend.display_name || friend.username }), h("span", { class: "muted", text: `@${friend.username}` }))));
+    const pane = nxPane = chatPane({
+      me, people, isGroup: false, head, placeholder: "Escribe un mensaje… (Enter para enviar)",
+      send: body => api("chatSend", friend.other_id, body),
+      typing: () => api("chatTyping", friend.other_id),
+      fetch: () => api("chatSync", friend.other_id),
+      markRead: async () => { await api("chatRead", friend.other_id); btn.querySelector(".chip")?.remove(); },
+      onChange: last => { if (last) preview(btn, `${last.sender_id === me ? "Tú: " : ""}${last.body}`); }
+    });
+    clear(thread).append(pane.el);
+    pane.focus();
     const msgs = await api("chatList", friend.other_id);
-    const unread = msgs.filter(m => m.sender_id === friend.other_id && !m.read_at).length;
-    if (unread) await api("chatRead", friend.other_id);
-    const history = h("div", { class: "nx-dm-history" });
-    if (!msgs.length) history.append(h("div", { class: "muted pad", text: "Todavía no hay mensajes. ¡Saluda!" }));
-    for (const m of msgs) {
-      const mine = m.sender_id === status.profile.id;
-      history.append(h("article", { class: `nx-dm-bubble ${mine ? "mine" : ""}` },
-        h("p", { text: m.body }), h("small", { text: new Date(m.created_at).toLocaleString("es-ES") })));
-    }
-    const input = h("textarea", { rows: "2", maxlength: "2000", placeholder: "Escribe un mensaje… (Enter para enviar)" });
-    const send = h("button", { class: "primary", text: "Enviar", onclick: async () => {
-      const body = input.value.trim(); if (!body) return;
-      send.disabled = true;
-      try { await api("chatSend", friend.other_id, body); input.value = ""; await loadThread(friend, btn); }
-      catch (e) { notify(e.message); }
-      finally { send.disabled = false; }
-    } });
-    input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send.click(); } });
-    clear(thread).append(h("div", { class: "nx-dm-head" }, h("div", { class: "nx-dm-who" }, cloudPic(friend, "md"), h("div", { class: "nx-dm-who-txt" }, h("b", { text: friend.display_name || friend.username }), h("span", { class: "muted", text: `@${friend.username}` })))), history, h("div", { class: "nx-dm-compose" }, input, send));
-    history.scrollTop = oldScroll == null ? history.scrollHeight : oldScroll;
-    if (unread) btn.querySelector(".chip")?.remove();
-    btn._unread = unread;
+    if (nxPane !== pane) return;                       // mientras tanto se abrió otra conversación
+    pane.update({ msgs });
+    pane.focus();
   }
 
   const summaries = await Promise.all(contacts.map(async friend => {
@@ -967,40 +1174,44 @@ async function renderBetterAVMessages(root) {
     });
   }
 
-  async function loadGroup(group, btn, keepScroll = false) {
+  async function loadGroup(group, btn) {
     selectedGroup = group; selected = null;
-    markActive(btn);
-    const oldScroll = keepScroll ? thread.querySelector(".nx-dm-history")?.scrollTop : null;
-    const draft = thread.querySelector(".nx-dm-compose textarea")?.value || "";
-    const [msgs, members] = await Promise.all([api("groupMessages", group.group_id), api("groupMembers", group.group_id)]);
-    const names = new Map(members.map(m => [m.user_id, m.display_name || m.username]));
-    if (Number(group.unread) > 0 || msgs.length !== btn._count) api("groupRead", group.group_id).catch(() => {});
-    btn._count = msgs.length; group.unread = 0; btn.querySelector(".chip")?.remove();
-    const history = h("div", { class: "nx-dm-history" });
-    if (!msgs.length) history.append(h("div", { class: "muted pad", text: "Todavía no hay mensajes en este grupo. ¡Saluda!" }));
-    for (const m of msgs) {
-      const mine = m.sender_id === me;
-      history.append(h("article", { class: `nx-dm-bubble ${mine ? "mine" : ""}` },
-        mine ? null : h("b", { class: "nx-g-from", text: names.get(m.sender_id) || "Ex-miembro" }),
-        h("p", { text: m.body }), h("small", { text: new Date(m.created_at).toLocaleString("es-ES") })));
-    }
-    const input = h("textarea", { rows: "2", maxlength: "2000", placeholder: "Escribe al grupo… (Enter para enviar)" });
-    input.value = draft;
-    const send = h("button", { class: "primary", text: "Enviar", onclick: async () => {
-      const body = input.value.trim(); if (!body) return;
-      send.disabled = true;
-      try { await api("groupSend", group.group_id, body); input.value = ""; await loadGroup(group, btn); }
-      catch (e) { notify(e.message); }
-      finally { send.disabled = false; }
-    } });
-    input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send.click(); } });
-    clear(thread).append(
-      h("div", { class: "nx-dm-head nx-dm-head-row" },
-        h("div", { class: "nx-dm-who" }, h("div", { class: "pic md nx-group-ico", text: initials(group.name) }),
-          h("div", { class: "nx-dm-who-txt" }, h("b", { text: group.name }), h("span", { class: "muted", text: `${members.length} ${members.length === 1 ? "persona" : "personas"}` }))),
-        h("button", { class: "secondary small", text: "Opciones del grupo", onclick: () => openGroupManager(group) })),
-      history, h("div", { class: "nx-dm-compose" }, input, send));
-    history.scrollTop = oldScroll == null ? history.scrollHeight : oldScroll;
+    markActive(btn); closePane();
+    const people = new Map([[me, status.profile]]);
+    const sub = h("span", { class: "muted", text: "…" });
+    const setCount = n => { sub.textContent = `${n} ${n === 1 ? "persona" : "personas"}`; };
+    const head = h("div", { class: "nx-dm-head nx-dm-head-row" },
+      h("div", { class: "nx-dm-who" }, h("div", { class: "pic md nx-group-ico", text: initials(group.name) }),
+        h("div", { class: "nx-dm-who-txt" }, h("b", { text: group.name }), sub)),
+      h("button", { class: "secondary small", text: "Opciones del grupo", onclick: () => openGroupManager(group) }));
+    let lastMembersLoad = 0;
+    const applyMembers = list => {
+      for (const m of list) people.set(m.user_id, m);
+      setCount(list.length); pane.setPeople();
+    };
+    const pane = nxPane = chatPane({
+      me, people, isGroup: true, head, placeholder: "Escribe al grupo… (Enter para enviar)",
+      send: body => api("groupSend", group.group_id, body),
+      typing: () => api("groupTyping", group.group_id),
+      fetch: async () => {
+        const r = await api("groupSync", group.group_id);
+        if (r.msgs.some(m => !people.has(m.sender_id)) && Date.now() - lastMembersLoad > 8000) {   // alguien nuevo en el grupo: se vuelven a pedir los miembros (con sus fotos)
+          lastMembersLoad = Date.now();
+          try { applyMembers(await api("groupMembers", group.group_id)); } catch { /* se queda con los que había */ }
+        }
+        return r;
+      },
+      markRead: async () => { await api("groupRead", group.group_id); group.unread = 0; btn.querySelector(".chip")?.remove(); },
+      onChange: last => { if (last) preview(btn, `${last.sender_id === me ? "Tú" : (people.get(last.sender_id)?.display_name || "Alguien")}: ${last.body}`); }
+    });
+    clear(thread).append(pane.el);
+    pane.focus();
+    const [msgs, members, sync] = await Promise.all([api("groupMessages", group.group_id), api("groupMembers", group.group_id), api("groupSync", group.group_id).catch(() => ({}))]);
+    if (nxPane !== pane) return;
+    lastMembersLoad = Date.now();
+    applyMembers(members);
+    pane.update({ msgs, reads: sync.reads || undefined, typing: sync.typing, typingOk: sync.typingOk });
+    pane.focus();
   }
 
   // ---- lista: grupos y amigos
@@ -1038,19 +1249,14 @@ async function renderBetterAVMessages(root) {
   const startGroup = (pending && pending.kind === "group" && groups.find(g => g.group_id === pending.id)) || (firstGroup && gTime > dmTime ? firstGroup : null);
   if (startGroup) await loadGroup(startGroup, groupButtons.get(startGroup.group_id));
   else if (first) await loadThread(first.friend, contactButtons.get(first.friend.other_id));
-  nxRefreshTimer = refreshTimer = setInterval(async () => {
-    if (!root.isConnected || !root.classList.contains("active")) { clearInterval(refreshTimer); return; }
-    try {
-      if (selectedGroup) {
-        const gb = groupButtons.get(selectedGroup.group_id);
-        if (gb) await loadGroup(selectedGroup, gb, true);
-        return;
-      }
-      const latest = await api("friendsList");
-      const current = latest.find(f => f.other_id === selected?.other_id && f.status === "accepted");
-      if (current) await loadThread(current, contactButtons.get(current.other_id), true);
-    } catch { /* mantiene el último contenido si se pierde la conexión */ }
-  }, 10000);
+  // Refresco rápido de la conversación abierta: cada ~2 s con la ventana delante, más despacio si no.
+  const nextDelay = () => (document.hidden ? 15000 : document.hasFocus() ? 2000 : 6000);
+  const tick = async () => {
+    if (!root.isConnected || !root.classList.contains("active")) { closePane(); return; }
+    try { if (nxPane) await nxPane.refresh(); } catch { /* mantiene el último contenido si se pierde la conexión */ }
+    nxRefreshTimer = setTimeout(tick, nextDelay());
+  };
+  nxRefreshTimer = setTimeout(tick, 1500);
 }
 
 const ROLE_NAMES = { student: "Alumno", editingteacher: "Profesor", teacher: "Profesor", manager: "Gestor", coursecreator: "Creador de cursos" };
@@ -1577,7 +1783,23 @@ function openModuleUrl(m) {
 }
 
 function moduleRows(m, icon) {
+  const rows = moduleRowsRaw(m, icon);
+  if (!m.comp || typeof compButton !== "function") return rows;
+  // con seguimiento de completado: la casilla va al lado de la fila (no dentro del botón)
+  return rows.map((r, i) => i === 0 ? h("div", { class: "item-wrap" }, r, compButton(m)) : r);
+}
+
+function moduleRowsRaw(m, icon) {
   const fresh = state.unseen.has(m.key) && chip("NUEVO", "new");
+  if (typeof MOD_KINDS !== "undefined" && MOD_KINDS.has(m.kind)) {
+    let sub = MOD_SUB[m.kind] || "";
+    if (m.kind === "link") { try { sub = new URL(m.linkUrl).host; } catch { sub = "Enlace"; } }
+    if (m.kind === "meeting") sub = m.modname === "zoom" ? "Reunión de Zoom" : "Videoconferencia";
+    return [h("button", { class: "item", onclick: () => openActivity(m, courseById(state.courseId)) },
+      h("span", { class: "item-icon", text: MOD_ICON[m.kind] || icon }),
+      h("span", { class: "item-main" }, h("b", { text: m.name }), h("span", { class: "muted", text: sub })),
+      fresh)];
+  }
   if (m.kind === "doc" && m.files.length) {
     return m.files.map((f, i) => h("button", { class: "item", onclick: () => openDoc(f) },
       h("span", { class: "item-icon", text: icon }),

@@ -70,6 +70,8 @@ function cloudError(status, data) {
     "23514": "El nombre de usuario solo puede tener letras minúsculas, números y _ (3 a 20 caracteres)."
   };
   if (map[code]) return new Error(map[code]);
+  if (/set_typing|who_is_typing|group_reads|typing_status/i.test(msg))
+    return new Error("Faltan «escribiendo» y «visto» en grupos: ejecuta supabase/migration-0.8.3.sql en el SQL Editor de Supabase.");
   if (/chat_groups|chat_group_members|group_messages|list_groups|create_group|group_members|add_group_members|remove_group_member|mark_group_read/i.test(msg)
       && (/does not exist|could not find|schema cache/i.test(msg) || code === "42P01" || code === "42883" || code === "PGRST202" || code === "PGRST205"))
     return new Error("Faltan los grupos de chat: ejecuta supabase/migration-0.8.0.sql en el SQL Editor de Supabase.");

@@ -756,6 +756,35 @@ handle("chat:read", async (_e, userId) => {
   return true;
 });
 
+// ---- Refresco rápido de la conversación abierta (0.8.3): últimos mensajes + quién escribe (+ quién ha leído el grupo).
+// «Escribiendo» y «visto en grupos» dependen de supabase/migration-0.8.3.sql; si falta, el chat sigue funcionando sin ellos.
+const typingList = rows => (Array.isArray(rows) ? rows : []).slice(0, 5).map(r => ({ id: String(r.user_id), name: String(r.display_name || r.username || "Alguien").slice(0, 40) }));
+handle("chat:sync", async (_e, userId) => {
+  if (!cloud.UUID.test(String(userId))) throw new Error("Usuario no válido.");
+  const me = cloud.userId(); if (!me) throw new Error("Inicia sesión en Better AV.");
+  const [rows, typing] = await Promise.all([
+    cloud.rest("GET", `/rest/v1/direct_messages?or=(and(sender_id.eq.${me},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${me}))&select=id,sender_id,recipient_id,body,created_at,read_at&order=created_at.desc&limit=60`),
+    cloud.rpc("who_is_typing", { p_peer: String(userId) }).then(r => ({ ok: true, list: typingList(r) })).catch(() => ({ ok: false, list: [] }))
+  ]);
+  return { msgs: (rows || []).reverse(), typing: typing.list, typingOk: typing.ok };
+});
+handle("chat:typing", async (_e, userId) => {
+  if (!cloud.UUID.test(String(userId))) return false;
+  try { await cloud.rpc("set_typing", { p_peer: String(userId) }); return true; } catch { return false; }
+});
+handle("groups:sync", async (_e, id) => {
+  const g = gid(id);
+  const [rows, typing, reads] = await Promise.all([
+    cloud.rest("GET", `/rest/v1/group_messages?group_id=eq.${g}&select=id,sender_id,body,created_at&order=created_at.desc&limit=60`),
+    cloud.rpc("who_is_typing", { p_group: g }).then(r => ({ ok: true, list: typingList(r) })).catch(() => ({ ok: false, list: [] })),
+    cloud.rpc("group_reads", { p_group: g }).then(r => (Array.isArray(r) ? r.map(x => ({ user_id: String(x.user_id), last_read_at: String(x.last_read_at || "") })) : null)).catch(() => null)
+  ]);
+  return { msgs: (rows || []).reverse(), typing: typing.list, typingOk: typing.ok, reads };
+});
+handle("groups:typing", async (_e, id) => {
+  try { await cloud.rpc("set_typing", { p_group: gid(id) }); return true; } catch { return false; }
+});
+
 // ---- Grupos de chat de Better AV (supabase/migration-0.8.0.sql)
 const gid = v => { if (!cloud.UUID.test(String(v))) throw new Error("Grupo no válido."); return String(v); };
 const uuidList = list => [...new Set((Array.isArray(list) ? list : []).map(String).filter(x => cloud.UUID.test(x)))].slice(0, 24);
@@ -1084,6 +1113,30 @@ actHandle("act:forumPosts", (_e, id, discussionId) => withClient(id, c => act.fo
 actHandle("act:forumReply", (_e, id, postId, subject, text, subscribe) => withClient(id, c => act.forumReply(c, postId, subject, text, !!subscribe)));
 actHandle("act:forumNew", (_e, id, forumId, subject, text, subscribe) => withClient(id, c => act.forumNew(c, forumId, subject, text, !!subscribe)));
 actHandle("act:forumSubscribe", (_e, id, forumId, discussionId, state) => withClient(id, c => act.forumSubscribe(c, forumId, discussionId, !!state)));
+
+// ---- otros módulos del aula (0.8.3): completado, páginas, libros, URL, glosarios, wikis, bases de datos, talleres, lecciones, SCORM, H5P,
+//      encuestas, feedback y videoconferencias (lib/modules.js)
+const modsLib = require("./lib/modules");
+const { KIND_BY_MOD } = require("./moodle");
+actHandle("mod:info", (_e, id, modname, courseId, cmid, instance, urlHint) => {
+  if (typeof modname !== "string" || !Object.prototype.hasOwnProperty.call(KIND_BY_MOD, modname)) throw new Error("Este tipo de actividad se abre en el navegador.");
+  return withClient(id, async c => modsLib.info(c, await userIdOf(id, c), modname, courseId, cmid, instance, typeof urlHint === "string" ? urlHint : ""));
+});
+actHandle("mod:bookChapter", (_e, id, courseId, cmid, chapterId, bookId) => withClient(id, c => modsLib.bookChapter(c, courseId, Number(cmid), chapterId, bookId)));
+actHandle("mod:glossaryEntries", (_e, id, glossaryId, opts) => withClient(id, c => modsLib.glossaryEntries(c, glossaryId, opts || {})));
+actHandle("mod:wikiPages", (_e, id, wikiId, sub) => withClient(id, c => modsLib.wikiPages(c, wikiId, sub || {})));
+actHandle("mod:wikiPage", (_e, id, pageId) => withClient(id, c => modsLib.wikiPage(c, pageId)));
+actHandle("mod:dataEntries", (_e, id, dataId, page) => withClient(id, c => modsLib.dataEntries(c, dataId, page)));
+actHandle("mod:meetingJoin", (_e, id, modname, courseId, cmid, instance) => withClient(id, async c => {
+  if (modname !== "bigbluebuttonbn" && modname !== "zoom") throw new Error("Este módulo no tiene sala de videoconferencia.");
+  const url = await modsLib.meetingJoinUrl(c, modname, courseId, Number(cmid), instance);
+  const u = new URL(url);
+  if (u.protocol !== "https:" || u.username || u.password) throw new Error("El aula dio un enlace de entrada no permitido.");
+  await shell.openExternal(u.toString());
+  return true;
+}));
+actHandle("mod:complete", (_e, id, cmid, done) => withClient(id, c => modsLib.setComplete(c, cmid, !!done)));
+actHandle("mod:completion", (_e, id, courseId) => withClient(id, async c => modsLib.courseCompletion(c, await userIdOf(id, c), courseId)));
 
 // ---- mensajes, contactos, calendario y avisos del aula (0.8.2)
 const socHandle = (channel, fn) => actHandle(channel, (_e, id, ...a) => withClient(id, async c => fn(c, await userIdOf(id, c), ...a)));

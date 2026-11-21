@@ -95,6 +95,7 @@ async function renderMessages(root) {
       finally { send.disabled = false; }
     };
     send.onclick = doSend;
+    setTimeout(() => { if (input.isConnected && !document.querySelector("dialog[open]")) input.focus(); }, 0);   // se puede escribir sin pulsar antes el cuadro
     input.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSend(); } });
     const blockedNote = cv.type === 1 && cv.blocked ? "Has bloqueado a esta persona. Desbloquéala para escribirle." : cv.type === 1 && !cv.canMessage ? "Esta persona solo acepta mensajes de sus contactos." : "";
     const composer = blockedNote

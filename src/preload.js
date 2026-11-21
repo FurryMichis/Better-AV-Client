@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("betteravClient", {
-  version: "0.8.2",
+  version: "0.8.3",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
   addAccount: acc => call("accounts:add", acc),
@@ -61,6 +61,8 @@ contextBridge.exposeInMainWorld("betteravClient", {
   chatList: userId => call("chat:list", userId),
   chatSend: (userId, body) => call("chat:send", userId, body),
   chatRead: userId => call("chat:read", userId),
+  chatSync: userId => call("chat:sync", userId),
+  chatTyping: userId => call("chat:typing", userId),
   // Grupos de chat de Better AV
   groupsList: () => call("groups:list"),
   groupCreate: (name, members) => call("groups:create", name, members),
@@ -68,6 +70,8 @@ contextBridge.exposeInMainWorld("betteravClient", {
   groupMessages: id => call("groups:messages", id),
   groupSend: (id, body) => call("groups:send", id, body),
   groupRead: id => call("groups:read", id),
+  groupSync: id => call("groups:sync", id),
+  groupTyping: id => call("groups:typing", id),
   groupRename: (id, name) => call("groups:rename", id, name),
   groupAddMembers: (id, users) => call("groups:addMembers", id, users),
   groupRemoveMember: (id, userId) => call("groups:removeMember", id, userId),
@@ -149,6 +153,16 @@ contextBridge.exposeInMainWorld("betteravClient", {
   forumReply: (id, postId, subject, text, subscribe) => call("act:forumReply", id, postId, subject, text, subscribe),
   forumNew: (id, forumId, subject, text, subscribe) => call("act:forumNew", id, forumId, subject, text, subscribe),
   forumSubscribe: (id, forumId, discussionId, state) => call("act:forumSubscribe", id, forumId, discussionId, state),
+  // Otros módulos del aula (0.8.3)
+  modInfo: (id, modname, courseId, cmid, instance, urlHint) => call("mod:info", id, modname, courseId, cmid, instance, urlHint),
+  modBookChapter: (id, courseId, cmid, chapterId, bookId) => call("mod:bookChapter", id, courseId, cmid, chapterId, bookId),
+  modGlossaryEntries: (id, glossaryId, opts) => call("mod:glossaryEntries", id, glossaryId, opts),
+  modWikiPages: (id, wikiId, sub) => call("mod:wikiPages", id, wikiId, sub),
+  modWikiPage: (id, pageId) => call("mod:wikiPage", id, pageId),
+  modDataEntries: (id, dataId, page) => call("mod:dataEntries", id, dataId, page),
+  modMeetingJoin: (id, modname, courseId, cmid, instance) => call("mod:meetingJoin", id, modname, courseId, cmid, instance),
+  modComplete: (id, cmid, done) => call("mod:complete", id, cmid, done),
+  modCompletion: (id, courseId) => call("mod:completion", id, courseId),
   openExternal: url => call("instance:openExternal", url),
   calendar: (id, courseIds) => call("api:calendar", id, courseIds),
   grades: (id, courseId, userId) => call("api:grades", id, courseId, userId),

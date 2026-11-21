@@ -3,6 +3,21 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.8.3", headline: "Más módulos del aula y mensajes Better AV más vivos",
+    summary: "Marca actividades como completadas y mira tu progreso, lee páginas, libros y enlaces dentro de la app, abre glosarios, wikis y más módulos, y los mensajes de Better AV muestran fotos, «visto» y «escribiendo…».",
+    items: [
+      { kind: "new", title: "Completado y progreso del curso", text: "Las actividades con seguimiento tienen una casilla: si es manual la marcas tú; si es automática se rellena sola al cumplir las condiciones. Cada curso y cada tema muestran cuántas llevas completadas." },
+      { kind: "new", title: "Páginas, libros y enlaces con vista propia", text: "Las páginas y los libros (con índice de capítulos) se leen dentro de la app, y los enlaces enseñan su dirección antes de abrirse en el navegador. Ya no se descargan como archivos." },
+      { kind: "new", title: "Glosarios, wikis y bases de datos", text: "Busca y lee entradas de glosarios y bases de datos, y navega por las páginas de una wiki. Para añadir o editar, la app te lleva al navegador." },
+      { kind: "new", title: "Talleres, lecciones, SCORM, H5P, encuestas y feedback", text: "Ves su información, plazos, intentos y notas dentro de la app y un botón para hacerlos en el navegador, que es donde funcionan." },
+      { kind: "new", title: "Videoconferencias", text: "BigBlueButton muestra si la sala está en directo y cuánta gente hay, y con BigBlueButton y Zoom entras con un botón (se abre en tu navegador)." },
+      { kind: "new", title: "Foto, «visto» y «escribiendo…» en Mensajes Better AV", text: "Cada mensaje lleva la foto de quien lo escribió. Bajo tu último mensaje pone «Enviado» o «Visto» (en grupos, «Visto por…»), y arriba del cuadro se avisa de quién está escribiendo." },
+      { kind: "improve", title: "Chat más rápido y sin clics", text: "La conversación abierta se actualiza cada pocos segundos sin repintarse: no pierdes lo que escribes. Puedes empezar a escribir sin pulsar antes el cuadro, y el mensaje que envías aparece al instante." },
+      { kind: "improve", title: "Servidor", text: "«Escribiendo» y «Visto por» en grupos necesitan ejecutar una vez supabase/migration-0.8.3.sql en Supabase → SQL Editor. Sin ejecutarlo, el chat funciona igual (con «Visto» en chats privados)." },
+      { kind: "improve", title: "Qué depende del aula", text: "Todo usa las funciones de la app oficial de Moodle. Si tu aula tiene alguna desactivada, la app lo dirá y podrás abrirlo en el navegador." }
+    ]
+  },
+  {
     version: "0.8.2", headline: "Mensajes completos, calendario propio y avisos a tu gusto",
     summary: "Los mensajes del aula pasan a ser un chat de verdad (nuevos chats, contactos, bloqueos y grupos del aula), puedes crear tus propios eventos y controlar tus notificaciones.",
     items: [

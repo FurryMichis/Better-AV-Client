@@ -10,6 +10,7 @@ function openActivity(m, course) {
   if (m.kind === "task") return openAssignment(m, course);
   if (m.kind === "quiz") return openQuiz(m, course);
   if (m.kind === "forum") return openForum(m, course);
+  if (typeof MOD_KINDS !== "undefined" && MOD_KINDS.has(m.kind)) return openModuleView(m, course);   // modules.js (0.8.3)
 }
 
 // ------------------------------------------------------------------ ventana base
@@ -208,11 +209,11 @@ function htmlToPlainR(s) {
   return doc.body.textContent.replace(/\n{3,}/g, "\n\n").trim();
 }
 
-function mqSanitize(html, { readonly = false } = {}) {
+function mqSanitize(html, { readonly = false, base = "" } = {}) {
   const doc = new DOMParser().parseFromString(String(html || ""), "text/html"); // documento inerte: no ejecuta nada
   const frag = document.createDocumentFragment();
   const site = new URL(state.data.site.url);
-  const abs = u => { try { return new URL(u, site.origin + "/"); } catch { return null; } };
+  const abs = u => { try { return new URL(u, base || site.origin + "/"); } catch { return null; } };   // base: dirección de la página (capítulos de libro con rutas relativas)
   const openLink = href => {
     const u = abs(href);
     if (!u || (u.protocol !== "https:" && u.protocol !== "http:") || u.username || u.password) return;
