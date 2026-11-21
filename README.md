@@ -1,224 +1,259 @@
-# Better AV Client 0.8.3
+# Better AV Client 0.8.4
 
 Cliente de escritorio para el Aula Virtual (Moodle). **Para Windows y Linux.** (macOS ya no tiene compatibilidad desde la 0.6.6.)
 
 ## Generar los instaladores
+
 Necesitas Node.js LTS e internet. Cada sistema se compila **desde ese mismo sistema** (un .dmg no se puede generar en Windows), o con GitHub Actions (más abajo).
 
-| Sistema | Cómo | Resultado en `dist/` |
-|---|---|---|
-| Windows 10/11 | doble clic en `build.bat` (o `npm install` + `npm run dist`) | `BetterAVClient-Setup.exe` (instalador), `BetterAVClient-Portable.exe`, `latest.yml` y `.blockmap` |
-| Linux | `./build.sh` (o `npm run dist:linux`) | `BetterAVClient-Linux-x64.AppImage` y `.deb` |
+|Sistema|Cómo|Resultado en `dist/`|
+|-|-|-|
+|Windows 10/11|doble clic en `build.bat` (o `npm install` + `npm run dist`)|`BetterAVClient-Setup.exe` (instalador), `BetterAVClient-Portable.exe`, `latest.yml` y `.blockmap`|
+|Linux|`./build.sh` (o `npm run dist:linux`)|`BetterAVClient-Linux-x64.AppImage` y `.deb`|
 
 Para probar sin compilar: `npm start`.
 
 El instalador de Windows (`BetterAVClient-Setup.exe`) instala en una carpeta llamada **Better AV Client** (se puede cambiar durante la instalación).
 
 ## Uso
+
 1. "Añadir cuenta": nombre, enlace de tu aula (p. ej. `https://aulavirtual.tu-centro.es`), usuario y contraseña.
-   La contraseña se valida contra el aula y se guarda cifrada con el almacén seguro de Windows (DPAPI).
+La contraseña se valida contra el aula y se guarda cifrada con el almacén seguro de Windows (DPAPI).
 2. "Abrir instancia": al abrir se sincroniza y se marcan como NUEVO los documentos, enlaces y tareas
-   que no estaban la última vez (y aparece una notificación de Windows). El botón "Sincronizar" repite la comprobación.
+que no estaban la última vez (y aparece una notificación de Windows). El botón "Sincronizar" repite la comprobación.
 3. Curso: banner de fondo, nombre, profesor con "Enviar mensaje" y los temas como botones;
-   cada tema muestra Documentos, Enlaces y Actividades a entregar.
+cada tema muestra Documentos, Enlaces y Actividades a entregar.
 4. Apariencia: fondos estáticos y animados (nebulosa, atardecer, aurora, degradado vivo, galaxia con estrellas fugaces), imagen o GIF propio, **vídeo propio (MP4/WebM, en bucle y con sonido que puedes activar/silenciar con el botón 🔊 de la barra superior)**, oscurecimiento, color de acento y **tamaño de la interfaz** (botones − / + de la barra superior, Ctrl + «+» / «−» / «0» o Ctrl + rueda). Está en el lanzador y en la barra lateral de cada instancia.
 5. Barra lateral: Mis cursos, Calendario, Tareas, Calificaciones, Mensajes, Notificaciones y Perfil.
-
 6. Iconos de instancia: pulsa el icono de una cuenta (o «Icono» en Instancias) para elegir un emoji o subir una imagen.
 7. **Overlay (Shift+Tab)**: capa a pantalla completa con navegador integrado: buscar en Google, Gmail, el aula virtual original y tu IA.
-   Tiene **pestañas**: «+» o Ctrl+T para una nueva, Ctrl+W para cerrar, Ctrl+Tab / Ctrl+Mayús+Tab para cambiar, Ctrl+L para ir a la barra de direcciones,
-   y Ctrl+clic en un acceso (Google, Gmail, aula, IA) lo abre en una pestaña nueva. Los enlaces que piden ventana nueva se abren en pestaña.
-   Tu sesión de Google/IA se guarda solo dentro del overlay. Ajustes → «Overlay» permite hacerlo funcionar desde cualquier programa
-   (Ctrl+Shift+Espacio, o Shift+Tab global, que bloquea Shift+Tab en el resto de programas).
+Tiene **pestañas**: «+» o Ctrl+T para una nueva, Ctrl+W para cerrar, Ctrl+Tab / Ctrl+Mayús+Tab para cambiar, Ctrl+L para ir a la barra de direcciones,
+y Ctrl+clic en un acceso (Google, Gmail, aula, IA) lo abre en una pestaña nueva. Los enlaces que piden ventana nueva se abren en pestaña.
+Tu sesión de Google/IA se guarda solo dentro del overlay. Ajustes → «Overlay» permite hacerlo funcionar desde cualquier programa
+(Ctrl+Shift+Espacio, o Shift+Tab global, que bloquea Shift+Tab en el resto de programas).
 8. **IA**: la primera vez que abres la app eliges una IA (ChatGPT, Claude, Gemini, Copilot, Perplexity, DeepSeek, Le Chat, Grok).
-   Se cambia en Ajustes y se abre con el botón de IA del overlay.
+Se cambia en Ajustes y se abre con el botón de IA del overlay.
 9. **Segundo plano**: al cerrar la ventana la app sigue en la bandeja del sistema, busca novedades cada cierto tiempo y avisa con
-   notificaciones emergentes estilo Steam (configurable en Ajustes). Para salir del todo: bandeja → «Salir».
+notificaciones emergentes estilo Steam (configurable en Ajustes). Para salir del todo: bandeja → «Salir».
 10. Mensajes: los chats muestran el nombre del contacto. El número de mensajes nuevos aparece junto a «Mensajes» y junto a cada chat, y desaparece al abrir el chat.
-   Cada minuto se comprueban tus chats y, si llega un mensaje, salta un aviso (se puede desactivar en Ajustes); al pulsarlo se abre esa aula en «Mensajes».
-   Las novedades de los cursos siguen avisando como antes.
+Cada minuto se comprueban tus chats y, si llega un mensaje, salta un aviso (se puede desactivar en Ajustes); al pulsarlo se abre esa aula en «Mensajes».
+Las novedades de los cursos siguen avisando como antes.
 11. Apuntes: al pulsar un documento aparece «Abriendo los apuntes…». Al entrar en un tema se precargan sus documentos (hasta 10, de hasta 25 MB cada uno) y los ya abiertos quedan en caché 3 días, así que vuelven a abrirse al instante. Calendario: si el aula no lo ofrece, se muestra «Calendario no disponible.».
 
 ## Notas
-- Usa la API oficial de la app móvil de Moodle. Si tu centro la tiene desactivada o exige acceso solo por SSO,
-  la app mostrará un aviso al conectar.
-- Los documentos se descargan a una carpeta temporal y se abren con el programa predeterminado;
-  los archivos ejecutables nunca se abren automáticamente.
-- El vídeo de fondo se copia a la carpeta de datos de la app (máximo 1 GB); usa MP4 H.264 o WebM. Si en algún PC no se ve (H.265/HEVC, GPU o controladores problemáticos),
-  activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
-- Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
-- Las tareas, los cuestionarios y los foros se gestionan desde la app (desde la 0.8.1); lo que el aula no permita por la API se abre en el navegador.
+
+* Usa la API oficial de la app móvil de Moodle. Si tu centro la tiene desactivada o exige acceso solo por SSO,
+la app mostrará un aviso al conectar.
+* Los documentos se descargan a una carpeta temporal y se abren con el programa predeterminado;
+los archivos ejecutables nunca se abren automáticamente.
+* El vídeo de fondo se copia a la carpeta de datos de la app (máximo 1 GB); usa MP4 H.264 o WebM. Si en algún PC no se ve (H.265/HEVC, GPU o controladores problemáticos),
+activa «Modo compatible» en Ajustes o en Apariencia (desactiva la decodificación por hardware y reinicia la app). El vídeo se pausa si la ventana no se ve.
+* Google puede pedir verificación extra al iniciar sesión dentro del overlay; el botón ↗ abre la página en tu navegador.
+* Las tareas, los cuestionarios y los foros se gestionan desde la app (desde la 0.8.1); lo que el aula no permita por la API se abre en el navegador.
+
+## Novedades de la 0.8.4
+
+- **Actualizaciones sin instalador**: `quitAndInstall(true, true)` en todos los caminos (arranque, botón, aviso): instalación silenciosa y reapertura automática. Con la actualización descargada y la ventana oculta/minimizada se aplica sola (comprobación cada minuto); si la usas, solo se avisa. Tras actualizar se muestra un aviso con la versión. Mantiene el freno anti-bucle de 24 h.
+- Requisitos: Windows instalado (NSIS) y Linux AppImage. La versión portable y el .deb siguen sin actualizarse solos. La primera vez que pasas de 0.8.3 a 0.8.4 se usa aún el actualizador de la 0.8.3 (puede mostrar el asistente una vez); desde la 0.8.4 ya es silencioso.
 
 ## Novedades de la 0.8.3
 
-- **Completado y progreso**: casilla por actividad (manual: `core_completion_update_activity_completion_status_manually`; automática: solo estado, se refresca con `core_completion_get_activities_completion_status`) y barra de progreso por curso y tema.
-- **Páginas, libros y URL** con vista propia (`mod_page_*`, `mod_book_*`, `mod_url_*`); el HTML pasa por el mismo saneador que los cuestionarios.
-- **Glosarios, wikis (lectura) y bases de datos (lectura)** dentro de la app. **Talleres, lecciones, SCORM, H5P, encuestas y feedback**: información, plazos, intentos y notas, y botón al navegador. **BigBlueButton y Zoom**: estado de la sala y botón para entrar (se abre en el navegador). Lo que el aula no exponga por la API móvil se abre en el navegador.
-- **Mensajes Better AV**: foto junto a cada mensaje, «Enviado/Visto» (en grupos «Visto por…»), «escribiendo…», refresco cada ~2 s sin repintar y foco automático en el cuadro de texto.
-- **Supabase**: ejecuta `supabase/migration-0.8.3.sql` una vez (tabla `typing_status`, funciones `set_typing`, `who_is_typing`, `group_reads`). Sin ella, todo funciona salvo «escribiendo» y «visto» en grupos.
+* **Completado y progreso**: casilla por actividad (manual: `core\_completion\_update\_activity\_completion\_status\_manually`; automática: solo estado, se refresca con `core\_completion\_get\_activities\_completion\_status`) y barra de progreso por curso y tema.
+* **Páginas, libros y URL** con vista propia (`mod\_page\_\*`, `mod\_book\_\*`, `mod\_url\_\*`); el HTML pasa por el mismo saneador que los cuestionarios.
+* **Glosarios, wikis (lectura) y bases de datos (lectura)** dentro de la app. **Talleres, lecciones, SCORM, H5P, encuestas y feedback**: información, plazos, intentos y notas, y botón al navegador. **BigBlueButton y Zoom**: estado de la sala y botón para entrar (se abre en el navegador). Lo que el aula no exponga por la API móvil se abre en el navegador.
+* **Mensajes Better AV**: foto junto a cada mensaje, «Enviado/Visto» (en grupos «Visto por…»), «escribiendo…», refresco cada \~2 s sin repintar y foco automático en el cuadro de texto.
+* **Supabase**: ejecuta `supabase/migration-0.8.3.sql` una vez (tabla `typing\_status`, funciones `set\_typing`, `who\_is\_typing`, `group\_reads`). Sin ella, todo funciona salvo «escribiendo» y «visto» en grupos.
 
 ## Novedades de la 0.8.2
 
-- **Mensajes del aula**: buscar usuarios y empezar chats nuevos (`core_message_message_search_users`), contactos, solicitudes y bloqueos (`core_message_*_contact*`, `block_user`), borrar mensajes y conversaciones «para mí», y chats de grupo del propio Moodle (lectura, envío, miembros y silenciar). Los chats silenciados no avisan ni cuentan en el contador. Los grupos de Better AV (0.8.0) son independientes.
-- **Calendario**: además de las entregas, muestra tus eventos propios, los del centro y los de tus cursos. Crear (`core_calendar_create_calendar_events`), editar y borrar eventos propios; editar usa el formulario del aula (`core_calendar_submit_create_update_form`) y la hora se envía con la zona horaria de tu equipo.
-- **Notificaciones**: marcar como leídas (una o todas) y preferencias por tipo de aviso y canal, o desactivarlas todas (`core_user_update_user_preferences`). Los canales que el aula bloquea no se pueden cambiar.
-- No hay cambios en Supabase en esta versión.
+* **Mensajes del aula**: buscar usuarios y empezar chats nuevos (`core\_message\_message\_search\_users`), contactos, solicitudes y bloqueos (`core\_message\_\*\_contact\*`, `block\_user`), borrar mensajes y conversaciones «para mí», y chats de grupo del propio Moodle (lectura, envío, miembros y silenciar). Los chats silenciados no avisan ni cuentan en el contador. Los grupos de Better AV (0.8.0) son independientes.
+* **Calendario**: además de las entregas, muestra tus eventos propios, los del centro y los de tus cursos. Crear (`core\_calendar\_create\_calendar\_events`), editar y borrar eventos propios; editar usa el formulario del aula (`core\_calendar\_submit\_create\_update\_form`) y la hora se envía con la zona horaria de tu equipo.
+* **Notificaciones**: marcar como leídas (una o todas) y preferencias por tipo de aviso y canal, o desactivarlas todas (`core\_user\_update\_user\_preferences`). Los canales que el aula bloquea no se pueden cambiar.
+* No hay cambios en Supabase en esta versión.
+
 
 
 ## Novedades de la 0.8.1
 
-- **Tareas**: enunciado y archivos, entregar texto y/o archivos (subida con `/webservice/upload.php`), guardar borrador, enviar para calificar, editar y borrar la entrega, ver nota, comentario y archivos del profesor y comentarios de la entrega (`mod_assign_*`, `core_comment_*`).
-- **Cuestionarios**: intentos y notas, revisión, empezar o continuar un intento con cronómetro (corregido con la hora del aula), contraseña y resumen (`mod_quiz_*`). El HTML de las preguntas se sanea antes de mostrarlo; las preguntas de arrastrar y soltar o con adjuntos se hacen en el navegador.
-- **Foros**: debates, respuestas, nuevo debate y suscripción por debate (`mod_forum_*`). La suscripción al foro entero no la ofrece la API: se hace en el navegador.
-- **Desplazamiento con la rueda del ratón**: ya se puede subir y bajar por los menús aunque el puntero esté sobre las tareas, tarjetas o listas. Causa: `.item-list` combinaba `overflow:hidden` con `overscroll-behavior:contain` y bloqueaba la rueda (`src/instance.css`). Además, `src/scrollfix.js` pasa la rueda al diálogo abierto o a la zona principal cuando el elemento bajo el puntero no puede desplazarse.
-- **Carpeta de instalación «Better AV Client»**: el instalador de Windows se instala siempre en `Better AV Client` (por defecto `%LOCALAPPDATA%\Programs\Better AV Client`), también al actualizar desde la versión con el nombre antiguo (`build/installer.nsh`, cargado con `nsis.include`). Si tenías instalada una versión anterior en la carpeta `NotXunta Client`, puedes borrar esa carpeta a mano; tus datos no se tocan.
-- No hay cambios en Supabase en esta versión.
+* **Tareas**: enunciado y archivos, entregar texto y/o archivos (subida con `/webservice/upload.php`), guardar borrador, enviar para calificar, editar y borrar la entrega, ver nota, comentario y archivos del profesor y comentarios de la entrega (`mod\_assign\_\*`, `core\_comment\_\*`).
+* **Cuestionarios**: intentos y notas, revisión, empezar o continuar un intento con cronómetro (corregido con la hora del aula), contraseña y resumen (`mod\_quiz\_\*`). El HTML de las preguntas se sanea antes de mostrarlo; las preguntas de arrastrar y soltar o con adjuntos se hacen en el navegador.
+* **Foros**: debates, respuestas, nuevo debate y suscripción por debate (`mod\_forum\_\*`). La suscripción al foro entero no la ofrece la API: se hace en el navegador.
+* **Desplazamiento con la rueda del ratón**: ya se puede subir y bajar por los menús aunque el puntero esté sobre las tareas, tarjetas o listas. Causa: `.item-list` combinaba `overflow:hidden` con `overscroll-behavior:contain` y bloqueaba la rueda (`src/instance.css`). Además, `src/scrollfix.js` pasa la rueda al diálogo abierto o a la zona principal cuando el elemento bajo el puntero no puede desplazarse.
+* **Carpeta de instalación «Better AV Client»**: el instalador de Windows se instala siempre en `Better AV Client` (por defecto `%LOCALAPPDATA%\\Programs\\Better AV Client`), también al actualizar desde la versión con el nombre antiguo (`build/installer.nsh`, cargado con `nsis.include`). Si tenías instalada una versión anterior en la carpeta `NotXunta Client`, puedes borrar esa carpeta a mano; tus datos no se tocan.
+* No hay cambios en Supabase en esta versión.
 
 ## Novedades de la 0.8.0
 
-- **Nuevo nombre: Better AV Client** (antes NotXunta Client). El repositorio pasa a `Better-AV-Client` y los instaladores a `BetterAVClient-Setup.exe`, `BetterAVClient-Portable.exe` y `BetterAVClient-Linux-x64.*`. Se conservan el identificador interno de la app (`com.notxunta.client`) y la carpeta de datos anterior, así que las aulas, los ajustes y la sesión siguen donde estaban y las actualizaciones automáticas siguen funcionando.
-- **Grupos de chat** en «Mensajes Better AV»: hasta 25 personas (solo amigos), 20 grupos por persona. Quien lo crea gestiona miembros y nombre; cualquiera puede salir. **Ejecuta `supabase/migration-0.8.0.sql`** en el SQL Editor de Supabase para activarlos.
-- El inicio de sesión con Google, Discord y GitHub no cambia (mismas URLs de redirección); solo conviene actualizar el nombre de la app en cada proveedor.
+* **Nuevo nombre: Better AV Client** (antes NotXunta Client). El repositorio pasa a `Better-AV-Client` y los instaladores a `BetterAVClient-Setup.exe`, `BetterAVClient-Portable.exe` y `BetterAVClient-Linux-x64.\*`. Se conservan el identificador interno de la app (`com.notxunta.client`) y la carpeta de datos anterior, así que las aulas, los ajustes y la sesión siguen donde estaban y las actualizaciones automáticas siguen funcionando.
+* **Grupos de chat** en «Mensajes Better AV»: hasta 25 personas (solo amigos), 20 grupos por persona. Quien lo crea gestiona miembros y nombre; cualquiera puede salir. **Ejecuta `supabase/migration-0.8.0.sql`** en el SQL Editor de Supabase para activarlos.
+* El inicio de sesión con Google, Discord y GitHub no cambia (mismas URLs de redirección); solo conviene actualizar el nombre de la app en cada proveedor.
 
 ## Novedades de la 0.7.2
-- **Perfil con la información del aula original**: la página «Perfil» de cada instancia muestra tu descripción, intereses, ciudad, país, centro, departamento, primer/último acceso, campos personalizados, un resumen de cursos y tareas y los datos del aula (nombre, dirección y versión de Moodle). Se lee con `core_user_get_users_by_field` al sincronizar; si tu aula oculta un campo, no se muestra. Botón «Actualizar perfil».
-- **Revisión de novedades más frecuente**: frecuencia por defecto de 5 minutos (antes 15; quien seguía con 15 pasa a 5 una sola vez) con opciones desde cada 2 minutos; mensajes del aula cada 30 s, mensajes Better AV cada 20 s y amigos cada 90 s. Al volver a la ventana o al despertar el equipo se comprueba todo enseguida (como máximo una vez cada 45 s).
-- **Más personalización de la cuenta Better AV**: descripción (200 caracteres), estado (60), pronombres, color de perfil y banner, con vista previa en «Cuenta y amigos». Tus amigos ven la tarjeta al pulsar su foto o nombre. **Antes de publicar, ejecuta `supabase/migration-0.7.2.sql`** en Supabase → SQL Editor (añade las columnas y la función `get_profile_card`). Sin ejecutarlo, la app sigue funcionando y avisa de que falta.
-- **Icono**: «Gestor de cuentas», «Mis cursos» y el popup «Conecta tu Aula Virtual» usan solo el gorrito de graduación (SVG propio, sin cara y sin emoji). Hay una copia en `src/assets/cap.svg`.
+
+* **Perfil con la información del aula original**: la página «Perfil» de cada instancia muestra tu descripción, intereses, ciudad, país, centro, departamento, primer/último acceso, campos personalizados, un resumen de cursos y tareas y los datos del aula (nombre, dirección y versión de Moodle). Se lee con `core\_user\_get\_users\_by\_field` al sincronizar; si tu aula oculta un campo, no se muestra. Botón «Actualizar perfil».
+* **Revisión de novedades más frecuente**: frecuencia por defecto de 5 minutos (antes 15; quien seguía con 15 pasa a 5 una sola vez) con opciones desde cada 2 minutos; mensajes del aula cada 30 s, mensajes Better AV cada 20 s y amigos cada 90 s. Al volver a la ventana o al despertar el equipo se comprueba todo enseguida (como máximo una vez cada 45 s).
+* **Más personalización de la cuenta Better AV**: descripción (200 caracteres), estado (60), pronombres, color de perfil y banner, con vista previa en «Cuenta y amigos». Tus amigos ven la tarjeta al pulsar su foto o nombre. **Antes de publicar, ejecuta `supabase/migration-0.7.2.sql`** en Supabase → SQL Editor (añade las columnas y la función `get\_profile\_card`). Sin ejecutarlo, la app sigue funcionando y avisa de que falta.
+* **Icono**: «Gestor de cuentas», «Mis cursos» y el popup «Conecta tu Aula Virtual» usan solo el gorrito de graduación (SVG propio, sin cara y sin emoji). Hay una copia en `src/assets/cap.svg`.
 
 ## Novedades de la 0.7.1
-- **Volumen de notificación ajustable** en Ajustes → «Segundo plano y avisos» (0–100 %). El valor por defecto baja al 35 % (antes sonaba al máximo).
-- **Popup de inicio «Crea tu cuenta Better AV»**: muestra en un desplazable la política de privacidad y los términos (los `PRIVACY.md` y `TERMS.md` de este repositorio, leídos de GitHub; sin conexión usa la última copia o la que lleva la app en `src/legal/`). Hay que aceptarlos para crear la cuenta o entrar en ella; «Ahora no» lo deja para más tarde.
+
+* **Volumen de notificación ajustable** en Ajustes → «Segundo plano y avisos» (0–100 %). El valor por defecto baja al 35 % (antes sonaba al máximo).
+* **Popup de inicio «Crea tu cuenta Better AV»**: muestra en un desplazable la política de privacidad y los términos (los `PRIVACY.md` y `TERMS.md` de este repositorio, leídos de GitHub; sin conexión usa la última copia o la que lleva la app en `src/legal/`). Hay que aceptarlos para crear la cuenta o entrar en ella; «Ahora no» lo deja para más tarde.
 
 ## Novedades de la 0.7.0
-- **Versión para Android (APK)**, generada con GitHub Actions desde la carpeta `mobile/` (ver `mobile/LEEME-ANDROID.md`). La app de escritorio no cambia.
+
+* **Versión para Android (APK)**, generada con GitHub Actions desde la carpeta `mobile/` (ver `mobile/LEEME-ANDROID.md`). La app de escritorio no cambia.
 
 ## Novedades de la 0.6.9
-- **Sonido de notificación** (`src/assets/notification.mp3`): suena en todos los avisos (emergentes, del sistema y dentro de la app). Se activa/desactiva y se prueba en Ajustes. Para cambiar el sonido, sustituye ese archivo por otro con el mismo nombre.
-- **Tutorial de la primera vez**: ventana con pestañas, botones Anterior/Siguiente y «Saltar tutorial». Se guarda por dispositivo (`tutorialDone` en settings.json) y se puede repetir desde Ajustes.
+
+* **Sonido de notificación** (`src/assets/notification.mp3`): suena en todos los avisos (emergentes, del sistema y dentro de la app). Se activa/desactiva y se prueba en Ajustes. Para cambiar el sonido, sustituye ese archivo por otro con el mismo nombre.
+* **Tutorial de la primera vez**: ventana con pestañas, botones Anterior/Siguiente y «Saltar tutorial». Se guarda por dispositivo (`tutorialDone` en settings.json) y se puede repetir desde Ajustes.
 
 ## Novedades de la 0.6.8
-- **Barra de ventana propia**: minimizar, maximizar/restaurar y cerrar están dentro de la app (sin marco nativo). Se arrastra desde la barra y el doble clic maximiza.
-- **Barras de desplazamiento de la app**: verticales y horizontales con el color de acento (también en el overlay).
-- **Arreglado**: la barra superior y la lateral se descolocaban al desplazar. Ahora son fijas; solo se mueve el contenido, y la barra lateral se desplaza sola si la ventana es baja.
-- **Mejora**: sin desenfoque en las tarjetas que se desplazan (menos tirones).
+
+* **Barra de ventana propia**: minimizar, maximizar/restaurar y cerrar están dentro de la app (sin marco nativo). Se arrastra desde la barra y el doble clic maximiza.
+* **Barras de desplazamiento de la app**: verticales y horizontales con el color de acento (también en el overlay).
+* **Arreglado**: la barra superior y la lateral se descolocaban al desplazar. Ahora son fijas; solo se mueve el contenido, y la barra lateral se desplaza sola si la ventana es baja.
+* **Mejora**: sin desenfoque en las tarjetas que se desplazan (menos tirones).
 
 ## Novedades de la 0.6.7
-- **Mensajes Better AV**: arreglado el chat que se estiraba sin límite; ahora el historial se desplaza por dentro.
-- **Aviso de mensajes Better AV**: notificación (o aviso dentro de la app) cuando un amigo te escribe, y el contador se actualiza solo.
+
+* **Mensajes Better AV**: arreglado el chat que se estiraba sin límite; ahora el historial se desplaza por dentro.
+* **Aviso de mensajes Better AV**: notificación (o aviso dentro de la app) cuando un amigo te escribe, y el contador se actualiza solo.
 
 ## Novedades de la 0.6.5 — actualizaciones fiables
-- **Freno anti-bucle**: si tras reiniciar para actualizar la app sigue en la versión anterior, ya no repite la instalación en bucle (solo reintenta pasadas 24 h) y avisa con un enlace a la página de versiones.
-- **Tope de descarga**: si la descarga no avanza en 60 s, la app se abre igualmente.
-- **Publicación (GitHub Actions)**: el flujo comprueba que la etiqueta coincide con `package.json` (si no, falla con un mensaje claro), publica lo que haya aunque falle un sistema, y deja la release como «Latest». Para arreglar una release ya creada: Actions → Run workflow → escribe la etiqueta (p. ej. `v0.6.4`).
-- **Orden correcto para publicar una versión**: 1) sube `package.json` con la versión nueva, 2) crea la release con la etiqueta `vX.Y.Z` (la misma), 3) espera a que terminen los tres trabajos de Actions. Un instalador y su `latest.yml` siempre tienen que ser de la misma compilación.
+
+* **Freno anti-bucle**: si tras reiniciar para actualizar la app sigue en la versión anterior, ya no repite la instalación en bucle (solo reintenta pasadas 24 h) y avisa con un enlace a la página de versiones.
+* **Tope de descarga**: si la descarga no avanza en 60 s, la app se abre igualmente.
+* **Publicación (GitHub Actions)**: el flujo comprueba que la etiqueta coincide con `package.json` (si no, falla con un mensaje claro), publica lo que haya aunque falle un sistema, y deja la release como «Latest». Para arreglar una release ya creada: Actions → Run workflow → escribe la etiqueta (p. ej. `v0.6.4`).
+* **Orden correcto para publicar una versión**: 1) sube `package.json` con la versión nueva, 2) crea la release con la etiqueta `vX.Y.Z` (la misma), 3) espera a que terminen los tres trabajos de Actions. Un instalador y su `latest.yml` siempre tienen que ser de la misma compilación.
 
 ## Novedades de la 0.6.4 — actualización de seguridad
 
-- Descargas en una carpeta privada del usuario, nombres saneados, marca «de Internet» en Windows y más tipos de archivo bloqueados.
-- Página local del inicio de sesión (OAuth) con comprobación de Host, solo GET y cabeceras de seguridad.
-- Aspecto, avisos y ajustes que vienen de la nube se validan antes de aplicarse.
-- Sin redirecciones al pedir el token del aula; imágenes del aula sin SVG y con tope de tamaño.
-- Sin `<webview>`, sin permisos de cámara/micrófono/ubicación, enlaces con usuario/contraseña rechazados.
-- Electron 35 → 43 y «fuses» activados al empaquetar (sin `RunAsNode`, sin `--inspect`, solo carga desde `.asar`).
-- CSP más estrictas. Ejecuta `supabase/migration-0.6.4.sql` una vez (límites por cuenta).
-- Nota: el repositorio ya no lleva `package-lock.json`; el workflow usa `npm install`. Si existe en tu repo, bórralo.
+* Descargas en una carpeta privada del usuario, nombres saneados, marca «de Internet» en Windows y más tipos de archivo bloqueados.
+* Página local del inicio de sesión (OAuth) con comprobación de Host, solo GET y cabeceras de seguridad.
+* Aspecto, avisos y ajustes que vienen de la nube se validan antes de aplicarse.
+* Sin redirecciones al pedir el token del aula; imágenes del aula sin SVG y con tope de tamaño.
+* Sin `<webview>`, sin permisos de cámara/micrófono/ubicación, enlaces con usuario/contraseña rechazados.
+* Electron 35 → 43 y «fuses» activados al empaquetar (sin `RunAsNode`, sin `--inspect`, solo carga desde `.asar`).
+* CSP más estrictas. Ejecuta `supabase/migration-0.6.4.sql` una vez (límites por cuenta).
+* Nota: el repositorio ya no lleva `package-lock.json`; el workflow usa `npm install`. Si existe en tu repo, bórralo.
 
 ## Novedades de la 0.6.2 — arreglos
-- **Arreglado**: la pestaña «Cuenta y amigos» salía vacía (solo el título) y «Apariencia» no se abría. Causa: el interruptor «Mostrar cuando estoy en línea» (0.6.1) estaba definido en la función equivocada, así que al dibujar la pantalla saltaba un error. Además, si una parte de «Cuenta y amigos» falla, ahora se muestra el motivo en vez de dejar la pantalla en blanco.
-- **Quitados los archivos privados del aula virtual** (Área personal → Archivos privados de Moodle). «Archivos» ahora es solo **Archivos Better AV** (tu cuenta, Supabase Storage). No hace falta ejecutar ningún SQL nuevo: sigue valiendo `supabase/migration-0.6.1.sql`.
+
+* **Arreglado**: la pestaña «Cuenta y amigos» salía vacía (solo el título) y «Apariencia» no se abría. Causa: el interruptor «Mostrar cuando estoy en línea» (0.6.1) estaba definido en la función equivocada, así que al dibujar la pantalla saltaba un error. Además, si una parte de «Cuenta y amigos» falla, ahora se muestra el motivo en vez de dejar la pantalla en blanco.
+* **Quitados los archivos privados del aula virtual** (Área personal → Archivos privados de Moodle). «Archivos» ahora es solo **Archivos Better AV** (tu cuenta, Supabase Storage). No hace falta ejecutar ningún SQL nuevo: sigue valiendo `supabase/migration-0.6.1.sql`.
 
 ## Novedades de la 0.6.1 — amigos en línea y archivos
-- **Estado «en línea» entre amigos**: en «Amigos» aparece un punto verde junto a quien tiene la app abierta (o «Visto hace 5 min»). Solo lo ven los amigos aceptados. Se desactiva en «Cuenta y amigos» → «Mostrar cuando estoy en línea». La app avisa cada 45 s; si se cierra o se apaga el PC, el punto desaparece en unos 2 minutos.
-- ~~**Archivos privados del aula**~~ _(quitado en la 0.6.2)_ (sección «Archivos» dentro del aula): lista (con carpetas), abrir, subir y eliminar los archivos de *Área personal → Archivos privados* de Moodle, con la barra de espacio usado y el límite del aula (`userquota`) y el máximo por archivo. Antes de subir se comprueba que cabe.
-  - Depende de lo que permita cada aula: si tiene desactivado el acceso a archivos privados desde aplicaciones externas, la app lo explica. Borrar necesita una función de Moodle que no todas las aulas ofrecen; si no se puede, la app lo avisa y hay que borrar desde la web. **No se ha podido probar contra un Aula Virtual real**: pruébalo con un archivo de prueba.
-- **Archivos Better AV** (también en el menú del lanzador): archivos privados guardados en tu cuenta (Supabase Storage). Se ven desde cualquier ordenador; subir, abrir, «Guardar como…» y eliminar. Límites por defecto: 100 MB por cuenta y 25 MB por archivo (se cambian en `supabase/migration-0.6.1.sql`: `nx_quota()` y `nx_max_file()`; y el límite por archivo del bucket, una línea más abajo).
-- **Actualiza el servidor antes de publicar**: ejecuta `supabase/migration-0.6.1.sql` en Supabase → SQL Editor (crea el estado en línea, el bucket privado `nx-files` y sus reglas). Sin esto la app sigue funcionando, pero esas dos funciones avisarán de que falta.
-- Ojo con el plan gratuito de Supabase: 1 GB de Storage en total para todos los usuarios.
+
+* **Estado «en línea» entre amigos**: en «Amigos» aparece un punto verde junto a quien tiene la app abierta (o «Visto hace 5 min»). Solo lo ven los amigos aceptados. Se desactiva en «Cuenta y amigos» → «Mostrar cuando estoy en línea». La app avisa cada 45 s; si se cierra o se apaga el PC, el punto desaparece en unos 2 minutos.
+* <b>~~Archivos privados del aula~~</b> *(quitado en la 0.6.2)* (sección «Archivos» dentro del aula): lista (con carpetas), abrir, subir y eliminar los archivos de *Área personal → Archivos privados* de Moodle, con la barra de espacio usado y el límite del aula (`userquota`) y el máximo por archivo. Antes de subir se comprueba que cabe.
+
+  * Depende de lo que permita cada aula: si tiene desactivado el acceso a archivos privados desde aplicaciones externas, la app lo explica. Borrar necesita una función de Moodle que no todas las aulas ofrecen; si no se puede, la app lo avisa y hay que borrar desde la web. **No se ha podido probar contra un Aula Virtual real**: pruébalo con un archivo de prueba.
+* **Archivos Better AV** (también en el menú del lanzador): archivos privados guardados en tu cuenta (Supabase Storage). Se ven desde cualquier ordenador; subir, abrir, «Guardar como…» y eliminar. Límites por defecto: 100 MB por cuenta y 25 MB por archivo (se cambian en `supabase/migration-0.6.1.sql`: `nx\_quota()` y `nx\_max\_file()`; y el límite por archivo del bucket, una línea más abajo).
+* **Actualiza el servidor antes de publicar**: ejecuta `supabase/migration-0.6.1.sql` en Supabase → SQL Editor (crea el estado en línea, el bucket privado `nx-files` y sus reglas). Sin esto la app sigue funcionando, pero esas dos funciones avisarán de que falta.
+* Ojo con el plan gratuito de Supabase: 1 GB de Storage en total para todos los usuarios.
 
 ## Novedades de la 0.6.0 — compatibilidad con Windows, Linux y Mac
-- **Windows, Linux y macOS**: instaladores para los tres sistemas (ver arriba).
-- **Tablón «Novedades»** en la barra lateral: cada función y arreglo de cada versión (con marca «NUEVO» hasta que lo abres). Los datos están en `src/lib/changelog.js`: añade ahí una entrada cada vez que publiques una versión.
-- Atajos adaptados: en Mac ⌘ en lugar de Ctrl (zoom, pestañas del overlay, ⌘+Mayús+Espacio) y menú de macOS (Salir, copiar/pegar).
-- Contraseñas con el almacén del sistema: DPAPI (Windows), Llavero (macOS), GNOME Keyring / KWallet (Linux). En Linux sin llavero la app **no guarda contraseñas** y lo avisa.
-- Actualizaciones: Windows (instalador) y Linux (AppImage) se actualizan solos; en Mac y Linux .deb la app avisa de la versión nueva y abre la página de descarga.
-- Bandeja y avisos adaptados; los archivos con extensión de programa de Mac/Linux (.app, .sh, .AppImage, .deb, .dmg…) tampoco se abren automáticamente.
-- Flujo de **GitHub Actions** (`.github/workflows/build.yml`) que compila los tres sistemas al subir una etiqueta.
+
+* **Windows, Linux y macOS**: instaladores para los tres sistemas (ver arriba).
+* **Tablón «Novedades»** en la barra lateral: cada función y arreglo de cada versión (con marca «NUEVO» hasta que lo abres). Los datos están en `src/lib/changelog.js`: añade ahí una entrada cada vez que publiques una versión.
+* Atajos adaptados: en Mac ⌘ en lugar de Ctrl (zoom, pestañas del overlay, ⌘+Mayús+Espacio) y menú de macOS (Salir, copiar/pegar).
+* Contraseñas con el almacén del sistema: DPAPI (Windows), Llavero (macOS), GNOME Keyring / KWallet (Linux). En Linux sin llavero la app **no guarda contraseñas** y lo avisa.
+* Actualizaciones: Windows (instalador) y Linux (AppImage) se actualizan solos; en Mac y Linux .deb la app avisa de la versión nueva y abre la página de descarga.
+* Bandeja y avisos adaptados; los archivos con extensión de programa de Mac/Linux (.app, .sh, .AppImage, .deb, .dmg…) tampoco se abren automáticamente.
+* Flujo de **GitHub Actions** (`.github/workflows/build.yml`) que compila los tres sistemas al subir una etiqueta.
 
 ## Novedades de la 0.5.6
-- **Pantalla de inicio**: antes de abrir la app aparece un recuadro con el logo y «Buscando actualizaciones…». Si hay una versión nueva se descarga ahí mismo (con barra de progreso y botón «Continuar sin actualizar») y se instala sola al terminar. Sin conexión o con la app sin instalar (`npm start`, portable) se abre igualmente.
-- **Foto de perfil** de la cuenta Better AV: «Poner foto / Cambiar foto / Quitar foto» en «Cuenta y amigos». Se ve en tu perfil, en la barra superior del lanzador y en las listas de amigos.
-- **Ajustes sincronizados con la cuenta Better AV**: fondo (imagen), oscurecimiento, color de acento, sonido, IA elegida, avisos, segundo plano y tus aulas se suben solos y se importan al iniciar sesión en otro ordenador (gana siempre el cambio más reciente). **Las contraseñas del aula nunca se suben**: las aulas importadas piden su contraseña una vez en cada ordenador. No se sincronizan los ajustes que dependen del equipo: tamaño de la interfaz, atajo del overlay, modo compatible de vídeo ni el archivo del vídeo de fondo (pesa hasta 1 GB).
-- Arreglado: en «Amigos» y en «Apariencia» aparecía el texto «false» (varias veces seguidas) cuando una sección estaba vacía.
-- Arreglado: en «Cuenta y amigos» del lanzador los apartados salían duplicados al volver a entrar en la pestaña.
-- **Actualiza el servidor antes de publicar**: ejecuta `supabase/migration-0.5.6.sql` en Supabase → SQL Editor (añade la foto y la tabla de ajustes). Sin esto la app sigue funcionando, pero la foto y la sincronización darán error.
+
+* **Pantalla de inicio**: antes de abrir la app aparece un recuadro con el logo y «Buscando actualizaciones…». Si hay una versión nueva se descarga ahí mismo (con barra de progreso y botón «Continuar sin actualizar») y se instala sola al terminar. Sin conexión o con la app sin instalar (`npm start`, portable) se abre igualmente.
+* **Foto de perfil** de la cuenta Better AV: «Poner foto / Cambiar foto / Quitar foto» en «Cuenta y amigos». Se ve en tu perfil, en la barra superior del lanzador y en las listas de amigos.
+* **Ajustes sincronizados con la cuenta Better AV**: fondo (imagen), oscurecimiento, color de acento, sonido, IA elegida, avisos, segundo plano y tus aulas se suben solos y se importan al iniciar sesión en otro ordenador (gana siempre el cambio más reciente). **Las contraseñas del aula nunca se suben**: las aulas importadas piden su contraseña una vez en cada ordenador. No se sincronizan los ajustes que dependen del equipo: tamaño de la interfaz, atajo del overlay, modo compatible de vídeo ni el archivo del vídeo de fondo (pesa hasta 1 GB).
+* Arreglado: en «Amigos» y en «Apariencia» aparecía el texto «false» (varias veces seguidas) cuando una sección estaba vacía.
+* Arreglado: en «Cuenta y amigos» del lanzador los apartados salían duplicados al volver a entrar en la pestaña.
+* **Actualiza el servidor antes de publicar**: ejecuta `supabase/migration-0.5.6.sql` en Supabase → SQL Editor (añade la foto y la tabla de ajustes). Sin esto la app sigue funcionando, pero la foto y la sincronización darán error.
 
 ## Novedades de la 0.5.5
-- Versión pública: inicio de sesión con Google / Discord / GitHub listo para usar y números de versión unificados.
+
+* Versión pública: inicio de sesión con Google / Discord / GitHub listo para usar y números de versión unificados.
 
 ## Novedades de la 0.5.4
-- Inicio de sesión con Google / Discord / GitHub: si el proveedor no está activado en Supabase, la app lo avisa antes de abrir el navegador; botón «Cancelar» durante la espera; cierre limpio del puerto local.
+
+* Inicio de sesión con Google / Discord / GitHub: si el proveedor no está activado en Supabase, la app lo avisa antes de abrir el navegador; botón «Cancelar» durante la espera; cierre limpio del puerto local.
 
 ## Novedades de la 0.5.3
-- Overlay con varias pestañas.
-- «Abriendo los apuntes…» con círculo de carga, descarga en disco sin cargar el archivo en memoria, caché y precarga de los apuntes del tema.
-- Vídeo de fondo con sonido (activar/silenciar y volumen) y modo compatible; el vídeo ya no se bloquea si Windows tiene las animaciones desactivadas.
-- Arreglado el contador de mensajes nuevos que nunca se quitaba (ahora se marca el chat como leído en el aula y se recuerda en local).
-- Avisos de mensajes nuevos además de las novedades de los cursos.
+
+* Overlay con varias pestañas.
+* «Abriendo los apuntes…» con círculo de carga, descarga en disco sin cargar el archivo en memoria, caché y precarga de los apuntes del tema.
+* Vídeo de fondo con sonido (activar/silenciar y volumen) y modo compatible; el vídeo ya no se bloquea si Windows tiene las animaciones desactivadas.
+* Arreglado el contador de mensajes nuevos que nunca se quitaba (ahora se marca el chat como leído en el aula y se recuerda en local).
+* Avisos de mensajes nuevos además de las novedades de los cursos.
 
 ## Actualizaciones automáticas
+
 La app instalada busca actualizaciones al abrir y cada 6 horas, las descarga en segundo plano y las instala al cerrar (o con «Reiniciar e instalar»). Ajustes → «Actualizaciones».
 Usa GitHub Releases (gratis):
-1. Crea un repositorio y pon tu usuario en `package.json` → `build.publish[0].owner` (y `repo` si lo llamas distinto).
+
+1. Crea un repositorio y pon tu usuario en `package.json` → `build.publish\[0].owner` (y `repo` si lo llamas distinto).
 2. Sube la versión en `package.json` (p. ej. `0.6.1`) y ejecuta `npm run dist`.
 3. Crea una *Release* en GitHub con la etiqueta `v0.6.1` y sube de `dist/`: `BetterAVClient-Setup.exe`, `BetterAVClient-Setup.exe.blockmap` y `latest.yml`.
-   (Alternativa automática: `set GH_TOKEN=tu_token` y `npm run release`.) Si el repositorio es privado, las actualizaciones no funcionan sin token: usa uno público.
+(Alternativa automática: `set GH\_TOKEN=tu\_token` y `npm run release`.) Si el repositorio es privado, las actualizaciones no funcionan sin token: usa uno público.
 4. Las apps instaladas con versión anterior se actualizan solas. **Esta versión (0.6.1) se actualiza sola desde la 0.5.5 en adelante; las anteriores a la primera con actualizador hay que instalarlas a mano una vez**; a partir de ahí, todo automático.
 
 ### Publicar los tres sistemas con GitHub Actions (recomendado)
+
 1. Sube el proyecto (incluida la carpeta `.github/`) a tu repositorio de GitHub.
 2. Pon la versión en `package.json` y súbela: `git tag v0.6.1` y `git push origin v0.6.1`.
 3. En la pestaña **Actions** se compilan Windows, macOS y Linux y se publican los instaladores en una *Release* (borrador): revísala y pulsa **Publish release**. También puedes lanzarlo a mano (Run workflow) para obtener los instaladores como «artifacts» sin publicar.
 
 ### Notas por sistema
-- **Windows**: sin firmar, SmartScreen mostrará «Windows protegió su PC» → *Más información → Ejecutar de todas formas*.
-- **macOS**: la app no está firmada ni notarizada (hace falta una cuenta de Apple Developer, 99 USD/año). Al abrirla: clic derecho → *Abrir*. Si en un Mac con Apple Silicon sale «está dañada», ejecuta en la Terminal `xattr -cr "/Applications/Better AV Client.app"`. Las actualizaciones no son automáticas: la app avisa y abre la página de descarga. No se ha probado en un Mac real: revisa especialmente la bandeja (barra de menú) y los avisos emergentes.
-- **Linux**: AppImage (`chmod +x BetterAVClient-Linux-x64.AppImage` y doble clic) o `.deb` (`sudo apt install ./BetterAVClient-Linux-x64.deb`). En Ubuntu 23.10+/24.04 el AppImage puede negarse a arrancar por la restricción de «user namespaces»: ejecútalo con `--no-sandbox` o usa el `.deb`. Para guardar contraseñas necesitas un llavero (GNOME Keyring o KWallet, que casi todos los escritorios ya traen). El icono de bandeja en GNOME necesita la extensión *AppIndicator*. El atajo global (Shift+Tab / ⌃⇧Espacio «desde cualquier programa») no funciona en Wayland: usa «Solo con Better AV Client en primer plano».
+
+* **Windows**: sin firmar, SmartScreen mostrará «Windows protegió su PC» → *Más información → Ejecutar de todas formas*.
+* **macOS**: la app no está firmada ni notarizada (hace falta una cuenta de Apple Developer, 99 USD/año). Al abrirla: clic derecho → *Abrir*. Si en un Mac con Apple Silicon sale «está dañada», ejecuta en la Terminal `xattr -cr "/Applications/Better AV Client.app"`. Las actualizaciones no son automáticas: la app avisa y abre la página de descarga. No se ha probado en un Mac real: revisa especialmente la bandeja (barra de menú) y los avisos emergentes.
+* **Linux**: AppImage (`chmod +x BetterAVClient-Linux-x64.AppImage` y doble clic) o `.deb` (`sudo apt install ./BetterAVClient-Linux-x64.deb`). En Ubuntu 23.10+/24.04 el AppImage puede negarse a arrancar por la restricción de «user namespaces»: ejecútalo con `--no-sandbox` o usa el `.deb`. Para guardar contraseñas necesitas un llavero (GNOME Keyring o KWallet, que casi todos los escritorios ya traen). El icono de bandeja en GNOME necesita la extensión *AppIndicator*. El atajo global (Shift+Tab / ⌃⇧Espacio «desde cualquier programa») no funciona en Wayland: usa «Solo con Better AV Client en primer plano».
 
 ## Cuentas Better AV y amigos
+
 Cuenta propia de Better AV Client, **independiente del aula virtual**: se crea con correo y contraseña o con Google / Discord / GitHub. Con ella:
-- En cada curso hay una pestaña **Participantes**; junto a cada persona que también usa Better AV Client aparece **＋ Añadir amigo** (las que no, indican «Sin Better AV Client»).
-- «Amigos» (barra lateral del aula) y «Cuenta y amigos» (pantalla principal): solicitudes recibidas/enviadas, lista de amigos y búsqueda por nombre de usuario. Avisa cuando llega una solicitud.
-- Privacidad: solo se guarda correo, usuario, nombre para mostrar, tu foto de perfil, tus ajustes de apariencia/app, la lista de tus aulas (nombre, enlace y usuario) y, si lo permites, qué usuario eres en cada aula (para que te encuentren). **Nunca se envían contraseñas ni contenido del aula.** Se puede desactivar «Que mis compañeros me encuentren» y eliminar la cuenta desde la app.
-- Limitación: el vínculo «esta cuenta es tal usuario del aula» lo declara la propia persona y no se verifica contra el aula; por eso se muestra también su @usuario de Better AV.
+
+* En cada curso hay una pestaña **Participantes**; junto a cada persona que también usa Better AV Client aparece **＋ Añadir amigo** (las que no, indican «Sin Better AV Client»).
+* «Amigos» (barra lateral del aula) y «Cuenta y amigos» (pantalla principal): solicitudes recibidas/enviadas, lista de amigos y búsqueda por nombre de usuario. Avisa cuando llega una solicitud.
+* Privacidad: solo se guarda correo, usuario, nombre para mostrar, tu foto de perfil, tus ajustes de apariencia/app, la lista de tus aulas (nombre, enlace y usuario) y, si lo permites, qué usuario eres en cada aula (para que te encuentren). **Nunca se envían contraseñas ni contenido del aula.** Se puede desactivar «Que mis compañeros me encuentren» y eliminar la cuenta desde la app.
+* Limitación: el vínculo «esta cuenta es tal usuario del aula» lo declara la propia persona y no se verifica contra el aula; por eso se muestra también su @usuario de Better AV.
 
 ### Puesta en marcha del servidor (una vez, gratis con Supabase)
-_(Si ya lo tenías montado con la 0.5.5, basta con ejecutar `supabase/migration-0.5.6.sql` en el SQL Editor.)_
+
+*(Si ya lo tenías montado con la 0.5.5, basta con ejecutar `supabase/migration-0.5.6.sql` en el SQL Editor.)*
+
 1. Entra en supabase.com → **New project** (elige región de la UE). Guarda la contraseña de la base de datos.
 2. **SQL Editor → New query**: pega todo `supabase/schema.sql` y pulsa **Run**.
 3. **Authentication → Providers → Email**: activado. Para probar rápido, desactiva «Confirm email» (el correo integrado de Supabase está muy limitado; para producción configura tu propio SMTP).
 4. **Authentication → URL Configuration → Redirect URLs**: añade `http://127.0.0.1:53682/callback`.
 5. (Opcional) **Google**: en Google Cloud crea credenciales OAuth «Aplicación web» con la URL de redirección `https://TU-PROYECTO.supabase.co/auth/v1/callback`, y pega Client ID y Secret en Supabase → Providers → Google. Discord y GitHub funcionan igual.
-6. **Project Settings → API**: copia «Project URL» y la clave **anon public** en `src/lib/cloud-config.js` (nunca la `service_role`).
+6. **Project Settings → API**: copia «Project URL» y la clave **anon public** en `src/lib/cloud-config.js` (nunca la `service\_role`).
 7. Compila (`build.bat`) y publica la Release como siempre.
 
 **Proveedores (Google, Discord, GitHub)** — en cada uno la URL de redirección es siempre la de Supabase: `https://TU-PROYECTO.supabase.co/auth/v1/callback`.
-- Google: Google Cloud → APIs y servicios → Credenciales → ID de cliente OAuth «Aplicación web» (Authorized redirect URI = la de arriba). Pantalla de consentimiento: publícala («En producción») o añade tus correos como usuarios de prueba.
-- Discord: discord.com/developers → New Application → OAuth2 → Redirects = la de arriba; copia Client ID y Client Secret.
-- GitHub: Settings → Developer settings → OAuth Apps → New → «Authorization callback URL» = la de arriba.
-- En Supabase → Authentication → Providers activa cada uno y pega su Client ID/Secret (los secretos solo van ahí, nunca en la app).
-- Supabase → URL Configuration → Redirect URLs debe contener exactamente `http://127.0.0.1:53682/callback`; si falta, el navegador acaba en la «Site URL» y la app se queda esperando.
+
+* Google: Google Cloud → APIs y servicios → Credenciales → ID de cliente OAuth «Aplicación web» (Authorized redirect URI = la de arriba). Pantalla de consentimiento: publícala («En producción») o añade tus correos como usuarios de prueba.
+* Discord: discord.com/developers → New Application → OAuth2 → Redirects = la de arriba; copia Client ID y Client Secret.
+* GitHub: Settings → Developer settings → OAuth Apps → New → «Authorization callback URL» = la de arriba.
+* En Supabase → Authentication → Providers activa cada uno y pega su Client ID/Secret (los secretos solo van ahí, nunca en la app).
+* Supabase → URL Configuration → Redirect URLs debe contener exactamente `http://127.0.0.1:53682/callback`; si falta, el navegador acaba en la «Site URL» y la app se queda esperando.
 
 Sin el paso 6 la app funciona igual, pero «Cuenta y amigos» avisa de que no hay servidor configurado.
 
 ## 0.5.7 (fix de la 0.5.6)
-- Arreglo: si la base de datos de Supabase no tenía aplicado `supabase/migration-0.5.6.sql`, la app 0.5.6 no podía cargar el perfil y «Cuenta y amigos» dejaba de funcionar entera. Ahora la cuenta y los amigos funcionan igualmente y la app avisa de que falta ejecutar la migración (necesaria solo para la foto de perfil y la sincronización de ajustes).
+
+* Arreglo: si la base de datos de Supabase no tenía aplicado `supabase/migration-0.5.6.sql`, la app 0.5.6 no podía cargar el perfil y «Cuenta y amigos» dejaba de funcionar entera. Ahora la cuenta y los amigos funcionan igualmente y la app avisa de que falta ejecutar la migración (necesaria solo para la foto de perfil y la sincronización de ajustes).
+
 
 
 ## 0.6.6 · Inicio automático, mensajería y actualizaciones
 
-- En **Ajustes → Segundo plano y avisos** puedes activar «Iniciar Better AV al encender el ordenador». Windows usa los elementos de inicio de sesión; Linux crea un archivo `.desktop` en `~/.config/autostart`.
-- La mensajería directa está disponible entre amistades aceptadas desde **Cuenta Better AV y amigos → Mensaje**. Para activarla, ejecuta `supabase/migration-0.6.6.sql` en Supabase → SQL Editor. Los mensajes se limitan a 2.000 caracteres y las políticas RLS restringen lectura y envío a los participantes/amigos.
-- **Windows instalado** y **Linux AppImage** descargan e instalan actualizaciones con `electron-updater`. Linux `.deb` debe actualizarse con el gestor de paquetes.
-- Publica versiones creando una etiqueta `vX.Y.Z` que coincida con `package.json`; el workflow compila y adjunta los metadatos `latest*.yml` a GitHub Releases.
-- **Fin de la compatibilidad con macOS**: desde esta versión no se compila ni se publica la versión para Mac, ni habrá actualizaciones para ella.
+* En **Ajustes → Segundo plano y avisos** puedes activar «Iniciar Better AV al encender el ordenador». Windows usa los elementos de inicio de sesión; Linux crea un archivo `.desktop` en `\~/.config/autostart`.
+* La mensajería directa está disponible entre amistades aceptadas desde **Cuenta Better AV y amigos → Mensaje**. Para activarla, ejecuta `supabase/migration-0.6.6.sql` en Supabase → SQL Editor. Los mensajes se limitan a 2.000 caracteres y las políticas RLS restringen lectura y envío a los participantes/amigos.
+* **Windows instalado** y **Linux AppImage** descargan e instalan actualizaciones con `electron-updater`. Linux `.deb` debe actualizarse con el gestor de paquetes.
+* Publica versiones creando una etiqueta `vX.Y.Z` que coincida con `package.json`; el workflow compila y adjunta los metadatos `latest\*.yml` a GitHub Releases.
+* **Fin de la compatibilidad con macOS**: desde esta versión no se compila ni se publica la versión para Mac, ni habrá actualizaciones para ella.
+

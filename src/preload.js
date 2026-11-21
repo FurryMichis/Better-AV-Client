@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer, webFrame } = require("electron");
 const call = (channel, ...args) => ipcRenderer.invoke(channel, ...args);
 
 contextBridge.exposeInMainWorld("betteravClient", {
-  version: "0.8.3",
+  version: "0.8.4",
   platform: process.platform,
   listAccounts: () => call("accounts:list"),
   addAccount: acc => call("accounts:add", acc),

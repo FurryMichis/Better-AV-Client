@@ -2073,7 +2073,7 @@ function updatesPanel(row) {
   const paint = st => {
     msg.textContent = st.message || `Versión instalada: ${aula.version}`;
     clear(btns);
-    if (st.state === "ready") btns.append(h("button", { class: "primary small", text: "Reiniciar e instalar ahora", onclick: () => api("updateInstall").catch(e => notify(e.message)) }));
+    if (st.state === "ready") btns.append(h("button", { class: "primary small", text: "Reiniciar y actualizar ahora", onclick: () => api("updateInstall").catch(e => notify(e.message)) }));
     else if (st.state === "available" && aula.platform !== "linux") btns.append(h("button", { class: "primary small", text: "Abrir página de descarga", onclick: () => api("updateOpenReleases").catch(e => notify(e.message)) }));
     else if (st.state !== "unsupported") btns.append(h("button", { class: "secondary small", text: "Buscar actualizaciones", disabled: st.state === "checking" || st.state === "downloading" ? "" : null,
       onclick: () => api("updateCheck").then(paint).catch(e => notify(e.message)) }));

@@ -1226,6 +1226,19 @@ function createWindow() {
   });
 }
 
+// 0.8.4 · Actualización sin instalador: con la versión nueva ya descargada, si la app está en segundo plano (ventana oculta
+// en la bandeja o minimizada) se aplica sola en silencio y la app se reabre; si estás usándola, te lo ofrece y no te interrumpe.
+let autoApplyTimer = null;
+function watchAutoApply() {
+  clearInterval(autoApplyTimer);
+  autoApplyTimer = setInterval(() => {
+    if (!updater.isReady()) { clearInterval(autoApplyTimer); return; }
+    const w = mainWindow;
+    const hidden = !w || w.isDestroyed() || !w.isVisible() || w.isMinimized();
+    if (hidden) { clearInterval(autoApplyTimer); updater.installNow(); }
+  }, 60000);
+}
+
 // Muestra la pantalla de inicio y, si la app está instalada, busca actualizaciones. Devuelve el resultado de la comprobación
 // (ver updater.startupCheck) o "installing" si hay una versión nueva descargada y la app se va a reiniciar para instalarla.
 async function startupScreen() {
@@ -1238,6 +1251,7 @@ async function startupScreen() {
 
   // Freno anti-bucle: si la última vez se reinició para instalar y seguimos en la versión anterior, no se repite (24 h).
   const guard = updateGuard.evaluate(userDir(), app.getVersion());
+  if (guard.installed) bootNote = { title: "Better AV Client actualizado", body: `Ya tienes la versión ${app.getVersion()}.`, action: "" };
   if (guard.blocked) {
     bootNote = { title: "No se pudo instalar la actualización", body: `Se intentó instalar la ${guard.failedVersion} pero sigues en la ${app.getVersion()}. Descarga el instalador desde la página de versiones. Pulsa aquí para abrirla.` };
     splash.update({ text: "Iniciando…", percent: -1, canSkip: false });
@@ -1247,7 +1261,7 @@ async function startupScreen() {
 
   const r = await updater.startupCheck(st => splash.update(st));
   if (r === "ready") {
-    splash.update({ text: "Instalando la actualización…", percent: 100, canSkip: false });
+    splash.update({ text: "Aplicando la actualización… la app se reiniciará sola", percent: 100, canSkip: false });
     await wait(700);
     quitting = true;
     updateGuard.record(userDir(), updater.getStatus().version);   // si al volver a abrir no es esa versión, no se reintenta en bucle
@@ -1292,7 +1306,9 @@ if (!app.requestSingleInstanceLock()) {
     updater.init({
       enabled: () => settings.get().autoUpdate,
       notify: (title, body, action) => announce(title, body, "", action),
-      onStatus: st => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("update:status", st); }
+      onStatus: st => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("update:status", st); },
+      beforeInstall: version => { quitting = true; updateGuard.record(userDir(), version); },   // si al volver no es esa versión, no se reintenta en bucle
+      onReady: () => watchAutoApply()
     });
 
     // Pantalla de inicio con el logo: «Buscando actualizaciones…» antes de abrir la ventana principal.
@@ -1311,7 +1327,7 @@ if (!app.requestSingleInstanceLock()) {
     schedulePresence();
     try { powerMonitor.on("resume", () => setTimeout(quickCheck, 6000)); } catch { /* sin gestor de energía */ }
     sync.schedule(8000);       // trae los ajustes de tu cuenta Better AV (si has iniciado sesión)
-    if (bootNote) setTimeout(() => announce(bootNote.title, bootNote.body, "", "releases"), 3500);
+    if (bootNote) setTimeout(() => announce(bootNote.title, bootNote.body, "", bootNote.action === undefined ? "releases" : bootNote.action), 3500);
     setTimeout(() => {
       const keep = settings.get().keepBackground;
       announce("Better AV Client", `${keep ? "Se mantiene en segundo plano. " : ""}Pulsa Shift+Tab para abrir el overlay.`, "", "overlay");

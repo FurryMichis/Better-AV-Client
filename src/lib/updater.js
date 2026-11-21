@@ -9,6 +9,7 @@ let status = { state: "idle", version: "", message: "", percent: 0 };
 
 const supported = () => app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR; // la versión portable no se actualiza sola
 const manualOnly = () => process.platform === "linux" && !process.env.APPIMAGE;
+const isReady = () => status.state === "ready";
 const set = patch => { status = { ...status, ...patch }; if (deps && deps.onStatus) deps.onStatus(status); };
 
 function init(d) {
@@ -36,7 +37,8 @@ function init(d) {
   autoUpdater.on("download-progress", p => set({ state: "downloading", percent: Math.round(p.percent || 0), message: `Descargando la versión ${status.version}… ${Math.round(p.percent || 0)} %` }));
   autoUpdater.on("update-downloaded", info => {
     set({ state: "ready", version: info.version, percent: 100, message: `La versión ${info.version} está lista.` });
-    deps.notify("Actualización lista", `Better AV Client ${info.version}: pulsa para reiniciar e instalar (o se instalará al cerrar).`, "update");
+    deps.notify("Actualización lista", `Better AV Client ${info.version}: pulsa para reiniciar y aplicarla (solo se reinicia la app). Si no, se aplicará sola cuando la app esté en segundo plano o al cerrarla.`, "update");
+    if (deps.onReady) deps.onReady(info.version);
   });
   autoUpdater.on("error", e => set({ state: "error", message: `No se pudo comprobar: ${(e && e.message || "error").split("\n")[0].slice(0, 160)}` }));
 }
@@ -105,10 +107,13 @@ function installSilently() {
   return true;
 }
 
+// 0.8.4: instalar = cerrar, aplicar la actualización EN SILENCIO (sin asistente ni ventanas) y volver a abrir la app sola.
 function installNow() {
   if (!autoUpdater || status.state !== "ready") return false;
-  setImmediate(() => autoUpdater.quitAndInstall(false, true));
+  if (deps && deps.beforeInstall) deps.beforeInstall(status.version);   // freno anti-bucle y marca de «saliendo»
+  set({ state: "installing", message: `Aplicando la versión ${status.version}… la app se reiniciará sola.` });
+  setImmediate(() => autoUpdater.quitAndInstall(true, true));
   return true;
 }
 
-module.exports = { init, check, schedule, installNow, startupCheck, skipStartup, installSilently, getStatus: () => status };
+module.exports = { isReady, init, check, schedule, installNow, startupCheck, skipStartup, installSilently, getStatus: () => status };

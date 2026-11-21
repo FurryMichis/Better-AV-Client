@@ -3,6 +3,15 @@
 // kind: "new" = función nueva · "fix" = arreglo · "improve" = mejora
 module.exports = [
   {
+    version: "0.8.4", headline: "Actualizaciones sin instalador",
+    summary: "Las actualizaciones se descargan solas y se aplican en silencio: la app se cierra y se vuelve a abrir, sin asistente de instalación ni ventanas.",
+    items: [
+      { kind: "new", title: "Solo se reinicia la app", text: "Al pulsar «Reiniciar y actualizar» (o el aviso de actualización lista) la app se cierra, aplica la versión nueva en segundo plano y se abre sola. Ya no aparece ningún instalador." },
+      { kind: "new", title: "Se aplica sola en segundo plano", text: "Si la actualización ya está descargada y la app está oculta en la bandeja o minimizada, se aplica sola sin molestarte. Si la estás usando, no te interrumpe: te avisa y eliges cuándo." },
+      { kind: "improve", title: "Aviso al terminar", text: "Después de actualizar, la app te dice a qué versión has pasado. Si algo falla, no se repite en bucle y te avisa." }
+    ]
+  },
+  {
     version: "0.8.3", headline: "Más módulos del aula y mensajes Better AV más vivos",
     summary: "Marca actividades como completadas y mira tu progreso, lee páginas, libros y enlaces dentro de la app, abre glosarios, wikis y más módulos, y los mensajes de Better AV muestran fotos, «visto» y «escribiendo…».",
     items: [
